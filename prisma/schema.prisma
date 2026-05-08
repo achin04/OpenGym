@@ -11,3 +11,121 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum RunSourceType {
+  CITY
+  UNIVERSITY
+  USER
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  OPEN
+}
+
+enum AgeGroup {
+  ALL_AGES
+  YOUTH
+  ADULT
+  SENIOR
+}
+
+enum RsvpStatus {
+  GOING
+  WAITLISTED
+  CANCELLED
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  createdRuns Run[]    @relation("RunCreator")
+  rsvps       Rsvp[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Venue {
+  id           String   @id @default(cuid())
+  name         String
+  addressLine1 String
+  addressLine2 String?
+  city         String
+  state        String
+  postalCode   String?
+  country      String   @default("US")
+  websiteUrl   String?
+  phone        String?
+  runs         Run[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([city, state])
+  @@map("venues")
+}
+
+model ScheduleSource {
+  id         String        @id @default(cuid())
+  name       String
+  sourceType RunSourceType
+  url        String        @unique
+  notes      String?
+  runs       Run[]
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@index([sourceType])
+  @@map("schedule_sources")
+}
+
+model Run {
+  id               String          @id @default(cuid())
+  title            String
+  description      String?
+  sourceType       RunSourceType
+  startTime        DateTime
+  endTime          DateTime
+  price            Decimal?        @db.Decimal(10, 2)
+  skillLevel       SkillLevel      @default(OPEN)
+  ageGroup         AgeGroup        @default(ADULT)
+  maxPlayers       Int?
+  verified         Boolean         @default(false)
+  sourceUrl        String?
+  venueId          String
+  venue            Venue           @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  createdByUserId  String?
+  createdByUser    User?           @relation("RunCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  scheduleSourceId String?
+  scheduleSource   ScheduleSource? @relation(fields: [scheduleSourceId], references: [id], onDelete: SetNull)
+  rsvps            Rsvp[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([startTime])
+  @@index([venueId, startTime])
+  @@index([sourceType])
+  @@index([createdByUserId])
+  @@index([scheduleSourceId])
+  @@map("runs")
+}
+
+model Rsvp {
+  id        String     @id @default(cuid())
+  status    RsvpStatus @default(GOING)
+  userId    String
+  runId     String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  run       Run        @relation(fields: [runId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, runId])
+  @@index([runId])
+  @@index([status])
+  @@map("rsvps")
+}
