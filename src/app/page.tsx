@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-1 items-center bg-zinc-950 px-6 py-16 text-white">
@@ -14,6 +16,14 @@ export default function Home() {
             local indoor runs.
           </p>
         </div>
+
+        <Link
+          href="/runs"
+          className="w-fit rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-emerald-300"
+        >
+          Browse runs
+        </Link>
+
         <div className="border-t border-white/10 pt-6 text-sm text-zinc-400">
           Milestone 1 foundation in progress.
         </div>
