@@ -1,6 +1,39 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
 
+function formatDateTime(date: Date) {
+    return new Intl.DateTimeFormat("en-CA", {
+        dateStyle: "medium",
+        timeStyle: "short",
+        timeZone: "America/Toronto"
+    }).format(date);
+}
+
+function formatPrice(price: {toString: () => string } | null) {
+    if (price === null) {
+        return "Free";
+    }
+
+    const amount = Number(price.toString());
+
+    if (amount === 0 ) {
+        return "Free";
+    }
+
+    return new Intl.NumberFormat("en-CA", {
+        style: "currency",
+        currency: "CAD",
+    }).format(amount);
+}
+
+function formatLabel(value: string) {
+    return value
+        .toLowerCase()
+        .split("_")
+        .map((word) => word[0].toUpperCase() + word.slice(1))
+        .join(" ");
+}
+
 type RunDetailsPageProps = {
   params: Promise<{
     id: string;
@@ -27,7 +60,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   if (!run) {
     notFound();
   }
-  
+
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
       <section className="mx-auto w-full max-w-5xl space-y-4">
@@ -38,28 +71,78 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
         <h1 className="text-4xl font-semibold tracking-normal">
           {run.title}
         </h1>
+        <p className="text-zinc-300">
+          {run.description ?? "No description has been added yet."}
+        </p>
 
         <p className="text-zinc-300">Run ID: {run.id}</p>
         <p className="text-zinc-300">RSVP count: {run._count.rsvps}</p>
         <div className="rounded-lg border border-white/10 bg-white/5 p-6">
             <h2 className="text-2xl font-semibold">Venue</h2>
-
-            <dl className="mt-4 space-y-3 text-sm">
+            
+            <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <div>
-                <dt className="text-zinc-500">Name</dt>
-                <dd className="text-zinc-100">{run.venue.name}</dd>
+                    <dt className="text-zinc-500">Name</dt>
+                    <dd className="text-zinc-100">{run.venue.name}</dd>
                 </div>
 
                 <div>
-                <dt className="text-zinc-500">Address</dt>
-                <dd className="text-zinc-100">{run.venue.addressLine1}</dd>
+                    <dt className="text-zinc-500">Address</dt>
+                    <dd className="text-zinc-100">{run.venue.addressLine1}</dd>
                 </div>
 
                 <div>
-                <dt className="text-zinc-500">City</dt>
-                <dd className="text-zinc-100">{run.venue.city}</dd>
+                    <dt className="text-zinc-500">City</dt>
+                    <dd className="text-zinc-100">{run.venue.city}</dd>
                 </div>
-            </dl>
+
+                <div>
+                    <dt className="text-zinc-500">Starts</dt>
+                    <dd className="text-zinc-100">{formatDateTime(run.startTime)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Ends</dt>
+                    <dd className="text-zinc-100">{formatDateTime(run.endTime)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Price</dt>
+                    <dd className="text-zinc-100">{formatPrice(run.price)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Skill level</dt>
+                    <dd className="text-zinc-100">{formatLabel(run.skillLevel)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Age group</dt>
+                    <dd className="text-zinc-100">{formatLabel(run.ageGroup)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Max players</dt>
+                    <dd className="text-zinc-100">{run.maxPlayers ?? "No limit listed"}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Source type</dt>
+                    <dd className="text-zinc-100">{formatLabel(run.sourceType)}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Verified</dt>
+                    <dd className="text-zinc-100">{run.verified ? "Yes" : "No"}</dd>
+                </div>
+
+                <div>
+                    <dt className="text-zinc-500">Source URL</dt>
+                    <dd className="text-zinc-100">
+                    {run.sourceUrl ?? "No source URL listed"}
+                    </dd>
+                </div>
+                </dl>
             </div>
       </section>
     </main>

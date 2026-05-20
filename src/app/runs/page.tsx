@@ -1,4 +1,5 @@
 import {prisma} from "@/server/db";
+import Link from "next/link";
 
 function formatDateTime(date: Date) {
     return new Intl.DateTimeFormat("en-CA", {
@@ -71,7 +72,11 @@ export default async function RunsPage() {
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
-                    <h2 className="text-2xl font-semibold">{run.title}</h2>
+                    <h2 className="text-2xl font-semibold">
+                      <Link href={`/runs/${run.id}`} className="hover:underline">
+                        {run.title}
+                      </Link>
+                    </h2>
                     <p className="text-zinc-300">
                       {run.venue.name} · {run.venue.city}
                     </p>
