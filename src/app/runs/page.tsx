@@ -1,38 +1,6 @@
 import {prisma} from "@/server/db";
 import Link from "next/link";
-
-function formatDateTime(date: Date) {
-    return new Intl.DateTimeFormat("en-CA", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: "America/Toronto"
-    }).format(date);
-}
-
-function formatPrice(price: {toString: () => string } | null) {
-    if (price === null) {
-        return "Free";
-    }
-
-    const amount = Number(price.toString());
-
-    if (amount === 0 ) {
-        return "Free";
-    }
-
-    return new Intl.NumberFormat("en-CA", {
-        style: "currency",
-        currency: "CAD",
-    }).format(amount);
-}
-
-function formatLabel(value: string) {
-    return value
-        .toLowerCase()
-        .split("_")
-        .map((word) => word[0].toUpperCase() + word.slice(1))
-        .join(" ");
-}
+import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
 
 export default async function RunsPage() {
     const runs = await prisma.run.findMany({

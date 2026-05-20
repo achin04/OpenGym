@@ -1,38 +1,6 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
-
-function formatDateTime(date: Date) {
-    return new Intl.DateTimeFormat("en-CA", {
-        dateStyle: "medium",
-        timeStyle: "short",
-        timeZone: "America/Toronto"
-    }).format(date);
-}
-
-function formatPrice(price: {toString: () => string } | null) {
-    if (price === null) {
-        return "Free";
-    }
-
-    const amount = Number(price.toString());
-
-    if (amount === 0 ) {
-        return "Free";
-    }
-
-    return new Intl.NumberFormat("en-CA", {
-        style: "currency",
-        currency: "CAD",
-    }).format(amount);
-}
-
-function formatLabel(value: string) {
-    return value
-        .toLowerCase()
-        .split("_")
-        .map((word) => word[0].toUpperCase() + word.slice(1))
-        .join(" ");
-}
+import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
 
 type RunDetailsPageProps = {
   params: Promise<{
@@ -79,7 +47,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
         <p className="text-zinc-300">RSVP count: {run._count.rsvps}</p>
         <div className="rounded-lg border border-white/10 bg-white/5 p-6">
             <h2 className="text-2xl font-semibold">Venue</h2>
-            
+
             <dl className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                     <dt className="text-zinc-500">Name</dt>
