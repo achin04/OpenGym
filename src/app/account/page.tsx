@@ -1,7 +1,34 @@
 import { currentUser } from "@clerk/nextjs/server";
+import { prisma } from "@/server/db";
+
 
 export default async function AccountPage() {
-    const user = await currentUser();
+    const clerkUser = await currentUser();
+
+    if (!clerkUser) {
+        throw new Error("Expected a signed-in user");
+    }
+    
+    const email = clerkUser.primaryEmailAddress?.emailAddress;
+
+    if (!email) {
+        throw new Error("Expected user to have a primary email address");
+    }
+
+    const appUser = await prisma.user.upsert({
+        where: {
+            clerkUserId: clerkUser.id,
+        },
+        update: {
+            email,
+            name: clerkUser.fullName,
+        },
+        create: {
+            clerkUserId: clerkUser.id,
+            email,
+            name: clerkUser.fullName,
+        },
+    });
 
     return (
         <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -22,20 +49,25 @@ export default async function AccountPage() {
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
                 <div>
                 <dt className="text-zinc-500">Clerk user ID</dt>
-                <dd className="mt-1 text-zinc-100">{user?.id}</dd>
+                <dd className="mt-1 text-zinc-100">{clerkUser?.id}</dd>
+                </div>
+
+                <div>
+                <dt className="text-zinc-500">OpenGym user ID</dt>
+                <dd className="mt-1 text-zinc-100">{appUser.id}</dd>
                 </div>
 
                 <div>
                 <dt className="text-zinc-500">Email</dt>
                 <dd className="mt-1 text-zinc-100">
-                    {user?.primaryEmailAddress?.emailAddress ?? "No email found"}
+                    {clerkUser?.primaryEmailAddress?.emailAddress ?? "No email found"}
                 </dd>
                 </div>
 
                 <div>
                 <dt className="text-zinc-500">Name</dt>
                 <dd className="mt-1 text-zinc-100">
-                    {user?.fullName ?? "No name found"}
+                    {clerkUser?.fullName ?? "No name found"}
                 </dd>
                 </div>
             </dl>
