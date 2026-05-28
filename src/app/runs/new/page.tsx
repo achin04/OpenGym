@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db";
+import { createRun } from "./actions";
 
 export default async function NewRunPage() {
     const venues = await prisma.venue.findMany({
@@ -30,7 +31,7 @@ export default async function NewRunPage() {
         </div>
 
         <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-zinc-300">
-          <form className="grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6">
+          <form action={createRun} className="grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6">
             <div className="grid gap-2">
                 <label htmlFor="title" className="text-sm font-medium text-zinc-100">
                 Title
