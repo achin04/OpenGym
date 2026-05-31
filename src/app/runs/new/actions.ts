@@ -3,6 +3,9 @@
 import { currentUser } from "@clerk/nextjs/server" ;
 import { z } from "zod" ;
 import { prisma } from "@/server/db" ;
+import { revalidatePath } from "next/cache" ;
+import { redirect } from "next/navigation" ;
+import { RunSourceType } from "@/generated/prisma/enums";
 
 const createRunSchema = z
     .object({
@@ -11,8 +14,20 @@ const createRunSchema = z
         startTime: z.string().trim().min(1, "Start time is required"),
         endTime: z.string().trim().min(1, "End time is required"),
         description: z.string().trim().optional(),
-        price: z.string().trim().optional(),
-        maxPlayers: z.string().trim().optional(),
+        price: z
+            .string()
+            .trim()
+            .refine((value) => value === "" || Number(value) >= 0, {
+                message: "Price must be 0 or greater",
+            })
+            .optional(),
+        maxPlayers: z
+            .string()
+            .trim()
+            .refine((value) => value === "" || Number(value) >= 0, {
+                message: "Max players must be 0 or greater",
+            })
+            .optional(),
         skillLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "OPEN"]),
         ageGroup: z.enum(["ALL_AGES", "YOUTH", "ADULT", "SENIOR"]),
     })
@@ -89,8 +104,29 @@ export async function createRun(formData: FormData) {
         return;
     }
 
-    console.log({
-        appUserId: appUser.id,
-        runData: result.data,
+    const data  = result.data;
+
+    const run = await prisma.run.create({
+        data: {
+            title: data.title,
+            description: data.description || null,
+            sourceType: RunSourceType.USER,
+            startTime: new Date(data.startTime),
+            endTime: new Date(data.endTime),
+            price: data.price || null,
+            skillLevel: data.skillLevel,
+            ageGroup: data.ageGroup,
+            maxPlayers: data.maxPlayers ? Number(data.maxPlayers) : null,
+            verified: false,
+            sourceUrl: null,
+            venueId: data.venueId,
+            createdByUserId: appUser.id,
+        },
+        select: {
+            id: true,
+        },
     });
+
+    revalidatePath("/runs");
+    redirect(`/runs/${run.id}`);
 }
