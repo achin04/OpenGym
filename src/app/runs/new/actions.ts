@@ -73,6 +73,22 @@ export async function createRun(formData: FormData) {
         return;
     }
 
+    const venue = await prisma.venue.findUnique({
+        where: {
+            id: result.data.venueId,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    if (!venue) {
+        console.log({
+            venueId: ["Selected venue does not exist"],
+        });
+        return;
+    }
+
     console.log({
         appUserId: appUser.id,
         runData: result.data,
