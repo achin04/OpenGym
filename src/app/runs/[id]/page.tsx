@@ -1,6 +1,8 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
 import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
+import{ currentUser } from "@clerk/nextjs/server" ;
+import { RsvpStatus } from "@/generated/prisma/enums";
 
 type RunDetailsPageProps = {
   params: Promise<{
@@ -11,23 +13,55 @@ type RunDetailsPageProps = {
 export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   const { id } = await params;
 
+  const clerkUser = await currentUser();
+
+  const appUser = clerkUser
+    ? await prisma.user.findUnique({
+        where: {
+          clerkUserId: clerkUser.id,
+        },
+        select: {
+          id: true,
+        },
+      })
+    : null;
+
   const run = await prisma.run.findUnique({
     where: {
         id: id,
     },
     include: {
         venue: true,
-        _count: {
+        rsvps: {
+            where: {
+                status: RsvpStatus.GOING,
+            },
             select: {
-                rsvps: true,
-            }
-        }
-    }
+                id: true,
+            },
+        },
+    },
   });
 
   if (!run) {
     notFound();
   }
+  
+  const userRsvp = appUser
+    ? await prisma.rsvp.findUnique({
+        where: {
+            userId_runId: {
+                userId: appUser.id,
+                runId: run.id,
+            },
+        },
+        select: {
+            status: true,
+        },
+        })
+    : null;
+    
+  const goingCount = run.rsvps.length;
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -44,7 +78,13 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
         </p>
 
         <p className="text-zinc-300">Run ID: {run.id}</p>
-        <p className="text-zinc-300">RSVP count: {run._count.rsvps}</p>
+        <p className="text-zinc-300">
+            Going: {goingCount}
+            {run.maxPlayers ? ` / ${run.maxPlayers}` : ""}
+        </p>
+        <p className="text-zinc-300">
+            Your RSVP: {userRsvp?.status ? formatLabel(userRsvp.status) : "Not going"}
+        </p>
         <div className="rounded-lg border border-white/10 bg-white/5 p-6">
             <h2 className="text-2xl font-semibold">Venue</h2>
 
