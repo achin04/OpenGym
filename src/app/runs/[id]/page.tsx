@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
 import{ currentUser } from "@clerk/nextjs/server" ;
 import { RsvpStatus } from "@/generated/prisma/enums";
+import { rsvpToRun } from "./actions";
 
 type RunDetailsPageProps = {
   params: Promise<{
@@ -62,6 +63,10 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
     : null;
     
   const goingCount = run.rsvps.length;
+  const isGoing = userRsvp?.status === RsvpStatus.GOING;
+  const isFull = run.maxPlayers != null && goingCount >= run.maxPlayers;
+  const rsvpToThisRun = rsvpToRun.bind(null, run.id);
+
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -78,13 +83,36 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
         </p>
 
         <p className="text-zinc-300">Run ID: {run.id}</p>
-        <p className="text-zinc-300">
-            Going: {goingCount}
-            {run.maxPlayers ? ` / ${run.maxPlayers}` : ""}
-        </p>
-        <p className="text-zinc-300">
-            Your RSVP: {userRsvp?.status ? formatLabel(userRsvp.status) : "Not going"}
-        </p>
+
+        <div className="rounded-lg border border-white/10 bg-white/5 p-6">
+            <h2 className="text-2xl font-semibold">RSVP</h2>
+            <p className="text-zinc-300">
+                Going: {goingCount} {run.maxPlayers ? ` / ${run.maxPlayers}` : ""}
+            </p>
+
+            {!clerkUser ? (
+                <p className="mt-2 text-zinc-300">
+                Sign in to RSVP to this run.
+                </p>
+            ) : isGoing ? (
+                <p className="mt-2 text-emerald-300">
+                You are going to this run.
+                </p>
+            ) : isFull ? (
+                <p className="mt-2 text-zinc-300">
+                This run is full.
+                </p>
+            ) : (
+                <form action={rsvpToThisRun} className="mt-4">
+                <button
+                    type="submit"
+                    className="rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+                >
+                    RSVP
+                </button>
+                </form>
+            )}
+        </div>
         <div className="rounded-lg border border-white/10 bg-white/5 p-6">
             <h2 className="text-2xl font-semibold">Venue</h2>
 
