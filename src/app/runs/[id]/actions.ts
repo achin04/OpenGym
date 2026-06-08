@@ -105,3 +105,38 @@ export async function rsvpToRun(runId: string) {
     revalidatePath(`/runs/${runId}`);
     revalidatePath("/runs");
 }
+
+export async function cancelRsvp(runId: string) {
+    const clerkUser = await currentUser();
+
+    if (!clerkUser) {
+        throw new Error(" You must be signed in to cancel an RSVP. ");
+    }
+
+    const appUser = await prisma.user.findUnique({
+        where: {
+            clerkUserId: clerkUser.id,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    if (!appUser) {
+        throw new Error(" User not found. ");
+    }
+
+    await prisma.rsvp.updateMany({
+        where: {
+            userId: appUser.id,
+            runId,
+            status: RsvpStatus.GOING,
+        },
+        data: {
+            status: RsvpStatus.CANCELLED,
+        },
+    });
+
+    revalidatePath(`/runs/${runId}`);
+    revalidatePath("/runs");
+}

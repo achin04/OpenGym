@@ -1,9 +1,9 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
 import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
-import{ currentUser } from "@clerk/nextjs/server" ;
+import{ currentUser } from "@clerk/nextjs/server";
 import { RsvpStatus } from "@/generated/prisma/enums";
-import { rsvpToRun } from "./actions";
+import { cancelRsvp, rsvpToRun } from "./actions";
 
 type RunDetailsPageProps = {
   params: Promise<{
@@ -66,6 +66,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   const isGoing = userRsvp?.status === RsvpStatus.GOING;
   const isFull = run.maxPlayers != null && goingCount >= run.maxPlayers;
   const rsvpToThisRun = rsvpToRun.bind(null, run.id);
+  const cancelRsvpAction = cancelRsvp.bind(null, run.id);
 
 
   return (
@@ -95,9 +96,17 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                 Sign in to RSVP to this run.
                 </p>
             ) : isGoing ? (
-                <p className="mt-2 text-emerald-300">
-                You are going to this run.
-                </p>
+                <div className="mt-4 space-x-3">
+                    <p className="text-emerald-400">You are going to this run.</p>
+                    <form action={cancelRsvpAction} className="mt-4">
+                    <button
+                        type="submit"
+                        className="rounded-md bg-rose-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-rose-300"
+                    >
+                        Cancel RSVP
+                    </button>
+                    </form>
+                </div>
             ) : isFull ? (
                 <p className="mt-2 text-zinc-300">
                 This run is full.
