@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
 import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
-import{ currentUser } from "@clerk/nextjs/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { RsvpStatus } from "@/generated/prisma/enums";
 import { cancelRsvp, rsvpToRun } from "./actions";
 
