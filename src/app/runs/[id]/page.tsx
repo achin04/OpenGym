@@ -33,6 +33,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
     },
     include: {
         venue: true,
+        scheduleSource: true,
         rsvps: {
             where: {
                 status: RsvpStatus.GOING,
@@ -185,6 +186,12 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                     <dt className="text-zinc-500">Source URL</dt>
                     <dd className="text-zinc-100">
                     {run.sourceUrl ?? "No source URL listed"}
+                    </dd>
+                </div>
+                <div>
+                    <dt className="text-zinc-500">Schedule source</dt>
+                    <dd className="text-zinc-100">
+                        {run.scheduleSource?.name ?? "No schedule source listed"}
                     </dd>
                 </div>
                 </dl>
