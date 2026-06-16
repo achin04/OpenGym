@@ -1,4 +1,3 @@
-// src/app/admin/imported-runs/page.tsx
 import Link from "next/link";
 import { RunSourceType } from "@/generated/prisma/enums";
 import { formatDateTime, formatLabel, formatPrice } from "@/lib/formatters";
@@ -56,11 +55,17 @@ export default async function AdminImportedRunsPage() {
         ) : (
           <div className="grid gap-4">
             {runs.map((run) => (
-              <article key={run.id} className="rounded-lg border border-white/10 bg-white/5 p-6">
+              <article
+                key={run.id}
+                className="rounded-lg border border-white/10 bg-white/5 p-6"
+              >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <h2 className="text-xl font-semibold">
-                      <Link href={`/runs/${run.id}`} className="hover:underline">
+                      <Link
+                        href={`/runs/${run.id}`}
+                        className="hover:underline"
+                      >
                         {run.title}
                       </Link>
                     </h2>
@@ -78,17 +83,23 @@ export default async function AdminImportedRunsPage() {
                 <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
                   <div>
                     <dt className="text-zinc-500">Starts</dt>
-                    <dd className="mt-1 text-zinc-100">{formatDateTime(run.startTime)}</dd>
+                    <dd className="mt-1 text-zinc-100">
+                      {formatDateTime(run.startTime)}
+                    </dd>
                   </div>
 
                   <div>
                     <dt className="text-zinc-500">Ends</dt>
-                    <dd className="mt-1 text-zinc-100">{formatDateTime(run.endTime)}</dd>
+                    <dd className="mt-1 text-zinc-100">
+                      {formatDateTime(run.endTime)}
+                    </dd>
                   </div>
 
                   <div>
                     <dt className="text-zinc-500">Price</dt>
-                    <dd className="mt-1 text-zinc-100">{formatPrice(run.price)}</dd>
+                    <dd className="mt-1 text-zinc-100">
+                      {formatPrice(run.price)}
+                    </dd>
                   </div>
 
                   <div>

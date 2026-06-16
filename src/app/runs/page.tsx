@@ -1,16 +1,16 @@
-import {prisma} from "@/server/db";
 import Link from "next/link";
 import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
+import { prisma } from "@/server/db";
 
 export default async function RunsPage() {
-    const runs = await prisma.run.findMany({
-        include: {
-            venue: true,
-        },
-        orderBy: {
-            startTime: "asc",
-        },
-    });
+  const runs = await prisma.run.findMany({
+    include: {
+      venue: true,
+    },
+    orderBy: {
+      startTime: "asc",
+    },
+  });
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -41,7 +41,10 @@ export default async function RunsPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="space-y-2">
                     <h2 className="text-2xl font-semibold">
-                      <Link href={`/runs/${run.id}`} className="hover:underline">
+                      <Link
+                        href={`/runs/${run.id}`}
+                        className="hover:underline"
+                      >
                         {run.title}
                       </Link>
                     </h2>
