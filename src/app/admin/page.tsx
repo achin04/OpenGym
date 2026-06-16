@@ -43,7 +43,7 @@ export default async function AdminPage() {
             </Link>
 
             <Link
-                href="/admin/imported-runs/new"
+                href="/admin/imported-runs"
                 className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
             >
                 <h2 className="text-xl font-semibold">Imported Runs</h2>
