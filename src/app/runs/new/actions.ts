@@ -1,47 +1,12 @@
 "use server";
 
-import { currentUser } from "@clerk/nextjs/server" ;
-import { z } from "zod" ;
-import { prisma } from "@/server/db" ;
-import { revalidatePath } from "next/cache" ;
-import { redirect } from "next/navigation" ;
+import { currentUser } from "@clerk/nextjs/server";
+import { z } from "zod";
+import { prisma } from "@/server/db";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { RunSourceType } from "@/generated/prisma/enums";
-
-const createRunSchema = z
-    .object({
-        title: z.string().trim().min(1, "Title is required"),
-        venueId: z.string().trim().min(1, "Venue is required"),
-        startTime: z.string().trim().min(1, "Start time is required"),
-        endTime: z.string().trim().min(1, "End time is required"),
-        description: z.string().trim().optional(),
-        price: z
-            .string()
-            .trim()
-            .refine((value) => value === "" || Number(value) >= 0, {
-                message: "Price must be 0 or greater",
-            })
-            .optional(),
-        maxPlayers: z
-            .string()
-            .trim()
-            .refine((value) => value === "" || Number(value) >= 0, {
-                message: "Max players must be 0 or greater",
-            })
-            .optional(),
-        skillLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "OPEN"]),
-        ageGroup: z.enum(["ALL_AGES", "YOUTH", "ADULT", "SENIOR"]),
-    })
-    .refine(
-        (data) => {
-            const startTime = new Date(data.startTime);
-            const endTime = new Date(data.endTime);
-            return endTime > startTime;
-        },
-        {
-            message: "End time must be after start time",
-            path: ["endTime"],
-        },
-    );
+import { createRunSchema } from "@/lib/validations/runs";
 
 export async function createRun(formData: FormData) {
     const clerkUser = await currentUser();
