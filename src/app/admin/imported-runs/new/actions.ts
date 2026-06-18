@@ -5,28 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/server/db";
 import { requireAdmin } from "@/server/admin";
-
-const createImportedRunSchema = z
-    .object({
-        title: z.string().trim().min(1, "Title is required"),
-        venueId: z.string().trim().min(1, "Venue is required"),
-        scheduleSourceId: z.string().trim().min(1, "Schedule source is required"),
-        sourceUrl: z.url("Source URL must be a valid URL"),
-        startTime: z.string().trim().min(1, "Start time is required"),
-        endTime: z.string().trim().min(1, "End time is required"),
-        description: z.string().trim().optional(),
-        price: z.string().trim().optional(),
-        maxPlayers: z.string().trim().optional(),
-        skillLevel: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED", "OPEN"]),
-        ageGroup: z.enum(["ALL_AGES", "YOUTH", "ADULT", "SENIOR"]),
-    })
-    .refine(
-        (data) =>  new Date(data.endTime) > new Date(data.startTime),
-        {
-            message: "End time must be after start time",
-            path: ["endTime"]
-        },
-    );
+import { createImportedRunSchema } from "@/lib/validations/runs";
 
 export async function createImportedRun(formData: FormData) {
     await requireAdmin();
