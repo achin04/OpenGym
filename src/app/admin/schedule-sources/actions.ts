@@ -5,13 +5,8 @@ import { z } from "zod";
 import { RunSourceType } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db";
 import { requireAdmin } from "@/server/admin";
+import { createScheduleSourceSchema } from "@/lib/validations/admin";
 
-const createScheduleSourceSchema = z.object({
-    name: z.string().trim().min(1, "Name is required"),
-    sourceType: z.enum(["CITY", "UNIVERSITY"]),
-    url: z.string().trim().pipe(z.url("Website must be a valid URL")),
-    notes: z.string().trim().optional(),
-});
 
 export async function createScheduleSource(formData: FormData) {
     await requireAdmin();
