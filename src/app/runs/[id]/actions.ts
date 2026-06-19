@@ -2,9 +2,9 @@
 
 import { currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@/generated/prisma/client";
-import { RsvpStatus } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db";
+import { rsvpUserToRun, cancelUserRsvp } from "@/server/rsvps";
+
 
 
 export async function rsvpToRun(runId: string) {
@@ -35,72 +35,10 @@ export async function rsvpToRun(runId: string) {
         },
     });
 
-    await prisma.$transaction(
-        async (tx) => {
-            const run = await tx.run.findUnique({
-                where: {
-                    id: runId,
-                },
-                select: {
-                    id: true,
-                    maxPlayers: true,
-                },
-            });
-
-            if (!run) {
-                throw new Error(" Run not found. ");
-            }
-
-            const existingRsvp = await tx.rsvp.findUnique({
-                where: {
-                    userId_runId: {
-                        userId: appUser.id,
-                        runId,
-                    },
-                },
-                select: {
-                    status: true,
-                },
-            });
-
-            if (existingRsvp?.status === RsvpStatus.GOING) {
-                return;
-            }
-            
-            if (run.maxPlayers != null) {
-                const goingCount = await tx.rsvp.count({
-                    where: {
-                        runId,
-                        status: RsvpStatus.GOING,
-                    },
-                });
-
-                if (goingCount >= run.maxPlayers) {
-                    throw new Error(" This run is full ");
-                }
-            }
-            
-            await tx.rsvp.upsert({
-                where: {
-                    userId_runId: {
-                        userId: appUser.id,
-                        runId,
-                    },
-                },
-                update: {
-                    status: RsvpStatus.GOING,
-                },
-                create: {
-                    userId: appUser.id,
-                    runId,
-                    status: RsvpStatus.GOING,
-                },
-            });
-        },
-        {
-            isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-        }
-    );
+    await rsvpUserToRun({
+        userId: appUser.id,
+        runId,
+    });
 
     revalidatePath(`/runs/${runId}`);
     revalidatePath("/runs");
@@ -126,15 +64,9 @@ export async function cancelRsvp(runId: string) {
         throw new Error(" User not found. ");
     }
 
-    await prisma.rsvp.updateMany({
-        where: {
-            userId: appUser.id,
-            runId,
-            status: RsvpStatus.GOING,
-        },
-        data: {
-            status: RsvpStatus.CANCELLED,
-        },
+    await cancelUserRsvp({
+        userId: appUser.id,
+        runId,
     });
 
     revalidatePath(`/runs/${runId}`);
