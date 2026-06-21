@@ -20,6 +20,47 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Testing
+
+Run fast unit tests:
+
+```bash
+npm run test
+```
+
+Run integration tests against the local test database:
+
+```bash
+npm run test:integration
+```
+
+Run all local quality checks:
+
+```bash
+npm run check
+```
+
+Integration tests require a separate PostgreSQL database named `opengym_test`.
+
+Create the database with Postgres.app:
+
+```bash
+/Applications/Postgres.app/Contents/Versions/latest/bin/createdb opengym_test
+```
+
+Create `.env.test` with a `DATABASE_URL` that points to `opengym_test`.
+
+Apply migrations to the test database:
+
+```bash
+set -a
+source .env.test
+set +a
+npx prisma migrate deploy
+```
+
+The test database is separate from the development database so integration tests can safely create and delete data.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
