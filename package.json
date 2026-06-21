@@ -11,7 +11,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config=vitest.integration.config.ts",
-    "check": "npm run lint && npm run typecheck && npm run test && npm run test:integration"
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run test:integration",
+    "check:all": "npm run check && npm run test:e2e"
+
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.7",
@@ -24,6 +27,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.20.0",

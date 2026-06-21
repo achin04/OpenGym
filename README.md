@@ -34,10 +34,22 @@ Run integration tests against the local test database:
 npm run test:integration
 ```
 
-Run all local quality checks:
+Run Playwright end-to-end smoke tests:
+
+```bash
+npm run test:e2e
+```
+
+Run local quality checks, excluding browser tests:
 
 ```bash
 npm run check
+```
+
+Run all local quality checks, including browser tests:
+
+```bash
+npm run check:all
 ```
 
 Integration tests require a separate PostgreSQL database named `opengym_test`.
@@ -60,6 +72,8 @@ npx prisma migrate deploy
 ```
 
 The test database is separate from the development database so integration tests can safely create and delete data.
+
+Playwright tests start the Next.js development server automatically and currently cover basic public-page browser flows.
 
 ## Learn More
 
