@@ -73,7 +73,7 @@ describe("createRunSchema", () => {
         const result = createRunSchema.safeParse({
             ...validCreateRunInput,
             price: "",
-    });
+        });
         expect(result.success).toBe(true);
     });
 
@@ -81,7 +81,7 @@ describe("createRunSchema", () => {
         const result = createRunSchema.safeParse({
             ...validCreateRunInput,
             price: "0",
-    });
+        });
         expect(result.success).toBe(true);
     });
 
@@ -89,7 +89,7 @@ describe("createRunSchema", () => {
         const result = createRunSchema.safeParse({
             ...validCreateRunInput,
             maxPlayers: "-1",
-    });
+     });
         expect(result.success).toBe(false);
     });
 
@@ -97,7 +97,7 @@ describe("createRunSchema", () => {
         const result = createRunSchema.safeParse({
             ...validCreateRunInput,
             maxPlayers: "0",
-    });
+        });
         expect(result.success).toBe(false);
     });
 });
