@@ -6,11 +6,18 @@ const isProtectedRoute = createRouteMatcher([
     "/admin(.*)",
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware(
+  async (auth, req) => {
     if (isProtectedRoute(req)) {
         await auth.protect();
     }
-});
+  },
+  {
+    frontendApiProxy: {
+      enabled: (url) => url.hostname === "findopengym.com",
+    },
+  },
+);
 
 export const config = {
   matcher: [
