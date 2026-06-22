@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -14,7 +15,6 @@
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test && npm run test:integration",
     "check:all": "npm run check && npm run test:e2e"
-
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.7",
