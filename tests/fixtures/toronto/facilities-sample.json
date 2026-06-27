@@ -1,0 +1,252 @@
+{
+  "resource": {
+    "id": "e16505dc-f106-4b58-a689-ed0a2b8b0b69",
+    "name": "Facilities",
+    "format": "XLSX",
+    "datastoreActive": true,
+    "lastModified": null,
+    "metadataModified": "2026-06-18T21:37:59.302365"
+  },
+  "fields": [
+    {
+      "id": "_id",
+      "type": "int"
+    },
+    {
+      "id": "Facility ID",
+      "type": "int4"
+    },
+    {
+      "id": "Location ID",
+      "type": "int4"
+    },
+    {
+      "id": "Facility Type (Display Name)",
+      "type": "text"
+    },
+    {
+      "id": "Permit",
+      "type": "text"
+    },
+    {
+      "id": "FacilityType",
+      "type": "text"
+    },
+    {
+      "id": "Facility Rating",
+      "type": "text"
+    },
+    {
+      "id": "Asset Name",
+      "type": "text"
+    }
+  ],
+  "sampleRecords": [
+    {
+      "_id": 1,
+      "Facility ID": 2523,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Drinking Fountain",
+      "Permit": "None",
+      "FacilityType": "Drinking Fountain Count",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK - Drinking Water Source (  1)"
+    },
+    {
+      "_id": 2,
+      "Facility ID": 2523,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Dog Fountain",
+      "Permit": "None",
+      "FacilityType": "Dog Fountain Count",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK - Drinking Water Source (  1)"
+    },
+    {
+      "_id": 3,
+      "Facility ID": 2524,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Drinking Fountain",
+      "Permit": "None",
+      "FacilityType": "Drinking Fountain Count",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK - Drinking Water Source (  2)"
+    },
+    {
+      "_id": 4,
+      "Facility ID": 21787,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  1)"
+    },
+    {
+      "_id": 5,
+      "Facility ID": 21788,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 10)"
+    },
+    {
+      "_id": 6,
+      "Facility ID": 21790,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 12)"
+    },
+    {
+      "_id": 7,
+      "Facility ID": 21791,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 13)"
+    },
+    {
+      "_id": 8,
+      "Facility ID": 21792,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 14)"
+    },
+    {
+      "_id": 9,
+      "Facility ID": 21793,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 15)"
+    },
+    {
+      "_id": 10,
+      "Facility ID": 21794,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 16)"
+    },
+    {
+      "_id": 11,
+      "Facility ID": 21795,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 17)"
+    },
+    {
+      "_id": 12,
+      "Facility ID": 21796,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 18)"
+    },
+    {
+      "_id": 13,
+      "Facility ID": 21798,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  2)"
+    },
+    {
+      "_id": 14,
+      "Facility ID": 21799,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL ( 20)"
+    },
+    {
+      "_id": 15,
+      "Facility ID": 21805,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  4)"
+    },
+    {
+      "_id": 16,
+      "Facility ID": 21807,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  6)"
+    },
+    {
+      "_id": 17,
+      "Facility ID": 21808,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  7)"
+    },
+    {
+      "_id": 18,
+      "Facility ID": 21809,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK TRAIL (  8)"
+    },
+    {
+      "_id": 19,
+      "Facility ID": 23246,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Bike Trail",
+      "Permit": "None",
+      "FacilityType": "Bike Trail",
+      "Facility Rating": "None",
+      "Asset Name": "MARTIN GOODMAN TRAIL (  1)"
+    },
+    {
+      "_id": 20,
+      "Facility ID": 27944,
+      "Location ID": 1,
+      "Facility Type (Display Name)": "Picnic Site",
+      "Permit": "picnic",
+      "FacilityType": "Picnic Site",
+      "Facility Rating": "None",
+      "Asset Name": "ASHBRIDGES BAY PARK - Picnic Site (  1)"
+    }
+  ],
+  "basketballRecords": [],
+  "basketballTitleCounts": [],
+  "basketballSummary": null,
+  "total": 9825,
+  "basketballTotal": null,
+  "sampledAt": "2026-06-25T20:02:23.235Z"
+}

@@ -23,10 +23,6 @@ export default function Home() {
         >
           Browse runs
         </Link>
-
-        <div className="border-t border-white/10 pt-6 text-sm text-zinc-400">
-          Milestone 1 foundation in progress.
-        </div>
       </section>
     </main>
   );
