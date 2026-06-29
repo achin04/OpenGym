@@ -38,6 +38,47 @@ enum RsvpStatus {
   CANCELLED
 }
 
+enum ImportBatchMode {
+  DRY_RUN
+  APPLY
+}
+
+enum ImportBatchStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+enum ImportItemAction {
+  CREATE
+  UPDATE
+  UNCHANGED
+  MISSING
+  SKIPPED
+  ERROR
+}
+
+enum ImportReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  AUTO_APPROVED
+}
+
+enum SourceRunStatus {
+  ACTIVE
+  STALE
+  REMOVED
+  CANCELLED
+}
+
+enum VenueMatchStatus {
+  MATCHED
+  PENDING
+  IGNORED
+}
+
 model User {
   id          String   @id @default(cuid())
   clerkUserId String   @unique
@@ -52,7 +93,7 @@ model User {
 }
 
 model Venue {
-  id           String   @id @default(cuid())
+  id           String             @id @default(cuid())
   name         String
   addressLine1 String
   addressLine2 String?
@@ -61,56 +102,167 @@ model Venue {
   websiteUrl   String?
   phone        String?
   runs         Run[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  externalRefs ExternalVenueRef[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([city])
   @@map("venues")
 }
 
 model ScheduleSource {
-  id         String        @id @default(cuid())
-  name       String
-  sourceType RunSourceType
-  url        String        @unique
-  notes      String?
-  runs       Run[]
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id                     String             @id @default(cuid())
+  name                   String
+  sourceType             RunSourceType
+  url                    String             @unique
+  notes                  String?
+  providerKey            String?            @unique
+  externalDatasetId      String?
+  attributionText        String?
+  licenseUrl             String?
+  config                 Json?
+  lastSuccessfulImportAt DateTime?
+  runs                   Run[]
+  externalVenueRefs      ExternalVenueRef[]
+  importBatches          ImportBatch[]
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
 
   @@index([sourceType])
   @@map("schedule_sources")
 }
 
-model Run {
-  id               String          @id @default(cuid())
-  title            String
-  description      String?
-  sourceType       RunSourceType
-  startTime        DateTime
-  endTime          DateTime
-  price            Decimal?        @db.Decimal(10, 2)
-  skillLevel       SkillLevel      @default(OPEN)
-  ageGroup         AgeGroup        @default(ADULT)
-  maxPlayers       Int?
-  verified         Boolean         @default(false)
-  sourceUrl        String?
-  venueId          String
-  venue            Venue           @relation(fields: [venueId], references: [id], onDelete: Restrict)
-  createdByUserId  String?
-  createdByUser    User?           @relation("RunCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
-  scheduleSourceId String?
-  scheduleSource   ScheduleSource? @relation(fields: [scheduleSourceId], references: [id], onDelete: SetNull)
-  rsvps            Rsvp[]
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+model ExternalVenueRef {
+  id                 String           @id @default(cuid())
+  scheduleSourceId   String
+  scheduleSource     ScheduleSource   @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
+  externalId         String
+  venueId            String?
+  venue              Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  sourceName         String
+  sourceAddressLine1 String?
+  sourcePostalCode   String?
+  sourceUrl          String?
+  matchStatus        VenueMatchStatus @default(PENDING)
+  firstSeenAt        DateTime         @default(now())
+  lastSeenAt         DateTime         @default(now())
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
+  @@unique([scheduleSourceId, externalId])
+  @@index([venueId])
+  @@index([matchStatus])
+  @@map("external_venue_refs")
+}
+
+model Run {
+  id                 String             @id @default(cuid())
+  title              String
+  description        String?
+  sourceType         RunSourceType
+  startTime          DateTime
+  endTime            DateTime
+  price              Decimal?           @db.Decimal(10, 2)
+  skillLevel         SkillLevel         @default(OPEN)
+  ageGroup           AgeGroup           @default(ADULT)
+  maxPlayers         Int?
+  verified           Boolean            @default(false)
+  sourceUrl          String?
+  sourceExternalId   String?
+  sourceSeriesId     String?
+  sourceFingerprint  String?
+  sourceStatus       SourceRunStatus    @default(ACTIVE)
+  reviewStatus       ImportReviewStatus @default(PENDING)
+  sourceAgeLabel     String?
+  sourceMinAge       Int?
+  sourceMaxAge       Int?
+  sourceFirstSeenAt  DateTime?
+  sourceLastSeenAt   DateTime?
+  sourceMissingSince DateTime?
+  sourceMissCount    Int                @default(0)
+  venueId            String
+  venue              Venue              @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  createdByUserId    String?
+  createdByUser      User?              @relation("RunCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  scheduleSourceId   String?
+  scheduleSource     ScheduleSource?    @relation(fields: [scheduleSourceId], references: [id], onDelete: SetNull)
+  rsvps              Rsvp[]
+  importItems        ImportItem[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([scheduleSourceId, sourceExternalId])
   @@index([startTime])
   @@index([venueId, startTime])
   @@index([sourceType])
   @@index([createdByUserId])
   @@index([scheduleSourceId])
+  @@index([scheduleSourceId, sourceStatus])
+  @@index([reviewStatus])
+  @@index([sourceMissingSince])
   @@map("runs")
+}
+
+model ImportBatch {
+  id                               String            @id @default(cuid())
+  scheduleSourceId                 String
+  scheduleSource                   ScheduleSource    @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
+  trigger                          String?
+  mode                             ImportBatchMode   @default(DRY_RUN)
+  status                           ImportBatchStatus @default(RUNNING)
+  isCompleteSnapshot               Boolean           @default(false)
+  dropInResourceId                 String?
+  locationsResourceId              String?
+  facilitiesResourceId             String?
+  dropInResourceLastModifiedAt     DateTime?
+  locationsResourceLastModifiedAt  DateTime?
+  facilitiesResourceLastModifiedAt DateTime?
+  snapshotHash                     String?
+  startedAt                        DateTime          @default(now())
+  completedAt                      DateTime?
+  dropInRecordCount                Int               @default(0)
+  locationsRecordCount             Int               @default(0)
+  facilitiesRecordCount            Int               @default(0)
+  basketballRecordCount            Int               @default(0)
+  createdCount                     Int               @default(0)
+  updatedCount                     Int               @default(0)
+  unchangedCount                   Int               @default(0)
+  missingCount                     Int               @default(0)
+  skippedCount                     Int               @default(0)
+  errorCount                       Int               @default(0)
+  errorSummary                     String?
+  items                            ImportItem[]
+  createdAt                        DateTime          @default(now())
+  updatedAt                        DateTime          @updatedAt
+
+  @@index([scheduleSourceId, startedAt])
+  @@index([status])
+  @@map("import_batches")
+}
+
+model ImportItem {
+  id                 String             @id @default(cuid())
+  batchId            String
+  batch              ImportBatch        @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  sourceKey          String
+  sourceOccurrenceId String?
+  sourceSeriesId     String?
+  action             ImportItemAction
+  reviewStatus       ImportReviewStatus @default(PENDING)
+  runId              String?
+  run                Run?               @relation(fields: [runId], references: [id], onDelete: SetNull)
+  rawPayload         Json?
+  normalizedPayload  Json?
+  fieldDiff          Json?
+  errorMessage       String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  @@unique([batchId, sourceKey])
+  @@index([runId])
+  @@index([action])
+  @@index([reviewStatus])
+  @@map("import_items")
 }
 
 model Rsvp {
