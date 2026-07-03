@@ -10,8 +10,70 @@ const prisma = new PrismaClient({
   adapter,
 });
 
+const TORONTO_DROP_IN_SOURCE_URL = "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/";
+const TORONTO_DROP_IN_PROVIDER_KEY = "toronto-drop-in";
+const TORONTO_DROP_IN_DATASET_ID = "1a5be46a-4039-48cd-a2d2-8e702abf9516";
 
 async function main() {
+    await prisma.scheduleSource.upsert({
+        where: {
+            url: TORONTO_DROP_IN_SOURCE_URL,
+        },
+        update: {
+            name: "City of Toronto Drop-In",
+            sourceType: RunSourceType.CITY,
+            notes: "Registered Programs and Drop In Courses Offering dataset, filtered to basketball drop-in records.",
+            providerKey: TORONTO_DROP_IN_PROVIDER_KEY,
+            externalDatasetId: TORONTO_DROP_IN_DATASET_ID,
+            attributionText: "Contains information made available by the City of Toronto Open Data program.",
+            licenseUrl: "https://open.toronto.ca/open-data-license/",
+            config: {
+                packageId: TORONTO_DROP_IN_DATASET_ID,
+                resources: {
+                    dropIn: "c99ec04f-4540-482c-9ee4-efb38774eab4",
+                    locations: "f23ac1ad-6f46-4b59-811f-eb34be9b1f7a",
+                    facilities: "e16505dc-f106-4b58-a689-ed0a2b8b0b69",
+                    registeredPrograms: "3bdfdad5-b1d0-4b1b-b56d-c61c317da306",
+                },
+                basketballCourseTitles: [
+                    "Basketball",
+                    "Basketball (Girls)",
+                    "Basketball (Men)",
+                    "Basketball (Women)",
+                    "Basketball with Family",
+                    "Parasport: Wheelchair Basketball",
+                ],
+            },
+        },
+        create: {
+            name: "City of Toronto Drop-In",
+            sourceType: RunSourceType.CITY,
+            url: TORONTO_DROP_IN_SOURCE_URL,
+            notes: "Registered Programs and Drop In Courses Offering dataset, filtered to basketball drop-in records.",
+            providerKey: TORONTO_DROP_IN_PROVIDER_KEY,
+            externalDatasetId: TORONTO_DROP_IN_DATASET_ID,
+            attributionText: "Contains information made available by the City of Toronto Open Data program.",
+            licenseUrl: "https://open.toronto.ca/open-data-license/",
+            config: {
+                packageId: TORONTO_DROP_IN_DATASET_ID,
+                resources: {
+                    dropIn: "c99ec04f-4540-482c-9ee4-efb38774eab4",
+                    locations: "f23ac1ad-6f46-4b59-811f-eb34be9b1f7a",
+                    facilities: "e16505dc-f106-4b58-a689-ed0a2b8b0b69",
+                    registeredPrograms: "3bdfdad5-b1d0-4b1b-b56d-c61c317da306",
+                },
+                basketballCourseTitles: [
+                    "Basketball",
+                    "Basketball (Girls)",
+                    "Basketball (Men)",
+                    "Basketball (Women)",
+                    "Basketball with Family",
+                    "Parasport: Wheelchair Basketball",
+                ],
+            },
+        },
+    });
+
     const communityCenter = await prisma.venue.create({
         data: {
             name: "Downtown Community Center",

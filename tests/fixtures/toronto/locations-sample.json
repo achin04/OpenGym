@@ -1,0 +1,354 @@
+{
+  "resource": {
+    "id": "f23ac1ad-6f46-4b59-811f-eb34be9b1f7a",
+    "name": "Locations",
+    "format": "XLSX",
+    "datastoreActive": true,
+    "lastModified": null,
+    "metadataModified": "2026-06-18T21:37:27.795981"
+  },
+  "fields": [
+    {
+      "id": "_id",
+      "type": "int"
+    },
+    {
+      "id": "Location ID",
+      "type": "int4"
+    },
+    {
+      "id": "Parent Location ID",
+      "type": "int4"
+    },
+    {
+      "id": "Location Name",
+      "type": "text"
+    },
+    {
+      "id": "Location Type",
+      "type": "text"
+    },
+    {
+      "id": "Accessibility",
+      "type": "text"
+    },
+    {
+      "id": "Intersection",
+      "type": "text"
+    },
+    {
+      "id": "TTC Information",
+      "type": "text"
+    },
+    {
+      "id": "District",
+      "type": "text"
+    },
+    {
+      "id": "Street No",
+      "type": "text"
+    },
+    {
+      "id": "Street No Suffix",
+      "type": "text"
+    },
+    {
+      "id": "Street Name",
+      "type": "text"
+    },
+    {
+      "id": "Street Type",
+      "type": "text"
+    },
+    {
+      "id": "Street Direction",
+      "type": "text"
+    },
+    {
+      "id": "Postal Code",
+      "type": "text"
+    },
+    {
+      "id": "Description",
+      "type": "text"
+    }
+  ],
+  "sampleRecords": [
+    {
+      "_id": 57,
+      "Location ID": 63,
+      "Parent Location ID": 177,
+      "Location Name": "John Innes Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "Sherbourne Street and Shuter Street",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "150",
+      "Street No Suffix": "None",
+      "Street Name": "Sherbourne",
+      "Street Type": "St",
+      "Street Direction": "None",
+      "Postal Code": "M5A 2R6",
+      "Description": "<p>John Innes Community Recreation Centre is located in the Moss Park Neighbourhood of downtown Toronto. It offers a wide variety of programs for all age groups.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>\n<p>This location has some <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">youth-specific programming</a>.</p>"
+    },
+    {
+      "_id": 283,
+      "Location ID": 329,
+      "Parent Location ID": 329,
+      "Location Name": "East York Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "1081",
+      "Street No Suffix": "1/2",
+      "Street Name": "Pape",
+      "Street Type": "Ave",
+      "Street Direction": "None",
+      "Postal Code": "None",
+      "Description": "<p>A family/universal change room is available at this location.</p>\n<p>This is an <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/camps-after-school/after-school-recreation-care/\">After-School Recreation Care (ARC) location</a>. </p>"
+    },
+    {
+      "_id": 343,
+      "Location ID": 405,
+      "Parent Location ID": 405,
+      "Location Name": "Milliken Park Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "McCowan Road and Steeles Avenue East",
+      "TTC Information": "None",
+      "District": "Scarborough",
+      "Street No": "4325",
+      "Street No Suffix": "None",
+      "Street Name": "Mccowan",
+      "Street Type": "Rd",
+      "Street Direction": "None",
+      "Postal Code": "M1V4P1",
+      "Description": "Milliken Park Community Recreation Centre is located at the south-east corner of McCowan Road and Steeles Avenue. A wide variety of both drop-in and registered programs are offered for preschoolers, children, youth, adults and older adults. These include visual arts, dance, fitness, youth leadership, drop-in and instructional sports programs, a variety of camps and much more."
+    },
+    {
+      "_id": 373,
+      "Location ID": 451,
+      "Parent Location ID": 451,
+      "Location Name": "Wellesley Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "Sherbourne Street and Wellesley Street East",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "495",
+      "Street No Suffix": "None",
+      "Street Name": "Sherbourne",
+      "Street Type": "St",
+      "Street Direction": "None",
+      "Postal Code": "M4X 1K7",
+      "Description": "<p>Wellesley Community Centre serves the St. James Town community and has a community advisory council that meets quarterly.</p>\n\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>\n<p>This centre has a dedicated <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">enhanced youth space</a>.</p>\n<p>This is an <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/camps-after-school/after-school-recreation-care/\">After-School Recreation Care (ARC) location</a>. </p>"
+    },
+    {
+      "_id": 427,
+      "Location ID": 507,
+      "Parent Location ID": 550,
+      "Location Name": "Birchmount Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Scarborough",
+      "Street No": "93",
+      "Street No Suffix": "None",
+      "Street Name": "Birchmount",
+      "Street Type": "Rd",
+      "Street Direction": "None",
+      "Postal Code": "M1T 2M5",
+      "Description": "The Birchmount Community Centre is a multipurpose facility with programs and services offered through the Birchmount Bluffs Neighbourhood Centre.<br><br>\nThe leisure pool has a warm conversation pool with jets, a large water slide, and a shallow area and slide for children. It also has a sauna. A family/universal change room is available at this location. Skating programs are held at the indoor rink in <a href=\"/data/parks/prd/facilities/complex/3493/index.html\">Scarborough Gardens Arena</a> nearby."
+    },
+    {
+      "_id": 533,
+      "Location ID": 633,
+      "Parent Location ID": 633,
+      "Location Name": "Heron Park Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Scarborough",
+      "Street No": "292",
+      "Street No Suffix": "None",
+      "Street Name": "Manse",
+      "Street Type": "Rd",
+      "Street Direction": "None",
+      "Postal Code": "M1E 3V4",
+      "Description": "<p>Heron Park Community Recreation Centre offers programming for residents of all ages.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>\n<p>This centre has a dedicated <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">enhanced youth space</a>.</p>"
+    },
+    {
+      "_id": 568,
+      "Location ID": 675,
+      "Parent Location ID": 675,
+      "Location Name": "Lawrence Heights Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "North York",
+      "Street No": "5",
+      "Street No Suffix": "None",
+      "Street Name": "Replin",
+      "Street Type": "Rd",
+      "Street Direction": "None",
+      "Postal Code": "M6A 2M8",
+      "Description": "Check the Drop-in Programs section for hours for the outdoor pool.</p>\n<p>Lawrence Heights Community Centre is located directly across from the Lawrence West Subway Station. Programs are offered for all ages.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>. </p>\n<p>This centre has a dedicated <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">enhanced youth space</a>.</p>\n<p>This is an <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/camps-after-school/after-school-recreation-care/\">After-School Recreation Care (ARC) location</a>. </p>"
+    },
+    {
+      "_id": 585,
+      "Location ID": 693,
+      "Parent Location ID": 693,
+      "Location Name": "Mitchell Field Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "Church Avenue and Dudley Avenue",
+      "TTC Information": "None",
+      "District": "North York",
+      "Street No": "89",
+      "Street No Suffix": "None",
+      "Street Name": "Church",
+      "Street Type": "Ave",
+      "Street Direction": "None",
+      "Postal Code": "M2N 6C9",
+      "Description": "<p>Mitchell Field is a multi-use facility with an indoor arena and outdoor pool. </p>"
+    },
+    {
+      "_id": 594,
+      "Location ID": 703,
+      "Parent Location ID": 481,
+      "Location Name": "Northwood Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "Clubhouse Court and Arleta Avenue",
+      "TTC Information": "None",
+      "District": "Etobicoke York",
+      "Street No": "15",
+      "Street No Suffix": "None",
+      "Street Name": "Clubhouse",
+      "Street Type": "Crt",
+      "Street Direction": "None",
+      "Postal Code": "M3L 2L7",
+      "Description": "<p>Northwood Community Centre is located in the Jane and Sheppard area and is a popular site for meetings, banquets and recreation programs.</p>\n<p>This centre has a dedicated <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">enhanced youth space</a>.</p>"
+    },
+    {
+      "_id": 878,
+      "Location ID": 1076,
+      "Parent Location ID": 1076,
+      "Location Name": "Jenner Jean-Marie Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "None",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "North York",
+      "Street No": "48",
+      "Street No Suffix": "None",
+      "Street Name": "Thorncliffe Park",
+      "Street Type": "Dr",
+      "Street Direction": "None",
+      "Postal Code": "M4H 1J7",
+      "Description": "<p>Jenner Jean-Marie Community Recreation Centre is attached to the Thorncliffe Library, with access to the Thorncliffe Park Daycare. The centre is located in a high-density multicultural community.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>\n<p>This is an <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/camps-after-school/after-school-recreation-care/\">After-School Recreation Care (ARC) location</a>. </p>"
+    },
+    {
+      "_id": 891,
+      "Location ID": 1093,
+      "Parent Location ID": 1093,
+      "Location Name": "O'Connor Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "None",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "1386",
+      "Street No Suffix": "None",
+      "Street Name": "Victoria Park",
+      "Street Type": "Ave",
+      "Street Direction": "None",
+      "Postal Code": "M4A 2L8",
+      "Description": "<p>O'Connor Community Centre offers a wide variety of programs for all ages. This facility has a weight room, gymnasium and is fully accessible. Rooms are available for groups to book. Call the facility directly to book space.</p>\n<p>The outdoor swimming pool's phone number is 416-395-7957.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>\n<p>This centre has a dedicated <a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/program-activities/youth-recreation/\">enhanced youth space</a>.</p>"
+    },
+    {
+      "_id": 902,
+      "Location ID": 1105,
+      "Parent Location ID": 1105,
+      "Location Name": "Stephen Leacock Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Scarborough",
+      "Street No": "2500",
+      "Street No Suffix": "None",
+      "Street Name": "Birchmount",
+      "Street Type": "Rd",
+      "Street Direction": "None",
+      "Postal Code": "M1T 2M5",
+      "Description": "<p>Stephen Leacock Community Recreation Centre has an indoor premier turf pad, dry pad, track and dance studio. It also has a hall that is available for book for private functions. For more information, please call the main office.</p>\n<p><a href=\"https://www.toronto.ca/explore-enjoy/parks-recreation/how-to-use-our-services/how-to-register-for-recreation-programs/free-lower-cost-recreation-options/?accordion=about-free-centres\">This is a free centre</a>.</p>"
+    },
+    {
+      "_id": 1036,
+      "Location ID": 1463,
+      "Parent Location ID": 1463,
+      "Location Name": "Edithvale Community Centre",
+      "Location Type": "crc",
+      "Accessibility": "Fully Accessible",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "North York",
+      "Street No": "131",
+      "Street No Suffix": "None",
+      "Street Name": "Finch",
+      "Street Type": "Ave",
+      "Street Direction": "W",
+      "Postal Code": "M2N 2H8",
+      "Description": "The Edithvale Community Centre was designed with extensive community input and features a gymnasium, banquet hall, youth lounge, seniors' lounge, two preschool rooms, a kitchen, craft rooms, fitness and dance studios, a weight room and an indoor, elevated running/walking track. The centre is conveniently located near public transit. There is also a path leading to the building for walkers and cyclists, as well as ample bike parking."
+    },
+    {
+      "_id": 1809,
+      "Location ID": 3643,
+      "Parent Location ID": 3643,
+      "Location Name": "Canoe Landing Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "None",
+      "Intersection": "Spadina Avenue and Lakeshore Boulevard",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "45",
+      "Street No Suffix": "None",
+      "Street Name": "Fort York Blvd.",
+      "Street Type": "None",
+      "Street Direction": "None",
+      "Postal Code": "M5V 0R6",
+      "Description": "<p>Indoor Playground with Caregiver is a free parent-and-child program, and children must be under the supervision of a parent/guardian at all times.</p>\n<p>The indoor playground has a capacity of 46 people. Participants can call 416-397-4200 every Thursday to reserve spots for their own family members for one of the Monday-to-Sunday slots for the following week.  Reservations can be made for one time slot per day. Patrons without reservations are required to line up 20 minutes before the slot start time for one of the walk-in spots. Check the Drop-In Programs tab and expand the Arts, Hobbies and Interests section for the Indoor Playground with Caregiver schedule.</p>"
+    },
+    {
+      "_id": 1907,
+      "Location ID": 3857,
+      "Parent Location ID": 3857,
+      "Location Name": "East Bayfront Community Recreation Centre",
+      "Location Type": "crc",
+      "Accessibility": "None",
+      "Intersection": "None",
+      "TTC Information": "None",
+      "District": "Toronto and East York",
+      "Street No": "261",
+      "Street No Suffix": "None",
+      "Street Name": "Queens Quay",
+      "Street Type": "None",
+      "Street Direction": "E",
+      "Postal Code": "None",
+      "Description": "<p>East Bayfront Community Recreation Centre is a large, multi-use facility in the East Waterfront neighbourhood. It opened in September 2025.</p>"
+    }
+  ],
+  "basketballRecords": [],
+  "basketballTitleCounts": [],
+  "basketballSummary": null,
+  "total": 1922,
+  "basketballTotal": null,
+  "sampledAt": "2026-06-25T20:02:21.976Z"
+}
