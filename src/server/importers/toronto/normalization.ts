@@ -1,12 +1,18 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
-import { AgeGroup, RunSourceType, SkillLevel } from "@/generated/prisma/enums";
+import {
+  AgeGroup,
+  RunSourceType,
+  SkillLevel,
+  VenueMatchStatus,
+} from "../../../generated/prisma/enums";
 
 const TORONTO_TIME_ZONE = "America/Toronto";
 const TORONTO_DROP_IN_SOURCE_URL =
   "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/";
 const TORONTO_LOCATION_URL_BASE =
   "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/parks-and-recreation-facilities/location/";
+const TORONTO_MATCH_CITY = "toronto";
 
 const BASKETBALL_COURSE_TITLES = new Set([
   "Basketball",
@@ -67,6 +73,27 @@ export const torontoDropInRowSchema = z.object({
 
 export type TorontoDropInRow = z.infer<typeof torontoDropInRowSchema>;
 
+export const torontoLocationRowSchema = z.object({
+  _id: sourceIntegerSchema,
+  "Location ID": sourceIntegerSchema,
+  "Parent Location ID": sourceIntegerSchema,
+  "Location Name": nonEmptySourceTextSchema,
+  "Location Type": sourceTextSchema,
+  Accessibility: sourceTextSchema,
+  Intersection: sourceTextSchema,
+  "TTC Information": sourceTextSchema,
+  District: sourceTextSchema,
+  "Street No": sourceTextSchema,
+  "Street No Suffix": sourceTextSchema,
+  "Street Name": sourceTextSchema,
+  "Street Type": sourceTextSchema,
+  "Street Direction": sourceTextSchema,
+  "Postal Code": sourceTextSchema,
+  Description: sourceTextSchema,
+});
+
+export type TorontoLocationRow = z.infer<typeof torontoLocationRowSchema>;
+
 export function isTorontoBasketballDropInRow(row: TorontoDropInRow): boolean {
   return BASKETBALL_COURSE_TITLES.has(row["Course Title"]);
 }
@@ -79,8 +106,6 @@ function buildSourceOccurrenceId(row: TorontoDropInRow): string {
     row["First Date"],
     row["Start Hour"],
     row["Start Minute"],
-    row["End Hour"],
-    row["End Min"],
   ].join(":");
 }
 
@@ -93,6 +118,162 @@ function buildSourceUrl(row: TorontoDropInRow): string {
   url.searchParams.set("id", String(row["Location ID"]));
 
   return url.toString();
+}
+
+function buildLocationSourceUrl(locationId: string): string {
+  const url = new URL(TORONTO_LOCATION_URL_BASE);
+  url.searchParams.set("id", locationId);
+
+  return url.toString();
+}
+
+export function normalizeTorontoSourceText(value: string): string | null {
+  const normalized = value.normalize("NFKC").trim().replaceAll(/\s+/g, " ");
+
+  if (normalized === "" || normalized.toLowerCase() === "none") {
+    return null;
+  }
+
+  return normalized;
+}
+
+export function normalizeTorontoPostalCode(value: string): string | null {
+  const normalized = normalizeTorontoSourceText(value);
+
+  if (!normalized) {
+    return null;
+  }
+
+  const compactPostalCode = normalized.replaceAll(/\s+/g, "").toUpperCase();
+
+  if (
+    !/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z]\d[ABCEGHJ-NPRSTV-Z]\d$/.test(
+      compactPostalCode,
+    )
+  ) {
+    return normalized.toUpperCase();
+  }
+
+  return `${compactPostalCode.slice(0, 3)} ${compactPostalCode.slice(3)}`;
+}
+
+function buildLocationAddressLine1(row: TorontoLocationRow): string | null {
+  const addressParts = [
+    row["Street No"],
+    row["Street No Suffix"],
+    row["Street Name"],
+    row["Street Type"],
+    row["Street Direction"],
+  ]
+    .map((part) => normalizeTorontoSourceText(part))
+    .filter((part): part is string => part !== null);
+
+  return addressParts.length > 0 ? addressParts.join(" ") : null;
+}
+
+export function normalizeTorontoLocationRow(
+  row: TorontoLocationRow,
+): NormalizedTorontoLocation {
+  const sourceName = normalizeTorontoSourceText(row["Location Name"]);
+
+  if (!sourceName) {
+    throw new Error("Toronto location source name is required");
+  }
+
+  const sourceLocationId = String(row["Location ID"]);
+
+  return {
+    sourceLocationId,
+    sourceName,
+    sourceAddressLine1: buildLocationAddressLine1(row),
+    sourcePostalCode: normalizeTorontoPostalCode(row["Postal Code"]),
+    sourceUrl: buildLocationSourceUrl(sourceLocationId),
+    rawSource: row,
+  };
+}
+
+function normalizeVenueMatchText(value: string | null | undefined): string | null {
+  const normalized = normalizeTorontoSourceText(value ?? "");
+
+  if (!normalized) {
+    return null;
+  }
+
+  return normalized
+    .toLowerCase()
+    .replaceAll(/[.,]/g, "")
+    .replaceAll(/\s+/g, " ");
+}
+
+function normalizeVenueMatchPostalCode(
+  value: string | null | undefined,
+): string | null {
+  return normalizeTorontoPostalCode(value ?? "");
+}
+
+function postalCodesAreCompatible(
+  sourcePostalCode: string | null,
+  venuePostalCode: string | null,
+): boolean {
+  return (
+    sourcePostalCode === null ||
+    venuePostalCode === null ||
+    sourcePostalCode === venuePostalCode
+  );
+}
+
+function venueMatchesTorontoLocation(
+  location: NormalizedTorontoLocation,
+  venue: TorontoVenueMatchCandidate,
+): boolean {
+  const sourceAddressLine1 = normalizeVenueMatchText(location.sourceAddressLine1);
+
+  if (!sourceAddressLine1) {
+    return false;
+  }
+
+  return (
+    normalizeVenueMatchText(location.sourceName) ===
+      normalizeVenueMatchText(venue.name) &&
+    sourceAddressLine1 === normalizeVenueMatchText(venue.addressLine1) &&
+    normalizeVenueMatchText(venue.city) === TORONTO_MATCH_CITY &&
+    postalCodesAreCompatible(
+      location.sourcePostalCode,
+      normalizeVenueMatchPostalCode(venue.postalCode),
+    )
+  );
+}
+
+export function matchTorontoVenue(
+  location: NormalizedTorontoLocation,
+  venues: TorontoVenueMatchCandidate[],
+): TorontoVenueMatchResult {
+  if (!location.sourceAddressLine1) {
+    return {
+      status: VenueMatchStatus.PENDING,
+      venueId: null,
+      reason: "missing_source_address",
+    };
+  }
+
+  const matches = venues.filter((venue) => {
+    return venueMatchesTorontoLocation(location, venue);
+  });
+
+  if (matches.length === 1) {
+    return {
+      status: VenueMatchStatus.MATCHED,
+      venueId: matches[0].id,
+      reason: "exact_name_address",
+      matchedVenue: matches[0],
+    };
+  }
+
+  return {
+    status: VenueMatchStatus.PENDING,
+    venueId: null,
+    reason: matches.length === 0 ? "no_exact_match" : "multiple_exact_matches",
+  };
 }
 
 type TorontoDateTimeParts = {
@@ -481,6 +662,39 @@ export type NormalizedRunCandidate = {
   sourceLocationId: string;
   rawSource: TorontoDropInRow;
 };
+
+export type NormalizedTorontoLocation = {
+  sourceLocationId: string;
+  sourceName: string;
+  sourceAddressLine1: string | null;
+  sourcePostalCode: string | null;
+  sourceUrl: string;
+  rawSource: TorontoLocationRow;
+};
+
+export type TorontoVenueMatchCandidate = {
+  id: string;
+  name: string;
+  addressLine1: string;
+  city: string;
+  postalCode: string | null;
+};
+
+export type TorontoVenueMatchResult =
+  | {
+      status: typeof VenueMatchStatus.MATCHED;
+      venueId: string;
+      reason: "exact_name_address";
+      matchedVenue: TorontoVenueMatchCandidate;
+    }
+  | {
+      status: typeof VenueMatchStatus.PENDING;
+      venueId: null;
+      reason:
+        | "missing_source_address"
+        | "no_exact_match"
+        | "multiple_exact_matches";
+    };
 
 export type TorontoDropInSkipReason =
   | "not_basketball"
