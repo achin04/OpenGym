@@ -4,7 +4,7 @@ import {
   RunSourceType,
   SkillLevel,
   VenueMatchStatus,
-} from "../../../generated/prisma/enums";
+} from "@/generated/prisma/enums";
 import dropInFixture from "../../../../tests/fixtures/toronto/drop-in-sample.json";
 import locationsFixture from "../../../../tests/fixtures/toronto/locations-sample.json";
 import {

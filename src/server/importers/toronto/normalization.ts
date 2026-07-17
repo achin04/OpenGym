@@ -5,7 +5,7 @@ import {
   RunSourceType,
   SkillLevel,
   VenueMatchStatus,
-} from "../../../generated/prisma/enums";
+} from "@/generated/prisma/enums";
 
 const TORONTO_TIME_ZONE = "America/Toronto";
 const TORONTO_DROP_IN_SOURCE_URL =

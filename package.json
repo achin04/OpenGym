@@ -14,7 +14,8 @@
     "test:integration": "vitest run --config=vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "check": "npm run lint && npm run typecheck && npm run test && npm run test:integration",
-    "check:all": "npm run check && npm run test:e2e"
+    "check:all": "npm run check && npm run test:e2e",
+    "import:toronto:dry-run": "NODE_OPTIONS=--conditions=react-server tsx scripts/import-toronto-dry-run.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.3.7",
