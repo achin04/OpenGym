@@ -8,8 +8,6 @@ import {
 } from "@/generated/prisma/enums";
 
 const TORONTO_TIME_ZONE = "America/Toronto";
-const TORONTO_DROP_IN_SOURCE_URL =
-  "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/";
 const TORONTO_LOCATION_URL_BASE =
   "https://www.toronto.ca/explore-enjoy/parks-recreation/places-spaces/parks-and-recreation-facilities/location/";
 const TORONTO_MATCH_CITY = "toronto";

@@ -1,30 +1,16 @@
 import Link from "next/link";
-import { RunSourceType } from "@/generated/prisma/enums";
-import { formatDateTime, formatLabel, formatPrice } from "@/lib/formatters";
-import { prisma } from "@/server/db";
+import { formatDateTime, formatLabel } from "@/lib/formatters";
+import { getAdminImportBatches } from "@/server/admin/imported-runs/queries";
 import { requireAdmin } from "@/server/admin";
 
 export default async function AdminImportedRunsPage() {
   await requireAdmin();
 
-  const runs = await prisma.run.findMany({
-    where: {
-      sourceType: {
-        in: [RunSourceType.CITY, RunSourceType.UNIVERSITY],
-      },
-    },
-    include: {
-      venue: true,
-      scheduleSource: true,
-    },
-    orderBy: {
-      startTime: "asc",
-    },
-  });
+  const batches = await getAdminImportBatches();
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
-      <section className="mx-auto w-full max-w-5xl space-y-8">
+      <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">
             <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
@@ -36,81 +22,110 @@ export default async function AdminImportedRunsPage() {
             </h1>
 
             <p className="max-w-2xl text-zinc-300">
-              Review manually imported city and university runs.
+              Review Toronto dry-run batches before approving imported runs.
+              Resolve pending venues first, then rerun the dry import.
             </p>
           </div>
 
           <Link
             href="/admin/imported-runs/new"
-            className="w-fit rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300"
+            className="w-fit rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
           >
-            New imported run
+            Manual imported run
           </Link>
         </div>
 
-        {runs.length === 0 ? (
+        {batches.length === 0 ? (
           <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-zinc-300">
-            No imported runs have been added yet.
+            No import batches yet. Run a Toronto dry import first.
           </div>
         ) : (
-          <div className="grid gap-4">
-            {runs.map((run) => (
-              <article
-                key={run.id}
-                className="rounded-lg border border-white/10 bg-white/5 p-6"
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold">
+          <div className="overflow-x-auto rounded-lg border border-white/10">
+            <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+              <thead className="bg-white/5 text-xs uppercase tracking-wide text-zinc-400">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Started</th>
+                  <th className="px-4 py-3 font-semibold">Completed</th>
+                  <th className="px-4 py-3 font-semibold">Source</th>
+                  <th className="px-4 py-3 font-semibold">Trigger</th>
+                  <th className="px-4 py-3 font-semibold">Mode</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Complete</th>
+                  <th className="px-4 py-3 font-semibold">Records</th>
+                  <th className="px-4 py-3 font-semibold">Create</th>
+                  <th className="px-4 py-3 font-semibold">Update</th>
+                  <th className="px-4 py-3 font-semibold">Unchanged</th>
+                  <th className="px-4 py-3 font-semibold">Skipped</th>
+                  <th className="px-4 py-3 font-semibold">Errors</th>
+                  <th className="px-4 py-3 font-semibold">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/10">
+                {batches.map((batch) => (
+                  <tr key={batch.id} className="bg-white/[0.03] align-top">
+                    <td className="px-4 py-4 text-zinc-100">
+                      {formatDateTime(batch.startedAt)}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.completedAt
+                        ? formatDateTime(batch.completedAt)
+                        : "Still running"}
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="font-medium text-zinc-100">
+                        {batch.scheduleSource.name}
+                      </div>
+                      <div className="mt-1 text-xs text-zinc-500">
+                        {formatLabel(batch.scheduleSource.sourceType)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.trigger ?? "Unknown"}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {formatLabel(batch.mode)}
+                    </td>
+                    <td className="px-4 py-4">
+                      <span className="rounded-full border border-emerald-400/30 px-3 py-1 text-xs font-semibold text-emerald-200">
+                        {formatLabel(batch.status)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.isCompleteSnapshot ? "Yes" : "No"}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      <div>{batch.dropInRecordCount} source</div>
+                      <div className="mt-1 text-xs text-zinc-500">
+                        {batch.basketballRecordCount} basketball
+                      </div>
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.createdCount}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.updatedCount}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.unchangedCount}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.skippedCount}
+                    </td>
+                    <td className="px-4 py-4 text-zinc-300">
+                      {batch.errorCount}
+                    </td>
+                    <td className="px-4 py-4">
                       <Link
-                        href={`/runs/${run.id}`}
-                        className="hover:underline"
+                        href={`/admin/imported-runs/${batch.id}`}
+                        className="font-semibold text-emerald-300 hover:text-emerald-200"
                       >
-                        {run.title}
+                        View batch
                       </Link>
-                    </h2>
-
-                    <p className="mt-2 text-zinc-300">
-                      {run.venue.name} · {run.venue.city}
-                    </p>
-                  </div>
-
-                  <span className="w-fit rounded-full border border-emerald-400/30 px-3 py-1 text-sm text-emerald-200">
-                    {formatLabel(run.sourceType)}
-                  </span>
-                </div>
-
-                <dl className="mt-6 grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <dt className="text-zinc-500">Starts</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {formatDateTime(run.startTime)}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-zinc-500">Ends</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {formatDateTime(run.endTime)}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-zinc-500">Price</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {formatPrice(run.price)}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-zinc-500">Schedule source</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {run.scheduleSource?.name ?? "No source"}
-                    </dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
