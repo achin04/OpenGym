@@ -32,7 +32,7 @@ export function VenueLinkForm({
   );
 
   return (
-    <form action={formAction} className="grid gap-3">
+    <form action={formAction} className="grid min-w-0 gap-3">
       <input
         type="hidden"
         name="externalVenueRefId"
@@ -40,7 +40,7 @@ export function VenueLinkForm({
       />
       <input type="hidden" name="batchId" value={batchId} />
 
-      <div className="grid gap-2">
+      <div className="grid min-w-0 gap-2">
         <label
           htmlFor={`venueId-${externalVenueRefId}`}
           className="text-sm font-medium text-zinc-100"
@@ -51,7 +51,7 @@ export function VenueLinkForm({
           id={`venueId-${externalVenueRefId}`}
           name="venueId"
           required
-          className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white outline-none focus:border-emerald-300"
+          className="w-full min-w-0 max-w-full rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white outline-none focus:border-emerald-300"
         >
           <option value="">Select a venue</option>
           {venues.map((venue) => (

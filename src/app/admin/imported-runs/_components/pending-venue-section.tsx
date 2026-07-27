@@ -51,9 +51,9 @@ export function PendingVenueSection({
           {groups.map((group) => (
             <article
               key={group.externalVenueRef.id}
-              className="grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]"
+              className="grid gap-6 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]"
             >
-              <div className="space-y-5">
+              <div className="min-w-0 space-y-5">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
                     Toronto source location
@@ -123,8 +123,8 @@ export function PendingVenueSection({
                 </div>
               </div>
 
-              <div className="grid gap-6">
-                <div className="rounded-lg border border-white/10 bg-zinc-950/60 p-4">
+              <div className="min-w-0 grid gap-6">
+                <div className="min-w-0 rounded-lg border border-white/10 bg-zinc-950/60 p-4">
                   <VenueLinkForm
                     batchId={batchId}
                     externalVenueRefId={group.externalVenueRef.id}
@@ -132,7 +132,7 @@ export function PendingVenueSection({
                   />
                 </div>
 
-                <div className="rounded-lg border border-white/10 bg-zinc-950/60 p-4">
+                <div className="min-w-0 rounded-lg border border-white/10 bg-zinc-950/60 p-4">
                   <h4 className="mb-4 text-sm font-semibold text-zinc-100">
                     Create Venue from source
                   </h4>
