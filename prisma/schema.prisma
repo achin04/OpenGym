@@ -93,18 +93,19 @@ model User {
 }
 
 model Venue {
-  id           String             @id @default(cuid())
-  name         String
-  addressLine1 String
-  addressLine2 String?
-  city         String
-  postalCode   String?
-  websiteUrl   String?
-  phone        String?
-  runs         Run[]
-  externalRefs ExternalVenueRef[]
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
+  id              String                  @id @default(cuid())
+  name            String
+  addressLine1    String
+  addressLine2    String?
+  city            String
+  postalCode      String?
+  websiteUrl      String?
+  phone           String?
+  runs            Run[]
+  externalRefs    ExternalVenueRef[]
+  importCreations ImportedVenueCreation[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@index([city])
   @@map("venues")
@@ -133,21 +134,22 @@ model ScheduleSource {
 }
 
 model ExternalVenueRef {
-  id                 String           @id @default(cuid())
+  id                 String                 @id @default(cuid())
   scheduleSourceId   String
-  scheduleSource     ScheduleSource   @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
+  scheduleSource     ScheduleSource         @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
   externalId         String
   venueId            String?
-  venue              Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  venue              Venue?                 @relation(fields: [venueId], references: [id], onDelete: SetNull)
   sourceName         String
   sourceAddressLine1 String?
   sourcePostalCode   String?
   sourceUrl          String?
-  matchStatus        VenueMatchStatus @default(PENDING)
-  firstSeenAt        DateTime         @default(now())
-  lastSeenAt         DateTime         @default(now())
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  matchStatus        VenueMatchStatus       @default(PENDING)
+  firstSeenAt        DateTime               @default(now())
+  lastSeenAt         DateTime               @default(now())
+  importCreation     ImportedVenueCreation?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
 
   @@unique([scheduleSourceId, externalId])
   @@index([venueId])
@@ -204,13 +206,13 @@ model Run {
 }
 
 model ImportBatch {
-  id                               String            @id @default(cuid())
+  id                               String                  @id @default(cuid())
   scheduleSourceId                 String
-  scheduleSource                   ScheduleSource    @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
+  scheduleSource                   ScheduleSource          @relation(fields: [scheduleSourceId], references: [id], onDelete: Restrict)
   trigger                          String?
-  mode                             ImportBatchMode   @default(DRY_RUN)
-  status                           ImportBatchStatus @default(RUNNING)
-  isCompleteSnapshot               Boolean           @default(false)
+  mode                             ImportBatchMode         @default(DRY_RUN)
+  status                           ImportBatchStatus       @default(RUNNING)
+  isCompleteSnapshot               Boolean                 @default(false)
   dropInResourceId                 String?
   locationsResourceId              String?
   facilitiesResourceId             String?
@@ -218,22 +220,23 @@ model ImportBatch {
   locationsResourceLastModifiedAt  DateTime?
   facilitiesResourceLastModifiedAt DateTime?
   snapshotHash                     String?
-  startedAt                        DateTime          @default(now())
+  startedAt                        DateTime                @default(now())
   completedAt                      DateTime?
-  dropInRecordCount                Int               @default(0)
-  locationsRecordCount             Int               @default(0)
-  facilitiesRecordCount            Int               @default(0)
-  basketballRecordCount            Int               @default(0)
-  createdCount                     Int               @default(0)
-  updatedCount                     Int               @default(0)
-  unchangedCount                   Int               @default(0)
-  missingCount                     Int               @default(0)
-  skippedCount                     Int               @default(0)
-  errorCount                       Int               @default(0)
+  dropInRecordCount                Int                     @default(0)
+  locationsRecordCount             Int                     @default(0)
+  facilitiesRecordCount            Int                     @default(0)
+  basketballRecordCount            Int                     @default(0)
+  createdCount                     Int                     @default(0)
+  updatedCount                     Int                     @default(0)
+  unchangedCount                   Int                     @default(0)
+  missingCount                     Int                     @default(0)
+  skippedCount                     Int                     @default(0)
+  errorCount                       Int                     @default(0)
   errorSummary                     String?
   items                            ImportItem[]
-  createdAt                        DateTime          @default(now())
-  updatedAt                        DateTime          @updatedAt
+  venueCreations                   ImportedVenueCreation[]
+  createdAt                        DateTime                @default(now())
+  updatedAt                        DateTime                @updatedAt
 
   @@index([scheduleSourceId, startedAt])
   @@index([status])
@@ -263,6 +266,28 @@ model ImportItem {
   @@index([action])
   @@index([reviewStatus])
   @@map("import_items")
+}
+
+model ImportedVenueCreation {
+  id                 String           @id @default(cuid())
+  batchId            String
+  batch              ImportBatch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  externalVenueRefId String           @unique
+  externalVenueRef   ExternalVenueRef @relation(fields: [externalVenueRefId], references: [id], onDelete: Restrict)
+  venueId            String?
+  venue              Venue?           @relation(fields: [venueId], references: [id], onDelete: SetNull)
+  sourceName         String
+  sourceAddressLine1 String?
+  sourcePostalCode   String?
+  sourceUrl          String?
+  removedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([batchId])
+  @@index([venueId])
+  @@index([createdAt])
+  @@map("imported_venue_creations")
 }
 
 model Rsvp {
