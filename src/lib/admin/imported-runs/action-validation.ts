@@ -47,11 +47,42 @@ export const createVenueFromExternalRefSchema = z.object({
   phone: z.string().trim().optional(),
 });
 
+export const updateImportedVenueCreationVenueSchema = z.object({
+  importedVenueCreationId: z
+    .string()
+    .trim()
+    .min(1, "Imported venue creation is required"),
+  name: z.string().trim().min(1, "Name is required"),
+  addressLine1: z.string().trim().min(1, "Address is required"),
+  addressLine2: z.string().trim().optional(),
+  city: z.string().trim().min(1, "City is required"),
+  postalCode: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => normalizeAdminPostalCode(value)),
+  websiteUrl: optionalUrlSchema,
+  phone: z.string().trim().optional(),
+});
+
+export const removeImportedVenueCreationVenueSchema = z.object({
+  importedVenueCreationId: z
+    .string()
+    .trim()
+    .min(1, "Imported venue creation is required"),
+});
+
 export type LinkExternalVenueRefInput = z.infer<
   typeof linkExternalVenueRefSchema
 >;
 export type CreateVenueFromExternalRefInput = z.infer<
   typeof createVenueFromExternalRefSchema
+>;
+export type UpdateImportedVenueCreationVenueInput = z.infer<
+  typeof updateImportedVenueCreationVenueSchema
+>;
+export type RemoveImportedVenueCreationVenueInput = z.infer<
+  typeof removeImportedVenueCreationVenueSchema
 >;
 
 export function formErrors(error: z.ZodError): Record<string, string[]> {

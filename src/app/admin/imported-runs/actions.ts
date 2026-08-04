@@ -6,12 +6,16 @@ import {
   createVenueFromExternalRefSchema,
   formErrors,
   linkExternalVenueRefSchema,
+  removeImportedVenueCreationVenueSchema,
+  updateImportedVenueCreationVenueSchema,
 } from "@/lib/admin/imported-runs/action-validation";
 import { requireAdmin } from "@/server/admin";
 import {
   VenueResolutionError,
   createVenueFromExternalVenueRef,
   linkExternalVenueRefToVenue,
+  removeImportedVenueCreationVenue,
+  updateImportedVenueCreationVenue,
 } from "@/server/admin/imported-runs/venue-resolution";
 
 function formString(formData: FormData, name: string) {
@@ -28,6 +32,7 @@ function optionalFormString(formData: FormData, name: string) {
 
 function revalidateImportedRunAdminPaths(batchId?: string) {
   revalidatePath("/admin/imported-runs");
+  revalidatePath("/admin/imported-venues");
 
   if (batchId) {
     revalidatePath(`/admin/imported-runs/${batchId}`);
@@ -35,6 +40,7 @@ function revalidateImportedRunAdminPaths(batchId?: string) {
 
   revalidatePath("/admin/venues");
   revalidatePath("/admin/schedule-sources");
+  revalidatePath("/runs/new");
 }
 
 function safeErrorState(error: unknown): AdminActionState {
@@ -119,6 +125,75 @@ export async function createVenueFromExternalRefAction(
     return {
       status: "success",
       message: "Venue created and linked to the source location.",
+    };
+  } catch (error) {
+    return safeErrorState(error);
+  }
+}
+
+export async function updateImportedVenueCreationVenueAction(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireAdmin();
+
+  const result = updateImportedVenueCreationVenueSchema.safeParse({
+    importedVenueCreationId: formString(formData, "importedVenueCreationId"),
+    name: formString(formData, "name"),
+    addressLine1: formString(formData, "addressLine1"),
+    addressLine2: optionalFormString(formData, "addressLine2"),
+    city: formString(formData, "city"),
+    postalCode: formString(formData, "postalCode"),
+    websiteUrl: formString(formData, "websiteUrl"),
+    phone: optionalFormString(formData, "phone"),
+  });
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Please check the venue fields.",
+      fieldErrors: formErrors(result.error),
+    };
+  }
+
+  try {
+    await updateImportedVenueCreationVenue(result.data);
+    revalidateImportedRunAdminPaths();
+
+    return {
+      status: "success",
+      message: "Imported venue updated.",
+    };
+  } catch (error) {
+    return safeErrorState(error);
+  }
+}
+
+export async function removeImportedVenueCreationVenueAction(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireAdmin();
+
+  const result = removeImportedVenueCreationVenueSchema.safeParse({
+    importedVenueCreationId: formString(formData, "importedVenueCreationId"),
+  });
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Please check the imported venue.",
+      fieldErrors: formErrors(result.error),
+    };
+  }
+
+  try {
+    await removeImportedVenueCreationVenue(result.data);
+    revalidateImportedRunAdminPaths();
+
+    return {
+      status: "success",
+      message: "Imported venue removed and source reference ignored.",
     };
   } catch (error) {
     return safeErrorState(error);

@@ -3,10 +3,7 @@ import { notFound } from "next/navigation";
 import { ImportBatchSummary } from "@/app/admin/imported-runs/_components/import-batch-summary";
 import { ImportItemTable } from "@/app/admin/imported-runs/_components/import-item-table";
 import { PendingVenueSection } from "@/app/admin/imported-runs/_components/pending-venue-section";
-import {
-  getAdminImportBatchDetail,
-  getAdminVenueOptions,
-} from "@/server/admin/imported-runs/queries";
+import { getAdminImportBatchDetail } from "@/server/admin/imported-runs/queries";
 import { requireAdmin } from "@/server/admin";
 
 type AdminImportBatchDetailPageProps = {
@@ -21,10 +18,7 @@ export default async function AdminImportBatchDetailPage({
   await requireAdmin();
 
   const { batchId } = await params;
-  const [detail, venues] = await Promise.all([
-    getAdminImportBatchDetail(batchId),
-    getAdminVenueOptions(),
-  ]);
+  const detail = await getAdminImportBatchDetail(batchId);
 
   if (!detail) {
     notFound();
@@ -49,34 +43,21 @@ export default async function AdminImportBatchDetailPage({
               Import batch detail
             </h1>
             <p className="max-w-3xl text-zinc-300">
-              Review this dry-run batch, resolve pending Toronto venue
-              references, then rerun the dry import before applying imported
-              runs.
+              Review this dry-run batch before applying imported runs. Source
+              venues are matched or created automatically when safe; unresolved
+              venue exceptions remain skipped for manual follow-up.
             </p>
           </div>
         </div>
 
         <ImportBatchSummary detail={detail} />
 
-        <PendingVenueSection
-          batchId={detail.batch.id}
-          groups={detail.pendingVenueGroups}
-          venues={venues}
-        />
-
-        <div className="rounded-lg border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm text-emerald-100">
-          After resolving venues, rerun{" "}
-          <code className="rounded bg-zinc-950/70 px-1.5 py-0.5 text-emerald-200">
-            npm run import:toronto:dry-run
-          </code>{" "}
-          so candidates for matched locations can be classified as create,
-          update, or unchanged.
-        </div>
+        <PendingVenueSection groups={detail.pendingVenueGroups} />
 
         <div className="space-y-10">
           <ImportItemTable
             title="Create"
-            description="Candidates that would create new runs after venue resolution."
+            description="Candidates that would create new runs."
             items={detail.itemGroups.create}
           />
 
@@ -94,7 +75,7 @@ export default async function AdminImportBatchDetailPage({
 
           <ImportItemTable
             title="Skipped"
-            description="Candidates that were not ready for import. Venue-related skipped items should be resolved above."
+            description="Candidates that were not ready for import. Venue-related skips now indicate manual review exceptions."
             items={detail.itemGroups.skipped}
           />
 

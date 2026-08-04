@@ -1,15 +1,8 @@
-import { formatDateTime } from "@/lib/formatters";
-import type {
-  AdminPendingVenueGroup,
-  AdminVenueOption,
-} from "@/server/admin/imported-runs/queries";
-import { CreateVenueFromSourceForm } from "./create-venue-from-source-form";
-import { VenueLinkForm } from "./venue-link-form";
+import { formatDateTime, formatLabel } from "@/lib/formatters";
+import type { AdminPendingVenueGroup } from "@/server/admin/imported-runs/queries";
 
 type PendingVenueSectionProps = {
-  batchId: string;
   groups: AdminPendingVenueGroup[];
-  venues: AdminVenueOption[];
 };
 
 function displayValue(value: string | null | undefined) {
@@ -26,19 +19,29 @@ function exampleTimeLabel(startTime: string | null | undefined) {
   return Number.isNaN(date.getTime()) ? "Unknown time" : formatDateTime(date);
 }
 
-export function PendingVenueSection({
-  batchId,
-  groups,
-  venues,
-}: PendingVenueSectionProps) {
+function venueReasonLabel(group: AdminPendingVenueGroup) {
+  const reasons = Array.from(
+    new Set(
+      group.examples.flatMap((item) => {
+        return item.payload?.venueMatchReason
+          ? [item.payload.venueMatchReason]
+          : [];
+      }),
+    ),
+  );
+
+  return reasons.length > 0 ? reasons.map(formatLabel).join(", ") : "Unknown";
+}
+
+export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
   return (
     <section className="space-y-4">
       <div>
-        <h2 className="text-2xl font-semibold">Venue resolution required</h2>
+        <h2 className="text-2xl font-semibold">Unresolved venue exceptions</h2>
         <p className="mt-2 max-w-3xl text-sm text-zinc-400">
-          These skipped Toronto candidates are waiting for a source location to
-          be linked to an OpenGym Venue. Resolve the location, then rerun the
-          dry import before applying runs.
+          Most Toronto source locations are matched or created automatically.
+          These skipped candidates still need manual investigation before they
+          can be imported.
         </p>
       </div>
 
@@ -51,7 +54,7 @@ export function PendingVenueSection({
           {groups.map((group) => (
             <article
               key={group.externalVenueRef.id}
-              className="grid gap-6 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)]"
+              className="grid gap-6 overflow-hidden rounded-lg border border-white/10 bg-white/5 p-6"
             >
               <div className="min-w-0 space-y-5">
                 <div>
@@ -87,6 +90,12 @@ export function PendingVenueSection({
                     <dd className="mt-1 text-zinc-100">{group.itemCount}</dd>
                   </div>
                   <div>
+                    <dt className="text-zinc-500">Review reason</dt>
+                    <dd className="mt-1 text-zinc-100">
+                      {venueReasonLabel(group)}
+                    </dd>
+                  </div>
+                  <div>
                     <dt className="text-zinc-500">Source URL</dt>
                     <dd className="mt-1 break-words text-zinc-100">
                       {group.externalVenueRef.sourceUrl ? (
@@ -120,26 +129,6 @@ export function PendingVenueSection({
                       </li>
                     ))}
                   </ul>
-                </div>
-              </div>
-
-              <div className="min-w-0 grid gap-6">
-                <div className="min-w-0 rounded-lg border border-white/10 bg-zinc-950/60 p-4">
-                  <VenueLinkForm
-                    batchId={batchId}
-                    externalVenueRefId={group.externalVenueRef.id}
-                    venues={venues}
-                  />
-                </div>
-
-                <div className="min-w-0 rounded-lg border border-white/10 bg-zinc-950/60 p-4">
-                  <h4 className="mb-4 text-sm font-semibold text-zinc-100">
-                    Create Venue from source
-                  </h4>
-                  <CreateVenueFromSourceForm
-                    batchId={batchId}
-                    externalVenueRef={group.externalVenueRef}
-                  />
                 </div>
               </div>
             </article>

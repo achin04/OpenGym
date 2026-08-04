@@ -21,7 +21,7 @@ export default async function AdminPage() {
           </p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/admin/venues"
             className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
@@ -49,6 +49,16 @@ export default async function AdminPage() {
             <h2 className="text-xl font-semibold">Imported Runs</h2>
             <p className="mt-2 text-sm text-zinc-300">
               Add verified runs from official sources.
+            </p>
+          </Link>
+
+          <Link
+            href="/admin/imported-venues"
+            className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
+          >
+            <h2 className="text-xl font-semibold">Imported Venues</h2>
+            <p className="mt-2 text-sm text-zinc-300">
+              Review venues created from source locations.
             </p>
           </Link>
         </div>

@@ -6,11 +6,10 @@ import { prisma as defaultPrisma } from "@/server/db";
 import type {
   CreateVenueFromExternalRefInput,
   LinkExternalVenueRefInput,
+  RemoveImportedVenueCreationVenueInput,
+  UpdateImportedVenueCreationVenueInput,
 } from "@/lib/admin/imported-runs/action-validation";
-import {
-  normalizeVenueDuplicatePostalCode,
-  normalizeVenueDuplicateText,
-} from "@/lib/admin/imported-runs/venue-normalization";
+import { likelyDuplicateVenue } from "@/lib/admin/imported-runs/venue-normalization";
 
 const TORONTO_DROP_IN_PROVIDER_KEY = "toronto-drop-in";
 const TORONTO_DROP_IN_SOURCE_URL =
@@ -18,12 +17,12 @@ const TORONTO_DROP_IN_SOURCE_URL =
 
 type VenueResolutionPrisma = Pick<
   PrismaClient,
-  "$transaction" | "externalVenueRef" | "venue"
+  "$transaction" | "externalVenueRef" | "importedVenueCreation" | "run" | "venue"
 >;
 
 type VenueResolutionTransaction = Pick<
   PrismaClient,
-  "externalVenueRef" | "venue"
+  "externalVenueRef" | "importedVenueCreation" | "run" | "venue"
 >;
 
 type TorontoExternalVenueRef = {
@@ -40,17 +39,21 @@ type TorontoExternalVenueRef = {
   };
 };
 
-type DuplicateVenueCandidate = {
-  id: string;
-  name: string;
-  addressLine1: string;
-  city: string;
-  postalCode: string | null;
-};
-
 export type VenueResolutionResult = {
   externalVenueRefId: string;
   venueId: string;
+};
+
+export type ImportedVenueCreationVenueUpdateResult = {
+  importedVenueCreationId: string;
+  venueId: string;
+};
+
+export type ImportedVenueCreationVenueRemoveResult = {
+  importedVenueCreationId: string;
+  externalVenueRefId: string;
+  venueId: string;
+  removedAt: Date;
 };
 
 export class VenueResolutionError extends Error {
@@ -111,36 +114,6 @@ async function findExternalVenueRef(
   });
 }
 
-function likelyDuplicateVenue(
-  input: Pick<CreateVenueFromExternalRefInput, "name" | "addressLine1" | "city"> & {
-    postalCode?: string | null;
-  },
-  venue: DuplicateVenueCandidate,
-) {
-  const inputCity = normalizeVenueDuplicateText(input.city);
-  const venueCity = normalizeVenueDuplicateText(venue.city);
-
-  if (!inputCity || inputCity !== venueCity) {
-    return false;
-  }
-
-  const inputPostalCode = normalizeVenueDuplicatePostalCode(input.postalCode);
-  const venuePostalCode = normalizeVenueDuplicatePostalCode(venue.postalCode);
-  const postalCodesMatch =
-    inputPostalCode !== null && inputPostalCode === venuePostalCode;
-
-  if (!postalCodesMatch) {
-    return false;
-  }
-
-  return (
-    normalizeVenueDuplicateText(input.name) ===
-      normalizeVenueDuplicateText(venue.name) ||
-    normalizeVenueDuplicateText(input.addressLine1) ===
-      normalizeVenueDuplicateText(venue.addressLine1)
-  );
-}
-
 async function findLikelyDuplicateVenue(
   db: VenueResolutionTransaction,
   input: CreateVenueFromExternalRefInput,
@@ -160,6 +133,29 @@ async function findLikelyDuplicateVenue(
       return likelyDuplicateVenue(input, venue);
     }) ?? null
   );
+}
+
+async function findImportedVenueCreationForEdit(
+  db: VenueResolutionTransaction,
+  importedVenueCreationId: string,
+) {
+  return db.importedVenueCreation.findUnique({
+    where: {
+      id: importedVenueCreationId,
+    },
+    select: {
+      id: true,
+      externalVenueRefId: true,
+      venueId: true,
+      removedAt: true,
+      externalVenueRef: {
+        select: {
+          id: true,
+          venueId: true,
+        },
+      },
+    },
+  });
 }
 
 export async function linkExternalVenueRefToVenue(
@@ -266,6 +262,138 @@ export async function createVenueFromExternalVenueRef(
     return {
       externalVenueRefId: updatedRef.id,
       venueId: updatedRef.venueId ?? venue.id,
+    };
+  });
+}
+
+export async function updateImportedVenueCreationVenue(
+  input: UpdateImportedVenueCreationVenueInput,
+  db: VenueResolutionPrisma = defaultPrisma,
+): Promise<ImportedVenueCreationVenueUpdateResult> {
+  return db.$transaction(async (tx) => {
+    const importedVenueCreation = await findImportedVenueCreationForEdit(
+      tx,
+      input.importedVenueCreationId,
+    );
+
+    if (!importedVenueCreation) {
+      fail("Imported venue creation was not found.");
+    }
+
+    if (importedVenueCreation.removedAt || !importedVenueCreation.venueId) {
+      fail("This imported venue has already been removed.");
+    }
+
+    if (importedVenueCreation.externalVenueRef.venueId !== importedVenueCreation.venueId) {
+      fail("This imported venue is no longer linked to its source reference.");
+    }
+
+    const venue = await tx.venue.update({
+      where: {
+        id: importedVenueCreation.venueId,
+      },
+      data: {
+        name: input.name,
+        addressLine1: input.addressLine1,
+        addressLine2: input.addressLine2 || null,
+        city: input.city,
+        postalCode: input.postalCode || null,
+        websiteUrl: input.websiteUrl || null,
+        phone: input.phone || null,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return {
+      importedVenueCreationId: importedVenueCreation.id,
+      venueId: venue.id,
+    };
+  });
+}
+
+export async function removeImportedVenueCreationVenue(
+  input: RemoveImportedVenueCreationVenueInput,
+  db: VenueResolutionPrisma = defaultPrisma,
+): Promise<ImportedVenueCreationVenueRemoveResult> {
+  return db.$transaction(async (tx) => {
+    const importedVenueCreation = await findImportedVenueCreationForEdit(
+      tx,
+      input.importedVenueCreationId,
+    );
+
+    if (!importedVenueCreation) {
+      fail("Imported venue creation was not found.");
+    }
+
+    if (importedVenueCreation.removedAt || !importedVenueCreation.venueId) {
+      fail("This imported venue has already been removed.");
+    }
+
+    if (importedVenueCreation.externalVenueRef.venueId !== importedVenueCreation.venueId) {
+      fail("This imported venue is no longer linked to its source reference.");
+    }
+
+    const runCount = await tx.run.count({
+      where: {
+        venueId: importedVenueCreation.venueId,
+      },
+    });
+
+    if (runCount > 0) {
+      fail(
+        "This Venue is used by existing runs. Edit it or reassign those runs before removing it.",
+      );
+    }
+
+    const otherExternalRefCount = await tx.externalVenueRef.count({
+      where: {
+        venueId: importedVenueCreation.venueId,
+        id: {
+          not: importedVenueCreation.externalVenueRefId,
+        },
+      },
+    });
+
+    if (otherExternalRefCount > 0) {
+      fail(
+        "This Venue is linked to other source references. Edit it instead of removing it.",
+      );
+    }
+
+    await tx.externalVenueRef.update({
+      where: {
+        id: importedVenueCreation.externalVenueRefId,
+      },
+      data: {
+        venueId: null,
+        matchStatus: VenueMatchStatus.IGNORED,
+      },
+    });
+
+    const removedAt = new Date();
+    await tx.importedVenueCreation.update({
+      where: {
+        id: importedVenueCreation.id,
+      },
+      data: {
+        venueId: null,
+        removedAt,
+      },
+    });
+
+    await tx.venue.delete({
+      where: {
+        id: importedVenueCreation.venueId,
+      },
+    });
+
+    return {
+      importedVenueCreationId: importedVenueCreation.id,
+      externalVenueRefId: importedVenueCreation.externalVenueRefId,
+      venueId: importedVenueCreation.venueId,
+      removedAt,
     };
   });
 }

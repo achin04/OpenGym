@@ -12,7 +12,11 @@ import {
 
 type ImportedRunsQueryPrisma = Pick<
   PrismaClient,
-  "importBatch" | "importItem" | "externalVenueRef" | "venue"
+  | "importBatch"
+  | "importItem"
+  | "externalVenueRef"
+  | "importedVenueCreation"
+  | "venue"
 >;
 
 export type AdminImportBatchListItem = Awaited<
@@ -22,6 +26,9 @@ export type AdminImportBatchListItem = Awaited<
 export type AdminImportBatchDetail = Awaited<
   ReturnType<typeof getAdminImportBatchDetail>
 >;
+export type AdminImportedVenueCreationListItem = Awaited<
+  ReturnType<typeof getAdminImportedVenueCreations>
+>[number];
 
 export type AdminImportItemDisplay = {
   id: string;
@@ -206,6 +213,59 @@ export async function getAdminImportBatches(
     },
     orderBy: {
       startedAt: "desc",
+    },
+  });
+}
+
+export async function getAdminImportedVenueCreations(
+  db: ImportedRunsQueryPrisma = defaultPrisma,
+) {
+  return db.importedVenueCreation.findMany({
+    take: 100,
+    include: {
+      batch: {
+        select: {
+          id: true,
+          startedAt: true,
+          trigger: true,
+          status: true,
+          scheduleSource: {
+            select: {
+              id: true,
+              name: true,
+              sourceType: true,
+              providerKey: true,
+            },
+          },
+        },
+      },
+      externalVenueRef: {
+        select: {
+          id: true,
+          externalId: true,
+          venueId: true,
+          sourceName: true,
+          sourceAddressLine1: true,
+          sourcePostalCode: true,
+          sourceUrl: true,
+          matchStatus: true,
+        },
+      },
+      venue: {
+        select: {
+          id: true,
+          name: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          postalCode: true,
+          websiteUrl: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 }

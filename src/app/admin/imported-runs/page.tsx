@@ -22,17 +22,26 @@ export default async function AdminImportedRunsPage() {
             </h1>
 
             <p className="max-w-2xl text-zinc-300">
-              Review Toronto dry-run batches before approving imported runs.
-              Resolve pending venues first, then rerun the dry import.
+              Review Toronto dry-run batches before applying imported runs.
+              New source venues are created automatically when the importer can
+              do so safely.
             </p>
           </div>
 
-          <Link
-            href="/admin/imported-runs/new"
-            className="w-fit rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
-          >
-            Manual imported run
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin/imported-venues"
+              className="w-fit rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
+            >
+              Imported venues
+            </Link>
+            <Link
+              href="/admin/imported-runs/new"
+              className="w-fit rounded-md border border-white/10 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-white/10"
+            >
+              Manual imported run
+            </Link>
+          </div>
         </div>
 
         {batches.length === 0 ? (

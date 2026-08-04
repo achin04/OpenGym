@@ -3,12 +3,15 @@ import { VenueMatchStatus } from "@/generated/prisma/enums";
 import {
   createVenueFromExternalRefSchema,
   linkExternalVenueRefSchema,
+  removeImportedVenueCreationVenueSchema,
+  updateImportedVenueCreationVenueSchema,
 } from "./action-validation";
 import {
   parseImportFieldDiffDisplay,
   parseImportItemPayloadDisplay,
 } from "./display-parsing";
 import {
+  likelyDuplicateVenue,
   normalizeAdminPostalCode,
   normalizeVenueDuplicatePostalCode,
   normalizeVenueDuplicateText,
@@ -96,6 +99,57 @@ describe("createVenueFromExternalRefSchema", () => {
   });
 });
 
+describe("updateImportedVenueCreationVenueSchema", () => {
+  const validInput = {
+    importedVenueCreationId: "imported_venue_creation_1",
+    name: "Updated Venue",
+    addressLine1: "10 Updated St.",
+    addressLine2: "",
+    city: "Toronto",
+    postalCode: "m5v0r6",
+    websiteUrl: "",
+    phone: "",
+  };
+
+  it("accepts valid update input and normalizes postal code", () => {
+    const result =
+      updateImportedVenueCreationVenueSchema.safeParse(validInput);
+
+    expect(result.success).toBe(true);
+
+    if (result.success) {
+      expect(result.data.postalCode).toBe("M5V 0R6");
+    }
+  });
+
+  it("rejects missing imported venue creation id", () => {
+    const result = updateImportedVenueCreationVenueSchema.safeParse({
+      ...validInput,
+      importedVenueCreationId: " ",
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("removeImportedVenueCreationVenueSchema", () => {
+  it("accepts valid remove input", () => {
+    const result = removeImportedVenueCreationVenueSchema.safeParse({
+      importedVenueCreationId: "imported_venue_creation_1",
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects missing imported venue creation id", () => {
+    const result = removeImportedVenueCreationVenueSchema.safeParse({
+      importedVenueCreationId: " ",
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
 describe("venue normalization", () => {
   it("formats Canadian postal codes consistently", () => {
     expect(normalizeAdminPostalCode("m5v0r6")).toBe("M5V 0R6");
@@ -112,6 +166,70 @@ describe("venue normalization", () => {
     expect(normalizeVenueDuplicateText(" ")).toBeNull();
     expect(normalizeVenueDuplicatePostalCode(" ")).toBeNull();
   });
+
+  it("detects likely duplicate venues by city, postal code, and source name or address", () => {
+    const existingVenue = {
+      name: "Canoe Landing Community Centre",
+      addressLine1: "45 Fort York Blvd",
+      city: "Toronto",
+      postalCode: "m5v0r6",
+    };
+
+    expect(
+      likelyDuplicateVenue(
+        {
+          name: "Canoe Landing Community Centre",
+          addressLine1: "Different Address",
+          city: "toronto",
+          postalCode: "M5V 0R6",
+        },
+        existingVenue,
+      ),
+    ).toBe(true);
+    expect(
+      likelyDuplicateVenue(
+        {
+          name: "Different Name",
+          addressLine1: "45 Fort York Blvd.",
+          city: "Toronto",
+          postalCode: "M5V 0R6",
+        },
+        existingVenue,
+      ),
+    ).toBe(true);
+  });
+
+  it("does not flag likely duplicates without matching city and postal code", () => {
+    const existingVenue = {
+      name: "Canoe Landing Community Centre",
+      addressLine1: "45 Fort York Blvd",
+      city: "Toronto",
+      postalCode: "M5V 0R6",
+    };
+
+    expect(
+      likelyDuplicateVenue(
+        {
+          name: "Canoe Landing Community Centre",
+          addressLine1: "45 Fort York Blvd",
+          city: "Mississauga",
+          postalCode: "M5V 0R6",
+        },
+        existingVenue,
+      ),
+    ).toBe(false);
+    expect(
+      likelyDuplicateVenue(
+        {
+          name: "Canoe Landing Community Centre",
+          addressLine1: "45 Fort York Blvd",
+          city: "Toronto",
+          postalCode: null,
+        },
+        existingVenue,
+      ),
+    ).toBe(false);
+  });
 });
 
 describe("display parsing", () => {
@@ -122,6 +240,7 @@ describe("display parsing", () => {
       endTime: "2026-06-21T16:30:00.000Z",
       sourceLocationId: "3643",
       externalVenueRefId: "external_ref_1",
+      importedVenueCreationId: "imported_venue_creation_1",
       venueMatchStatus: VenueMatchStatus.PENDING,
       venueMatchReason: "no_exact_match",
       location: {
@@ -138,6 +257,7 @@ describe("display parsing", () => {
       title: "Basketball",
       sourceLocationId: "3643",
       externalVenueRefId: "external_ref_1",
+      importedVenueCreationId: "imported_venue_creation_1",
       venueMatchStatus: VenueMatchStatus.PENDING,
     });
   });
