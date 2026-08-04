@@ -28,7 +28,7 @@ import {
   type NormalizedTorontoLocation,
   type TorontoDropInSkippedRow,
 } from "./normalization";
-import { findOrCreateTorontoExternalVenueRef } from "./venues";
+import { resolveTorontoExternalVenueRef } from "./venues";
 
 const TORONTO_DROP_IN_PROVIDER_KEY = "toronto-drop-in";
 const TORONTO_DROP_IN_SOURCE_URL =
@@ -36,11 +36,13 @@ const TORONTO_DROP_IN_SOURCE_URL =
 
 type TorontoDryRunPrisma = Pick<
   PrismaClient,
+  | "$transaction"
   | "scheduleSource"
   | "importBatch"
   | "importItem"
   | "run"
   | "externalVenueRef"
+  | "importedVenueCreation"
   | "venue"
 >;
 
@@ -752,6 +754,7 @@ async function createImportItems(
 
 async function processCandidates({
   db,
+  batchId,
   scheduleSourceId,
   seenAt,
   candidates,
@@ -761,6 +764,7 @@ async function processCandidates({
   usedSourceKeys,
 }: {
   db: TorontoDryRunPrisma;
+  batchId: string;
   scheduleSourceId: string;
   seenAt: Date;
   candidates: NormalizedRunCandidate[];
@@ -826,7 +830,8 @@ async function processCandidates({
         continue;
       }
 
-      const venueRef = await findOrCreateTorontoExternalVenueRef({
+      const venueRef = await resolveTorontoExternalVenueRef({
+        batchId,
         scheduleSourceId,
         location,
         seenAt,
@@ -834,6 +839,11 @@ async function processCandidates({
       });
 
       if (venueRef.status !== VenueMatchStatus.MATCHED) {
+        const venueIssue =
+          venueRef.status === VenueMatchStatus.IGNORED
+            ? "ignored venue reference"
+            : "pending venue match";
+
         items.push({
           sourceKey,
           sourceOccurrenceId: candidate.sourceExternalId,
@@ -855,7 +865,7 @@ async function processCandidates({
             location: serializeLocation(location),
             venueMatchReason: venueRef.reason,
           },
-          errorMessage: `Toronto location ${candidate.sourceLocationId} is pending venue match: ${venueRef.reason}.`,
+          errorMessage: `Toronto location ${candidate.sourceLocationId} has ${venueIssue}: ${venueRef.reason}.`,
         });
         continue;
       }
@@ -871,6 +881,11 @@ async function processCandidates({
         }),
         location: serializeLocation(location),
         venueMatchReason: venueRef.reason,
+        ...("importedVenueCreation" in venueRef
+          ? {
+              importedVenueCreationId: venueRef.importedVenueCreation.id,
+            }
+          : {}),
       };
 
       if (!existingRun) {
@@ -1066,6 +1081,7 @@ export async function runTorontoDryRunImport({
       ...(health.isCompleteSnapshot
         ? await processCandidates({
             db,
+            batchId: batch.id,
             scheduleSourceId: scheduleSource.id,
             seenAt,
             candidates: normalization.candidates,

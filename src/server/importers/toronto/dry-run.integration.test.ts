@@ -132,6 +132,7 @@ function createFakeCkanClient({
 }
 
 async function cleanDatabase() {
+  await prisma.importedVenueCreation.deleteMany();
   await prisma.importItem.deleteMany();
   await prisma.importBatch.deleteMany();
   await prisma.externalVenueRef.deleteMany();
@@ -275,14 +276,14 @@ describe("runTorontoDryRunImport", () => {
       trigger: "integration-test",
     });
 
-    expect(summary.status).toBe(ImportBatchStatus.PARTIAL);
+    expect(summary.status).toBe(ImportBatchStatus.SUCCEEDED);
     expect(summary.counts).toMatchObject({
       dropInRecordCount: 4,
       basketballRecordCount: 4,
-      createdCount: 1,
+      createdCount: 2,
       updatedCount: 1,
       unchangedCount: 1,
-      skippedCount: 1,
+      skippedCount: 0,
       errorCount: 0,
     });
     expect(summary.resources).toEqual({
@@ -300,14 +301,14 @@ describe("runTorontoDryRunImport", () => {
       scheduleSourceId: scheduleSource.id,
       trigger: "integration-test",
       mode: ImportBatchMode.DRY_RUN,
-      status: ImportBatchStatus.PARTIAL,
+      status: ImportBatchStatus.SUCCEEDED,
       isCompleteSnapshot: true,
       dropInRecordCount: 4,
       basketballRecordCount: 4,
-      createdCount: 1,
+      createdCount: 2,
       updatedCount: 1,
       unchangedCount: 1,
-      skippedCount: 1,
+      skippedCount: 0,
       errorCount: 0,
     });
     expect(batch.snapshotHash).toMatch(/^[a-f0-9]{64}$/);
@@ -326,7 +327,7 @@ describe("runTorontoDryRunImport", () => {
     expect(items).toHaveLength(4);
     expect(items.map((item) => item.action).sort()).toEqual([
       ImportItemAction.CREATE,
-      ImportItemAction.SKIPPED,
+      ImportItemAction.CREATE,
       ImportItemAction.UNCHANGED,
       ImportItemAction.UPDATE,
     ]);
@@ -336,10 +337,24 @@ describe("runTorontoDryRunImport", () => {
     expect(
       items.find((item) => item.action === ImportItemAction.UNCHANGED)?.runId,
     ).toBe(existingUnchangedRun.id);
-    expect(
-      items.find((item) => item.action === ImportItemAction.SKIPPED)
-        ?.errorMessage,
-    ).toContain("pending venue match");
+    const autoCreatedItem = items.find((item) => {
+      return (
+        item.action === ImportItemAction.CREATE &&
+        typeof item.normalizedPayload === "object" &&
+        item.normalizedPayload !== null &&
+        "sourceLocationId" in item.normalizedPayload &&
+        item.normalizedPayload.sourceLocationId === "63"
+      );
+    });
+    expect(autoCreatedItem?.errorMessage).toBeNull();
+    expect(autoCreatedItem?.normalizedPayload).toMatchObject({
+      sourceLocationId: "63",
+      venueMatchStatus: VenueMatchStatus.MATCHED,
+      venueMatchReason: "auto_created_from_source",
+    });
+    expect(autoCreatedItem?.normalizedPayload).toHaveProperty(
+      "importedVenueCreationId",
+    );
 
     const runsAfterDryRun = await prisma.run.findMany({
       orderBy: {
@@ -375,10 +390,118 @@ describe("runTorontoDryRunImport", () => {
         }),
         expect.objectContaining({
           externalId: "63",
-          venueId: null,
-          matchStatus: VenueMatchStatus.PENDING,
+          venueId: expect.any(String),
+          matchStatus: VenueMatchStatus.MATCHED,
         }),
       ]),
     );
+    const autoCreatedVenueAuditRows =
+      await prisma.importedVenueCreation.findMany({
+        include: {
+          externalVenueRef: true,
+          venue: true,
+        },
+      });
+    expect(autoCreatedVenueAuditRows).toHaveLength(1);
+    expect(autoCreatedVenueAuditRows[0]).toMatchObject({
+      batchId: summary.batchId,
+      sourceName: "John Innes Community Recreation Centre",
+      sourceAddressLine1: "150 Sherbourne St",
+      venue: expect.objectContaining({
+        name: "John Innes Community Recreation Centre",
+        addressLine1: "150 Sherbourne St",
+        city: "Toronto",
+      }),
+      externalVenueRef: expect.objectContaining({
+        externalId: "63",
+        matchStatus: VenueMatchStatus.MATCHED,
+      }),
+    });
+  });
+
+  it("keeps venue candidates skipped and batch partial when auto-create is unsafe", async () => {
+    const scheduleSource = await createScheduleSource();
+    await prisma.venue.create({
+      data: {
+        name: "Milliken Park Community Recreation Centre",
+        addressLine1: "1 Different Address",
+        city: "Toronto",
+        postalCode: "M1V4P1",
+      },
+    });
+    const likelyDuplicateRow = makeDropInRow({
+      _id: 20_001,
+      "Location ID": 405,
+      Course_ID: 555_555,
+      "Course Title": "Basketball",
+      "First Date": "2026-06-25",
+      "Last Date": "2026-06-25",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+
+    const summary = await runTorontoDryRunImport({
+      ckanClient: createFakeCkanClient({
+        dropInRecords: [likelyDuplicateRow],
+        locationRecords: locations.sampleRecords,
+      }),
+      now: new Date("2026-07-17T12:00:00.000Z"),
+      trigger: "integration-test",
+    });
+
+    expect(summary.status).toBe(ImportBatchStatus.PARTIAL);
+    expect(summary.counts).toMatchObject({
+      dropInRecordCount: 1,
+      basketballRecordCount: 1,
+      createdCount: 0,
+      updatedCount: 0,
+      unchangedCount: 0,
+      skippedCount: 1,
+      errorCount: 0,
+    });
+
+    const batch = await prisma.importBatch.findUniqueOrThrow({
+      where: {
+        id: summary.batchId,
+      },
+    });
+    expect(batch).toMatchObject({
+      scheduleSourceId: scheduleSource.id,
+      status: ImportBatchStatus.PARTIAL,
+      createdCount: 0,
+      skippedCount: 1,
+      errorCount: 0,
+    });
+
+    const item = await prisma.importItem.findFirstOrThrow({
+      where: {
+        batchId: summary.batchId,
+      },
+    });
+    expect(item).toMatchObject({
+      action: ImportItemAction.SKIPPED,
+      errorMessage:
+        "Toronto location 405 has pending venue match: likely_duplicate_venue.",
+    });
+    expect(item.normalizedPayload).toMatchObject({
+      sourceLocationId: "405",
+      venueMatchStatus: VenueMatchStatus.PENDING,
+      venueMatchReason: "likely_duplicate_venue",
+    });
+
+    await expect(prisma.venue.count()).resolves.toBe(1);
+    await expect(prisma.importedVenueCreation.count()).resolves.toBe(0);
+    await expect(
+      prisma.externalVenueRef.findFirst({
+        where: {
+          externalId: "405",
+        },
+      }),
+    ).resolves.toMatchObject({
+      venueId: null,
+      matchStatus: VenueMatchStatus.PENDING,
+    });
   });
 });

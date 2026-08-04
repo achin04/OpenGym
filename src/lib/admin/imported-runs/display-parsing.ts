@@ -32,6 +32,7 @@ export const importItemPayloadDisplaySchema = z.object({
   endTime: z.string().optional().nullable(),
   sourceLocationId: z.string().optional().nullable(),
   externalVenueRefId: z.string().optional().nullable(),
+  importedVenueCreationId: z.string().optional().nullable(),
   venueMatchStatus: z
     .enum([
       VenueMatchStatus.MATCHED,

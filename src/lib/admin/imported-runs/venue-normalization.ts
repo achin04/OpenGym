@@ -36,3 +36,45 @@ export function normalizeVenueDuplicatePostalCode(
 
   return normalized === "" ? null : normalized;
 }
+
+export type DuplicateVenueInput = {
+  name: string;
+  addressLine1: string;
+  city: string;
+  postalCode?: string | null;
+};
+
+export type DuplicateVenueCandidate = {
+  name: string;
+  addressLine1: string;
+  city: string;
+  postalCode: string | null;
+};
+
+export function likelyDuplicateVenue(
+  input: DuplicateVenueInput,
+  venue: DuplicateVenueCandidate,
+) {
+  const inputCity = normalizeVenueDuplicateText(input.city);
+  const venueCity = normalizeVenueDuplicateText(venue.city);
+
+  if (!inputCity || inputCity !== venueCity) {
+    return false;
+  }
+
+  const inputPostalCode = normalizeVenueDuplicatePostalCode(input.postalCode);
+  const venuePostalCode = normalizeVenueDuplicatePostalCode(venue.postalCode);
+  const postalCodesMatch =
+    inputPostalCode !== null && inputPostalCode === venuePostalCode;
+
+  if (!postalCodesMatch) {
+    return false;
+  }
+
+  return (
+    normalizeVenueDuplicateText(input.name) ===
+      normalizeVenueDuplicateText(venue.name) ||
+    normalizeVenueDuplicateText(input.addressLine1) ===
+      normalizeVenueDuplicateText(venue.addressLine1)
+  );
+}
