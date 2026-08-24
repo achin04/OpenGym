@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import {
   type AdminActionState,
+  applyImportBatchSchema,
   createVenueFromExternalRefSchema,
   formErrors,
   linkExternalVenueRefSchema,
@@ -10,6 +11,10 @@ import {
   updateImportedVenueCreationVenueSchema,
 } from "@/lib/admin/imported-runs/action-validation";
 import { requireAdmin } from "@/server/admin";
+import {
+  ApplyImportBatchError,
+  applyImportBatch,
+} from "@/server/admin/imported-runs/apply-import-batch";
 import {
   VenueResolutionError,
   createVenueFromExternalVenueRef,
@@ -43,6 +48,14 @@ function revalidateImportedRunAdminPaths(batchId?: string) {
   revalidatePath("/runs/new");
 }
 
+function revalidateAppliedRunPaths(runIds: string[]) {
+  revalidatePath("/runs");
+
+  for (const runId of runIds) {
+    revalidatePath(`/runs/${runId}`);
+  }
+}
+
 function safeErrorState(error: unknown): AdminActionState {
   if (error instanceof VenueResolutionError) {
     return {
@@ -57,6 +70,62 @@ function safeErrorState(error: unknown): AdminActionState {
     status: "error",
     message: "Venue resolution failed. Please check the fields and try again.",
   };
+}
+
+function safeApplyErrorState(error: unknown): AdminActionState {
+  if (error instanceof ApplyImportBatchError) {
+    return {
+      status: "error",
+      message: error.message,
+    };
+  }
+
+  console.error(error);
+
+  return {
+    status: "error",
+    message: "Import batch apply failed. Please review the batch and try again.",
+  };
+}
+
+export async function applyImportBatchAction(
+  _previousState: AdminActionState,
+  formData: FormData,
+): Promise<AdminActionState> {
+  await requireAdmin();
+
+  const result = applyImportBatchSchema.safeParse({
+    batchId: formString(formData, "batchId"),
+  });
+
+  if (!result.success) {
+    return {
+      status: "error",
+      message: "Please choose an import batch to apply.",
+      fieldErrors: formErrors(result.error),
+    };
+  }
+
+  try {
+    const applyResult = await applyImportBatch(result.data.batchId);
+    revalidateImportedRunAdminPaths(result.data.batchId);
+    revalidateImportedRunAdminPaths(applyResult.applyBatchId);
+    revalidateAppliedRunPaths(applyResult.affectedRunIds);
+
+    if (applyResult.alreadyApplied) {
+      return {
+        status: "success",
+        message: `This dry-run batch was already applied. Existing apply batch ${applyResult.applyBatchId} is linked to ${applyResult.affectedRunIds.length} runs.`,
+      };
+    }
+
+    return {
+      status: "success",
+      message: `Applied batch: ${applyResult.counts.createdCount} created, ${applyResult.counts.updatedCount} updated, ${applyResult.counts.unchangedCount} unchanged, ${applyResult.counts.skippedCount} skipped, ${applyResult.counts.errorCount} errors.`,
+    };
+  } catch (error) {
+    return safeApplyErrorState(error);
+  }
 }
 
 export async function linkExternalVenueRefAction(

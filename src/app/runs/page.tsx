@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
+import { formatDateTime, formatLabel } from "@/lib/formatters";
 import { prisma } from "@/server/db";
 
 export default async function RunsPage() {
@@ -70,13 +70,6 @@ export default async function RunsPage() {
                     <dt className="text-zinc-500">Ends</dt>
                     <dd className="mt-1 text-zinc-100">
                       {formatDateTime(run.endTime)}
-                    </dd>
-                  </div>
-
-                  <div>
-                    <dt className="text-zinc-500">Price</dt>
-                    <dd className="mt-1 text-zinc-100">
-                      {formatPrice(run.price)}
                     </dd>
                   </div>
 

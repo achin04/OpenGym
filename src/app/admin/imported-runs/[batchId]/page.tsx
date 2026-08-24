@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import {
+  ImportBatchMode,
+  ImportBatchStatus,
+} from "@/generated/prisma/enums";
+import { ApplyBatchForm } from "@/app/admin/imported-runs/_components/apply-batch-form";
 import { ImportBatchSummary } from "@/app/admin/imported-runs/_components/import-batch-summary";
 import { ImportItemTable } from "@/app/admin/imported-runs/_components/import-item-table";
 import { PendingVenueSection } from "@/app/admin/imported-runs/_components/pending-venue-section";
@@ -23,6 +28,14 @@ export default async function AdminImportBatchDetailPage({
   if (!detail) {
     notFound();
   }
+
+  const canApply =
+    detail.batch.mode === ImportBatchMode.DRY_RUN &&
+    detail.batch.isCompleteSnapshot &&
+    !!detail.batch.completedAt &&
+    !detail.appliedBatch &&
+    (detail.batch.status === ImportBatchStatus.SUCCEEDED ||
+      detail.batch.status === ImportBatchStatus.PARTIAL);
 
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
@@ -51,6 +64,14 @@ export default async function AdminImportBatchDetailPage({
         </div>
 
         <ImportBatchSummary detail={detail} />
+
+        <ApplyBatchForm
+          batchId={detail.batch.id}
+          canApply={canApply}
+          eligibleCreateCount={detail.itemGroups.create.length}
+          eligibleUpdateCount={detail.itemGroups.update.length}
+          appliedBatch={detail.appliedBatch}
+        />
 
         <PendingVenueSection groups={detail.pendingVenueGroups} />
 

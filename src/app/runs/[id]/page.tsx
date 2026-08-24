@@ -1,6 +1,6 @@
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
-import { formatDateTime, formatPrice, formatLabel } from "@/lib/formatters";
+import { formatDateTime, formatLabel } from "@/lib/formatters";
 import { currentUser } from "@clerk/nextjs/server";
 import { RsvpStatus } from "@/generated/prisma/enums";
 import { cancelRsvp, rsvpToRun } from "./actions";
@@ -148,11 +148,6 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
             <div>
               <dt className="text-zinc-500">Ends</dt>
               <dd className="text-zinc-100">{formatDateTime(run.endTime)}</dd>
-            </div>
-
-            <div>
-              <dt className="text-zinc-500">Price</dt>
-              <dd className="text-zinc-100">{formatPrice(run.price)}</dd>
             </div>
 
             <div>

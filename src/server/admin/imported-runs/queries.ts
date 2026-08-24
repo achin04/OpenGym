@@ -1,7 +1,11 @@
 import "server-only";
 
 import type { PrismaClient } from "@/generated/prisma/client";
-import { ImportItemAction, VenueMatchStatus } from "@/generated/prisma/enums";
+import {
+  ImportBatchMode,
+  ImportItemAction,
+  VenueMatchStatus,
+} from "@/generated/prisma/enums";
 import { prisma as defaultPrisma } from "@/server/db";
 import {
   parseImportFieldDiffDisplay,
@@ -18,6 +22,12 @@ type ImportedRunsQueryPrisma = Pick<
   | "importedVenueCreation"
   | "venue"
 >;
+
+const APPLY_TRIGGER_PREFIX = "apply:";
+
+function applyTriggerForBatch(batchId: string) {
+  return `${APPLY_TRIGGER_PREFIX}${batchId}`;
+}
 
 export type AdminImportBatchListItem = Awaited<
   ReturnType<typeof getAdminImportBatches>
@@ -313,6 +323,30 @@ export async function getAdminImportBatchDetail(
     return null;
   }
 
+  const appliedBatch =
+    batch.mode === ImportBatchMode.DRY_RUN
+      ? await db.importBatch.findFirst({
+          where: {
+            scheduleSourceId: batch.scheduleSourceId,
+            mode: ImportBatchMode.APPLY,
+            trigger: applyTriggerForBatch(batch.id),
+          },
+          select: {
+            id: true,
+            status: true,
+            completedAt: true,
+            createdCount: true,
+            updatedCount: true,
+            unchangedCount: true,
+            skippedCount: true,
+            errorCount: true,
+          },
+          orderBy: {
+            startedAt: "asc",
+          },
+        })
+      : null;
+
   const items = batch.items.map(toImportItemDisplay);
   const externalVenueRefs = await findExternalVenueRefsForDisplay(
     db,
@@ -321,6 +355,7 @@ export async function getAdminImportBatchDetail(
 
   return {
     batch,
+    appliedBatch,
     items,
     itemGroups: {
       create: items.filter((item) => item.action === ImportItemAction.CREATE),

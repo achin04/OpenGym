@@ -72,6 +72,10 @@ export const removeImportedVenueCreationVenueSchema = z.object({
     .min(1, "Imported venue creation is required"),
 });
 
+export const applyImportBatchSchema = z.object({
+  batchId: z.string().trim().min(1, "Import batch is required"),
+});
+
 export type LinkExternalVenueRefInput = z.infer<
   typeof linkExternalVenueRefSchema
 >;
@@ -84,6 +88,7 @@ export type UpdateImportedVenueCreationVenueInput = z.infer<
 export type RemoveImportedVenueCreationVenueInput = z.infer<
   typeof removeImportedVenueCreationVenueSchema
 >;
+export type ApplyImportBatchInput = z.infer<typeof applyImportBatchSchema>;
 
 export function formErrors(error: z.ZodError): Record<string, string[]> {
   return z.flattenError(error).fieldErrors;
