@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { BrandLockup } from "./_components/brand";
 import {
   ClerkProvider,
   SignInButton,
@@ -33,34 +34,40 @@ export default function RootLayout({
   return (
     <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-        <body className="min-h-full bg-zinc-950 text-white">
-          <header className="border-b border-white/10">
-            <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-4">
-              <Link href="/" className="text-lg font-semibold">
-                OpenGym
+        <body className="min-h-full text-cream">
+          <header className="sticky top-0 z-30 border-b border-line bg-background/86 backdrop-blur-xl">
+            <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
+              <Link href="/" aria-label="OpenGym home">
+                <BrandLockup />
               </Link>
 
-              <nav className="flex items-center gap-4 text-sm">
-                <Link href="/runs" className="text-zinc-300 hover:text-white">
+              <nav className="flex shrink-0 items-center gap-1 text-sm sm:gap-3">
+                <Link
+                  href="/runs"
+                  className="shrink-0 rounded-md px-2 py-2 font-medium text-cream/70 transition hover:bg-white/5 hover:text-cream sm:px-3"
+                >
                   Runs
                 </Link>
 
                 <Show when="signed-out">
                   <SignInButton mode="modal">
-                    <button className="text-zinc-300 hover:text-white">
+                    <button className="shrink-0 whitespace-nowrap rounded-md px-2 py-2 font-medium text-cream/70 transition hover:bg-white/5 hover:text-cream sm:px-3">
                       Sign in
                     </button>
                   </SignInButton>
 
                   <SignUpButton mode="modal">
-                    <button className="rounded-md bg-emerald-400 px-3 py-2 font-medium text-zinc-950 hover:bg-emerald-300">
+                    <button className="shrink-0 whitespace-nowrap rounded-md bg-court px-2.5 py-2 font-semibold text-background transition hover:bg-court-200 sm:px-3">
                       Sign up
                     </button>
                   </SignUpButton>
                 </Show>
 
                 <Show when="signed-in">
-                  <Link href="/account" className="text-zinc-300 hover:text-white">
+                  <Link
+                    href="/account"
+                    className="shrink-0 whitespace-nowrap rounded-md px-2 py-2 font-medium text-cream/70 transition hover:bg-white/5 hover:text-cream sm:px-3"
+                  >
                     Account
                   </Link>
                   <UserButton />

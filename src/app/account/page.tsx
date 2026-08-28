@@ -30,44 +30,44 @@ export default async function AccountPage() {
   });
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
-      <section className="mx-auto w-full max-w-5xl space-y-6">
+    <main className="min-h-screen px-5 py-8 text-cream sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-6xl space-y-6">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court-200">
             Account
           </p>
-          <h1 className="text-4xl font-semibold tracking-normal">
+          <h1 className="text-4xl font-semibold tracking-normal sm:text-5xl">
             Your OpenGym account
           </h1>
-          <p className="max-w-2xl text-zinc-300">
+          <p className="max-w-2xl text-cream/62">
             This page is protected. Only signed-in users should be able to see
             it.
           </p>
         </div>
 
-        <div className="rounded-lg border border-white/10 bg-white/5 p-6">
+        <div className="rounded-lg border border-line bg-ink-900/72 p-6">
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-zinc-500">Clerk user ID</dt>
-              <dd className="mt-1 text-zinc-100">{clerkUser?.id}</dd>
+              <dt className="text-cream/38">Clerk user ID</dt>
+              <dd className="mt-1 text-cream">{clerkUser?.id}</dd>
             </div>
 
             <div>
-              <dt className="text-zinc-500">OpenGym user ID</dt>
-              <dd className="mt-1 text-zinc-100">{appUser.id}</dd>
+              <dt className="text-cream/38">OpenGym user ID</dt>
+              <dd className="mt-1 text-cream">{appUser.id}</dd>
             </div>
 
             <div>
-              <dt className="text-zinc-500">Email</dt>
-              <dd className="mt-1 text-zinc-100">
+              <dt className="text-cream/38">Email</dt>
+              <dd className="mt-1 text-cream">
                 {clerkUser?.primaryEmailAddress?.emailAddress ??
                   "No email found"}
               </dd>
             </div>
 
             <div>
-              <dt className="text-zinc-500">Name</dt>
-              <dd className="mt-1 text-zinc-100">
+              <dt className="text-cream/38">Name</dt>
+              <dd className="mt-1 text-cream">
                 {clerkUser?.fullName ?? "No name found"}
               </dd>
             </div>

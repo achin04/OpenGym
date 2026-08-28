@@ -1,26 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #090a0c;
+  --foreground: #f5efe5;
+  --court: #f47b2a;
+  --court-200: #ffc68f;
+  --cream: #f8efe0;
+  --ink-800: #17181c;
+  --ink-900: #0f1013;
+  --line: rgba(248, 239, 224, 0.12);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-court: var(--court);
+  --color-court-200: var(--court-200);
+  --color-cream: var(--cream);
+  --color-ink-800: var(--ink-800);
+  --color-ink-900: var(--ink-900);
+  --color-line: var(--line);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--background);
+  scroll-padding-top: 6rem;
 }
 
 body {
   background: var(--background);
+  background-image:
+    linear-gradient(90deg, transparent 0 calc(50% - 1px), rgba(244, 123, 42, 0.08) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
+    radial-gradient(circle at 50% -14rem, transparent 0 23rem, rgba(244, 123, 42, 0.12) 23.05rem 23.18rem, transparent 23.25rem),
+    linear-gradient(180deg, rgba(244, 123, 42, 0.08), transparent 28rem);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: rgba(244, 123, 42, 0.35);
+  color: var(--cream);
+}
+
+input,
+select,
+textarea {
+  color-scheme: dark;
+}
+
+.court-grid {
+  background-image:
+    linear-gradient(rgba(248, 239, 224, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(248, 239, 224, 0.055) 1px, transparent 1px);
+  background-size: 2.75rem 2.75rem;
+}
+
+.court-key {
+  position: relative;
+}
+
+.court-key::before,
+.court-key::after {
+  border: 1px solid rgba(244, 123, 42, 0.22);
+  content: "";
+  pointer-events: none;
+  position: absolute;
+}
+
+.court-key::before {
+  border-radius: 999px 999px 0 0;
+  border-bottom: 0;
+  height: 7.5rem;
+  left: 50%;
+  top: -3.75rem;
+  transform: translateX(-50%);
+  width: 15rem;
+}
+
+.court-key::after {
+  border-bottom: 0;
+  height: 8rem;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
+  width: 7rem;
 }

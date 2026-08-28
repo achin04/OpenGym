@@ -6,6 +6,16 @@ export function formatDateTime(date: Date) {
   }).format(date);
 }
 
+export function formatTimeRange(start: Date, end: Date) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "America/Toronto",
+  });
+
+  return `${formatter.format(start)} - ${formatter.format(end)}`;
+}
+
 export function formatPrice(price: { toString: () => string } | null) {
   if (price === null) {
     return "Free";

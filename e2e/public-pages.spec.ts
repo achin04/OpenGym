@@ -5,15 +5,15 @@ test("home page links to runs page", async ({ page }) => {
 
   await expect(
     page.getByRole("heading", {
-      name: "Find your next indoor basketball run.",
+      name: "Find basketball runs near you.",
     }),
   ).toBeVisible();
 
-  await page.getByRole("link", { name: "Browse runs" }).click();
+  await page.getByRole("button", { name: "Find runs" }).click();
 
-  await expect(page).toHaveURL("/runs");
+  await expect(page).toHaveURL(/\/runs/);
   await expect(
-    page.getByRole("heading", { name: "Browse upcoming runs" }),
+    page.getByRole("heading", { name: "Find a run that fits your week" }),
   ).toBeVisible();
 });
 
