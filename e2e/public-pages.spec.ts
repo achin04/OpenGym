@@ -14,7 +14,7 @@ test("home page search links to filtered runs page", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/runs\?location=Toronto/);
   await expect(
-    page.getByRole("heading", { name: "Best runs near Toronto" }),
+    page.getByRole("heading", { name: "Runs near Toronto" }),
   ).toBeVisible();
 });
 

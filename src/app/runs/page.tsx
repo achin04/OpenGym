@@ -130,78 +130,6 @@ function getAvailabilityRange(availability: AvailabilityFilter, now: Date) {
   };
 }
 
-function includesText(value: string | null | undefined, query: string) {
-  return value?.toLowerCase().includes(query.toLowerCase()) ?? false;
-}
-
-type RunMatch = Awaited<ReturnType<typeof prisma.run.findMany>>[number] & {
-  venue: {
-    name: string;
-    addressLine1: string;
-    city: string;
-  };
-  rsvps: { id: string }[];
-};
-
-function scoreRun(run: RunMatch, filters: { location: string; skillLevel: string; ageGroup: string }, now: Date) {
-  let score = 0;
-
-  if (filters.location) {
-    const location = filters.location.toLowerCase();
-
-    if (run.venue.city.toLowerCase() === location) {
-      score += 80;
-    } else if (includesText(run.venue.city, location)) {
-      score += 58;
-    }
-
-    if (includesText(run.venue.name, location)) {
-      score += 34;
-    }
-
-    if (includesText(run.venue.addressLine1, location)) {
-      score += 24;
-    }
-
-    if (includesText(run.title, location) || includesText(run.description, location)) {
-      score += 12;
-    }
-  } else {
-    score += 8;
-  }
-
-  if (filters.skillLevel && run.skillLevel === filters.skillLevel) {
-    score += 12;
-  }
-
-  if (filters.ageGroup && run.ageGroup === filters.ageGroup) {
-    score += 10;
-  }
-
-  if (run.verified) {
-    score += 10;
-  }
-
-  if (run.startTime >= now) {
-    const hoursAway = (run.startTime.getTime() - now.getTime()) / 3_600_000;
-    score += 18;
-
-    if (hoursAway <= 24) {
-      score += 16;
-    } else if (hoursAway <= 72) {
-      score += 10;
-    } else if (hoursAway <= 168) {
-      score += 6;
-    }
-  }
-
-  if (run.maxPlayers == null || run.rsvps.length < run.maxPlayers) {
-    score += 5;
-  }
-
-  return score;
-}
-
 function getSpotsLabel(goingCount: number, maxPlayers: number | null) {
   if (maxPlayers == null) {
     return `${goingCount} going`;
@@ -220,10 +148,10 @@ function getResultsLabel(count: number, location: string) {
   const noun = count === 1 ? "run" : "runs";
 
   if (location) {
-    return `${count} ${noun} matched near ${location}`;
+    return `${count} ${noun} found near ${location}`;
   }
 
-  return `${count} ${noun} matched your filters`;
+  return `${count} ${noun} found`;
 }
 
 export default async function RunsPage({ searchParams }: RunsPageProps) {
@@ -325,19 +253,6 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
     take: 48,
   });
 
-  const rankedRuns = runs
-    .map((run) => ({
-      run,
-      score: Math.min(100, scoreRun(run, { location, skillLevel, ageGroup }, now)),
-    }))
-    .sort((left, right) => {
-      if (right.score !== left.score) {
-        return right.score - left.score;
-      }
-
-      return left.run.startTime.getTime() - right.run.startTime.getTime();
-    });
-
   return (
     <main className="min-h-screen px-5 py-8 text-cream sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-6xl space-y-8">
@@ -347,21 +262,21 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               Basketball Runs
             </p>
             <h1 className="max-w-3xl text-4xl font-semibold tracking-normal sm:text-5xl">
-              {location ? `Best runs near ${location}` : "Find a run that fits your week"}
+              {location ? `Runs near ${location}` : "Find a run that fits your week"}
             </h1>
             <p className="max-w-2xl text-cream/62">
               Search by city, neighborhood, venue, or postal code. Results are
-              ranked by area fit, availability, verification, and open spots.
+              shown by start time.
             </p>
           </div>
 
           <div className="rounded-lg border border-line bg-ink-900/72 p-4">
-            <p className="text-sm font-medium text-cream/52">Match signal</p>
+            <p className="text-sm font-medium text-cream/52">Runs found</p>
             <p className="mt-2 text-2xl font-semibold text-court-200">
-              {rankedRuns.length > 0 ? `${rankedRuns[0]?.score}%` : "0%"}
+              {runs.length}
             </p>
             <p className="mt-1 text-xs text-cream/45">
-              Top relevance score for the current filters.
+              Filtered by your current search.
             </p>
           </div>
         </div>
@@ -470,7 +385,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
           <p className="text-sm font-medium text-cream/62">
-            {getResultsLabel(rankedRuns.length, location)}
+            {getResultsLabel(runs.length, location)}
           </p>
           <Link
             href="/runs/new"
@@ -480,10 +395,10 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           </Link>
         </div>
 
-        {rankedRuns.length === 0 ? (
+        {runs.length === 0 ? (
           <div className="rounded-lg border border-line bg-ink-900/72 p-8 text-cream/68">
             <p className="text-lg font-semibold text-cream">
-              No runs match those filters yet.
+              No runs found for those filters yet.
             </p>
             <p className="mt-2 max-w-2xl">
               Try a broader area, switch availability to any time, or check back
@@ -499,7 +414,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           </div>
         ) : (
           <div className="grid gap-4">
-            {rankedRuns.map(({ run, score }, index) => {
+            {runs.map((run) => {
               const goingCount = run.rsvps.length;
 
               return (
@@ -532,14 +447,6 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                   <div className="min-w-0 space-y-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        {index === 0 ? (
-                          <span className="rounded-full bg-court px-2.5 py-1 text-xs font-semibold text-background">
-                            Top match
-                          </span>
-                        ) : null}
-                        <span className="rounded-full border border-line px-2.5 py-1 text-xs font-medium text-cream/62">
-                          {score}% match
-                        </span>
                         <span className="rounded-full border border-line px-2.5 py-1 text-xs font-medium text-cream/62">
                           {run.verified ? "Verified" : "Community listed"}
                         </span>

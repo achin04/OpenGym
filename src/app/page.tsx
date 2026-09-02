@@ -6,7 +6,7 @@ const popularLocations = ["Toronto", "Etobicoke", "North York", "Scarborough"];
 const filterFeatures = [
   {
     icon: AreaIcon,
-    label: "Area fit",
+    label: "Area search",
     description: "Find runs within your travel range",
   },
   {
@@ -17,15 +17,15 @@ const filterFeatures = [
   {
     icon: ClipboardIcon,
     label: "Run details",
-    description: "See level, price, and capacity",
+    description: "See level, schedule, and capacity",
   },
 ];
 
 const valueProps = [
   {
     icon: TargetIcon,
-    label: "Fast matching",
-    description: "We prioritize runs that start soon",
+    label: "Quick search",
+    description: "Find upcoming runs by place and time",
   },
   {
     icon: CourtIcon,
@@ -54,7 +54,7 @@ export default function Home() {
             </h1>
             <p className="max-w-[34rem] text-lg leading-8 text-cream/68">
               Enter a city or neighborhood, set when you can play, and OpenGym
-              surfaces the closest-fit drop-in runs first.
+              shows available drop-in runs.
             </p>
           </div>
 
