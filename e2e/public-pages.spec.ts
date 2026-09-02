@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("home page links to runs page", async ({ page }) => {
+test("home page search links to filtered runs page", async ({ page }) => {
   await page.goto("/");
 
   await expect(
@@ -9,11 +9,12 @@ test("home page links to runs page", async ({ page }) => {
     }),
   ).toBeVisible();
 
+  await page.getByLabel("City or area").fill("Toronto");
   await page.getByRole("button", { name: "Find runs" }).click();
 
-  await expect(page).toHaveURL(/\/runs/);
+  await expect(page).toHaveURL(/\/runs\?location=Toronto/);
   await expect(
-    page.getByRole("heading", { name: "Find a run that fits your week" }),
+    page.getByRole("heading", { name: "Best runs near Toronto" }),
   ).toBeVisible();
 });
 
