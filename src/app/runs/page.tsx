@@ -6,7 +6,13 @@ import {
   formatTimeRange,
 } from "@/lib/formatters";
 import type { Prisma } from "@/generated/prisma/client";
-import { AgeGroup, RsvpStatus, SkillLevel, SourceRunStatus } from "@/generated/prisma/enums";
+import { SourceFilterWithAdvanced } from "@/app/runs/_components/source-filter-with-advanced";
+import {
+  AgeGroup,
+  RunSourceType,
+  SkillLevel,
+  SourceRunStatus,
+} from "@/generated/prisma/enums";
 import { prisma } from "@/server/db";
 
 type RunsPageProps = {
@@ -15,6 +21,7 @@ type RunsPageProps = {
     availability?: string | string[];
     skillLevel?: string | string[];
     ageGroup?: string | string[];
+    sourceType?: string | string[];
   }>;
 };
 
@@ -43,6 +50,12 @@ const ageOptions = [
     value,
     label: formatLabel(value),
   })),
+];
+
+const sourceOptions = [
+  { value: "", label: "All runs" },
+  { value: RunSourceType.USER, label: "User created" },
+  { value: RunSourceType.CITY, label: "City of Toronto" },
 ];
 
 function singleParam(value: string | string[] | undefined) {
@@ -130,20 +143,6 @@ function getAvailabilityRange(availability: AvailabilityFilter, now: Date) {
   };
 }
 
-function getSpotsLabel(goingCount: number, maxPlayers: number | null) {
-  if (maxPlayers == null) {
-    return `${goingCount} going`;
-  }
-
-  const spotsLeft = Math.max(maxPlayers - goingCount, 0);
-
-  if (spotsLeft === 0) {
-    return "Full";
-  }
-
-  return `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left`;
-}
-
 function getResultsLabel(count: number, location: string) {
   const noun = count === 1 ? "run" : "runs";
 
@@ -154,6 +153,18 @@ function getResultsLabel(count: number, location: string) {
   return `${count} ${noun} found`;
 }
 
+function isImportedRun(sourceType: RunSourceType) {
+  return sourceType !== RunSourceType.USER;
+}
+
+function runSourceLabel(sourceType: RunSourceType) {
+  if (sourceType === RunSourceType.CITY) {
+    return "City of Toronto";
+  }
+
+  return formatLabel(sourceType);
+}
+
 export default async function RunsPage({ searchParams }: RunsPageProps) {
   const params = await searchParams;
   const now = new Date();
@@ -161,6 +172,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
   const availability = parseAvailability(params.availability);
   const skillLevel = parseEnumValue(SkillLevel, params.skillLevel);
   const ageGroup = parseEnumValue(AgeGroup, params.ageGroup);
+  const sourceType = parseEnumValue(RunSourceType, params.sourceType);
   const availabilityRange = getAvailabilityRange(availability, now);
 
   const locationFilter: Prisma.RunWhereInput | undefined = location
@@ -232,20 +244,17 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           ageGroup,
         }
       : {}),
+    ...(sourceType
+      ? {
+          sourceType,
+        }
+      : {}),
   };
 
   const runs = await prisma.run.findMany({
     where,
     include: {
       venue: true,
-      rsvps: {
-        where: {
-          status: RsvpStatus.GOING,
-        },
-        select: {
-          id: true,
-        },
-      },
     },
     orderBy: {
       startTime: "asc",
@@ -283,7 +292,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
 
         <form
           action="/runs"
-          className="grid gap-3 rounded-lg border border-line bg-ink-900/78 p-3 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(12rem,1.5fr)_repeat(3,minmax(9rem,1fr))_auto]"
+          className="grid gap-3 rounded-lg border border-line bg-ink-900/78 p-3 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(12rem,1.5fr)_repeat(2,minmax(9rem,1fr))_auto]"
         >
           <div className="grid gap-1">
             <label
@@ -324,47 +333,14 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
             </select>
           </div>
 
-          <div className="grid gap-1">
-            <label
-              htmlFor="skillLevel"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
-            >
-              Skill
-            </label>
-            <select
-              id="skillLevel"
-              name="skillLevel"
-              defaultValue={skillLevel}
-              className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
-            >
-              {skillOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid gap-1">
-            <label
-              htmlFor="ageGroup"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
-            >
-              Age
-            </label>
-            <select
-              id="ageGroup"
-              name="ageGroup"
-              defaultValue={ageGroup}
-              className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
-            >
-              {ageOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <SourceFilterWithAdvanced
+            sourceType={sourceType}
+            skillLevel={skillLevel}
+            ageGroup={ageGroup}
+            sourceOptions={sourceOptions}
+            skillOptions={skillOptions}
+            ageOptions={ageOptions}
+          />
 
           <div className="flex items-end gap-2">
             <button
@@ -381,6 +357,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               Reset
             </Link>
           </div>
+
         </form>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
@@ -415,16 +392,32 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
         ) : (
           <div className="grid gap-4">
             {runs.map((run) => {
-              const goingCount = run.rsvps.length;
+              const importedRun = isImportedRun(run.sourceType);
 
               return (
               <article
                 key={run.id}
-                className="group rounded-lg border border-line bg-ink-900/68 p-5 transition hover:border-court/45 hover:bg-ink-900/90"
+                className={
+                  importedRun
+                    ? "group border-l-4 border-l-sky-400/70 border-y border-r border-y-line border-r-line bg-[#0f1418]/86 p-5 transition hover:border-l-sky-300 hover:bg-[#111923]"
+                    : "group rounded-lg border border-court/35 bg-ink-900/74 p-5 shadow-lg shadow-court/5 transition hover:border-court/60 hover:bg-ink-900/95"
+                }
               >
                 <div className="grid gap-5 md:grid-cols-[7.25rem_minmax(0,1fr)_auto] md:items-start">
-                  <div className="rounded-md border border-court/30 bg-court/8 p-4 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-court-200">
+                  <div
+                    className={
+                      importedRun
+                        ? "border border-sky-400/25 bg-sky-400/8 p-4 text-center"
+                        : "rounded-md border border-court/30 bg-court/8 p-4 text-center"
+                    }
+                  >
+                    <p
+                      className={
+                        importedRun
+                          ? "text-xs font-semibold uppercase tracking-[0.14em] text-sky-200"
+                          : "text-xs font-semibold uppercase tracking-[0.14em] text-court-200"
+                      }
+                    >
                       {new Intl.DateTimeFormat("en-CA", {
                         weekday: "short",
                         timeZone: "America/Toronto",
@@ -447,26 +440,42 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                   <div className="min-w-0 space-y-4">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-line px-2.5 py-1 text-xs font-medium text-cream/62">
-                          {run.verified ? "Verified" : "Community listed"}
+                        <span
+                          className={
+                            importedRun
+                              ? "rounded-full border border-sky-300/25 px-2.5 py-1 text-xs font-medium text-sky-100/75"
+                              : "rounded-full bg-court px-2.5 py-1 text-xs font-semibold text-background"
+                          }
+                        >
+                          {importedRun ? runSourceLabel(run.sourceType) : "User run"}
                         </span>
                       </div>
 
-                      <h2 className="text-2xl font-semibold text-cream">
-                        <Link
-                          href={`/runs/${run.id}`}
-                          className="transition group-hover:text-court-200"
-                        >
-                          {run.title}
-                        </Link>
-                      </h2>
-                      <p className="text-sm text-cream/62">
-                        {run.venue.name} · {run.venue.city} ·{" "}
-                        {run.venue.addressLine1}
-                      </p>
+                      {importedRun ? null : (
+                        <>
+                          <h2 className="text-2xl font-semibold text-cream">
+                            <Link
+                              href={`/runs/${run.id}`}
+                              className="transition group-hover:text-court-200"
+                            >
+                              {run.title}
+                            </Link>
+                          </h2>
+                          <p className="text-sm text-cream/62">
+                            {run.venue.name} · {run.venue.city} ·{" "}
+                            {run.venue.addressLine1}
+                          </p>
+                        </>
+                      )}
                     </div>
 
-                    <dl className="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                    <dl
+                      className={
+                        importedRun
+                          ? "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4"
+                          : "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-6"
+                      }
+                    >
                       <div>
                         <dt className="text-cream/38">Time</dt>
                         <dd className="mt-1 font-medium text-cream">
@@ -475,25 +484,44 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">Price</dt>
+                        <dt className="text-cream/38">Address</dt>
                         <dd className="mt-1 font-medium text-cream">
-                          {formatPrice(run.price)}
+                          {run.venue.addressLine1}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">Level</dt>
+                        <dt className="text-cream/38">City</dt>
                         <dd className="mt-1 font-medium text-cream">
-                          {formatLabel(run.skillLevel)}
+                          {run.venue.city}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">Roster</dt>
+                        <dt className="text-cream/38">Age</dt>
                         <dd className="mt-1 font-medium text-cream">
-                          {getSpotsLabel(goingCount, run.maxPlayers)}
+                          {formatLabel(run.ageGroup)}
                         </dd>
                       </div>
+
+                      {importedRun ? null : (
+                        <>
+                          <div>
+                            <dt className="text-cream/38">Level</dt>
+                            <dd className="mt-1 font-medium text-cream">
+                              {formatLabel(run.skillLevel)}
+                            </dd>
+                          </div>
+
+                          <div>
+                            <dt className="text-cream/38">Price</dt>
+                            <dd className="mt-1 font-medium text-cream">
+                              {formatPrice(run.price)}
+                            </dd>
+                          </div>
+
+                        </>
+                      )}
                     </dl>
                   </div>
 
