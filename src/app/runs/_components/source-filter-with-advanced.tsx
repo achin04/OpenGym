@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+export const RESET_RUNS_FILTERS_EVENT = "opengym:reset-runs-filters";
 
 type FilterOption = {
   value: string;
@@ -45,12 +47,28 @@ export function SourceFilterWithAdvanced({
   ageOptions,
 }: SourceFilterWithAdvancedProps) {
   const [open, setOpen] = useState(false);
+  const [selectedSourceType, setSelectedSourceType] = useState(sourceType);
   const [selectedSkillLevel, setSelectedSkillLevel] = useState(skillLevel);
   const [selectedAgeGroup, setSelectedAgeGroup] = useState(ageGroup);
   const currentAdvancedFilterCount = [
     selectedSkillLevel,
     selectedAgeGroup,
   ].filter(Boolean).length;
+
+  useEffect(() => {
+    function resetFilters() {
+      setOpen(false);
+      setSelectedSourceType("");
+      setSelectedSkillLevel("");
+      setSelectedAgeGroup("");
+    }
+
+    window.addEventListener(RESET_RUNS_FILTERS_EVENT, resetFilters);
+
+    return () => {
+      window.removeEventListener(RESET_RUNS_FILTERS_EVENT, resetFilters);
+    };
+  }, []);
 
   return (
     <div className="relative grid gap-1">
@@ -68,7 +86,8 @@ export function SourceFilterWithAdvanced({
         <select
           id="sourceType"
           name="sourceType"
-          defaultValue={sourceType}
+          value={selectedSourceType}
+          onChange={(event) => setSelectedSourceType(event.target.value)}
           className="min-h-11 min-w-0 flex-1 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
         >
           {sourceOptions.map((option) => (

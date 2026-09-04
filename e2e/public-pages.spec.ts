@@ -55,3 +55,31 @@ test("runs page opens advanced filters from icon button", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/runs\?.*skillLevel=OPEN/);
 });
+
+test("runs page reset restores filter inputs to defaults", async ({ page }) => {
+  await page.goto(
+    "/runs?location=Toronto&availability=week&sourceType=USER&skillLevel=OPEN&ageGroup=ADULT",
+  );
+
+  await expect(page.getByLabel("City or area")).toHaveValue("Toronto");
+  await expect(page.getByLabel("Availability")).toHaveValue("week");
+  await expect(page.getByLabel("Source")).toHaveValue("USER");
+
+  await page.getByRole("button", { name: "Advanced filters" }).click();
+  await expect(page.getByLabel("Skill")).toHaveValue("OPEN");
+  await expect(page.getByLabel("Age")).toHaveValue("ADULT");
+
+  await page.getByRole("button", { name: "Reset" }).click();
+
+  await expect(page).toHaveURL(/\/runs$/);
+  await expect(page.getByLabel("City or area")).toHaveValue("");
+  await expect(page.getByLabel("Availability")).toHaveValue("upcoming");
+  await expect(page.getByLabel("Source")).toHaveValue("");
+  await expect(
+    page.getByRole("dialog", { name: "Advanced filters" }),
+  ).not.toBeVisible();
+
+  await page.getByRole("button", { name: "Advanced filters" }).click();
+  await expect(page.getByLabel("Skill")).toHaveValue("");
+  await expect(page.getByLabel("Age")).toHaveValue("");
+});

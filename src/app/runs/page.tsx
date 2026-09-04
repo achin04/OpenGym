@@ -6,6 +6,7 @@ import {
   formatTimeRange,
 } from "@/lib/formatters";
 import type { Prisma } from "@/generated/prisma/client";
+import { ResetRunsFiltersButton } from "@/app/runs/_components/reset-runs-filters-button";
 import { SourceFilterWithAdvanced } from "@/app/runs/_components/source-filter-with-advanced";
 import {
   AgeGroup,
@@ -334,6 +335,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           </div>
 
           <SourceFilterWithAdvanced
+            key={`${sourceType}:${skillLevel}:${ageGroup}`}
             sourceType={sourceType}
             skillLevel={skillLevel}
             ageGroup={ageGroup}
@@ -350,12 +352,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               Search
             </button>
 
-            <Link
-              href="/runs"
-              className="min-h-11 rounded-md border border-line px-4 py-3 text-sm font-semibold text-cream/70 transition hover:border-court/50 hover:text-cream"
-            >
-              Reset
-            </Link>
+            <ResetRunsFiltersButton />
           </div>
 
         </form>
