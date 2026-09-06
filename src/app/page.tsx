@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BrandMark } from "./_components/brand";
 
@@ -18,24 +19,6 @@ const filterFeatures = [
     icon: ClipboardIcon,
     label: "Run details",
     description: "See level, schedule, and capacity",
-  },
-];
-
-const valueProps = [
-  {
-    icon: TargetIcon,
-    label: "Quick search",
-    description: "Find upcoming runs by place and time",
-  },
-  {
-    icon: CourtIcon,
-    label: "Court vibes",
-    description: "Indoor courts and good vibes",
-  },
-  {
-    icon: RouteIcon,
-    label: "Play your way",
-    description: "All levels welcome, competitive or chill",
   },
 ];
 
@@ -124,28 +107,39 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="mt-16 rounded-xl border border-[#3a3029] bg-[#131313]/95 p-6 shadow-2xl shadow-black/20 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:grid lg:grid-cols-[minmax(0,1fr)_25rem] lg:gap-10 lg:p-10">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-normal text-[#F4F4F4]">
+        <section className="relative mt-16 min-h-[32rem] overflow-hidden rounded-xl border border-[#3a3029] bg-[#131313] p-6 shadow-2xl shadow-black/20 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:p-12">
+          <Image
+            src="/torontoSkyline.avif"
+            alt=""
+            fill
+            sizes="(min-width: 1280px) 80rem, 100vw"
+            className="object-cover object-center"
+          />
+          <div className="absolute inset-0 bg-[#050505]/55" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,#101010_0%,rgba(16,16,16,0.88)_32%,rgba(16,16,16,0.56)_68%,rgba(16,16,16,0.34)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,16,16,0.1)_0%,rgba(16,16,16,0.08)_52%,#101010_100%)]" />
+
+          <div className="relative z-10 flex min-h-[24rem] flex-col justify-center py-3 sm:py-5 lg:py-6">
+            <h2 className="max-w-4xl text-4xl font-semibold tracking-normal text-[#F4F4F4] sm:text-5xl lg:text-6xl">
               What you can filter
             </h2>
 
-            <div className="mt-12 grid gap-8 md:grid-cols-3 md:gap-0">
+            <div className="mt-10 grid gap-8 sm:mt-12 sm:grid-cols-3 sm:gap-0">
               {filterFeatures.map((feature, index) => {
                 const Icon = feature.icon;
 
                 return (
                   <div
                     key={feature.label}
-                    className={`md:px-6 ${index === 0 ? "md:pl-0" : ""} ${
-                      index > 0 ? "md:border-l md:border-[#353535]" : ""
+                    className={`sm:px-7 lg:px-9 ${index === 0 ? "sm:pl-0" : ""} ${
+                      index > 0 ? "sm:border-l sm:border-white/14" : ""
                     }`}
                   >
-                    <Icon className="h-8 w-8 text-court-200" />
-                    <h3 className="mt-8 text-base font-semibold text-[#F4F4F4]">
+                    <Icon className="h-9 w-9 text-court-200" />
+                    <h3 className="mt-6 text-xl font-semibold text-[#F4F4F4]">
                       {feature.label}
                     </h3>
-                    <p className="mt-3 max-w-40 text-sm leading-6 text-[#A8A8A8]">
+                    <p className="mt-3 max-w-64 text-base leading-7 text-[#d2c8bf]">
                       {feature.description}
                     </p>
                   </div>
@@ -153,34 +147,8 @@ export default function Home() {
               })}
             </div>
           </div>
-
-          <div className="mt-10 lg:mt-0">
-            <MapPreview />
-          </div>
         </section>
 
-        <section className="mt-12 grid gap-8 border-t border-[#2d251f] pt-12 md:grid-cols-3 md:gap-0">
-          {valueProps.map((item, index) => {
-            const Icon = item.icon;
-
-            return (
-              <div
-                key={item.label}
-                className={`md:px-12 ${index === 0 ? "md:pl-0" : ""} ${
-                  index > 0 ? "md:border-l md:border-[#353535]" : ""
-                }`}
-              >
-                <Icon className="h-10 w-10 text-court-200" />
-                <h2 className="mt-8 text-xl font-semibold text-[#F4F4F4]">
-                  {item.label}
-                </h2>
-                <p className="mt-3 max-w-52 text-base leading-7 text-[#A8A8A8]">
-                  {item.description}
-                </p>
-              </div>
-            );
-          })}
-        </section>
       </section>
     </main>
   );
@@ -294,196 +262,5 @@ function ClipboardIcon({ className }: IconProps) {
         strokeWidth="1.8"
       />
     </svg>
-  );
-}
-
-function TargetIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-      <path
-        d="M4 20 20 4"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function CourtIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M4 18h16M7 18c.7-3.3 2.4-5 5-5s4.3 1.7 5 5M9 8a3 3 0 1 1 6 0c0 1.7-1.3 5-3 5S9 9.7 9 8Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function RouteIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M6 18h12V6H6v12Zm3-3 6-6m0 0h-4m4 0v4"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function MapPreview() {
-  return (
-    <div className="relative h-72 overflow-hidden rounded-xl border border-[#343434] bg-[#0d0f10] shadow-inner shadow-black/40 sm:h-80 lg:h-full lg:min-h-72">
-      <svg
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full"
-        preserveAspectRatio="xMidYMid slice"
-        viewBox="0 0 520 360"
-      >
-        <defs>
-          <pattern
-            id="map-grid"
-            width="34"
-            height="34"
-            patternUnits="userSpaceOnUse"
-          >
-            <path
-              d="M34 0H0v34"
-              fill="none"
-              stroke="rgba(255,255,255,0.055)"
-              strokeWidth="1"
-            />
-          </pattern>
-          <filter id="pin-glow" x="-80%" y="-80%" width="260%" height="260%">
-            <feGaussianBlur stdDeviation="7" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-
-        <rect width="520" height="360" fill="#0d0f10" />
-        <rect width="520" height="360" fill="url(#map-grid)" opacity="0.9" />
-
-        <path
-          d="M360 360c14-88 82-135 160-132v132H360Z"
-          fill="#0d2d34"
-          opacity="0.8"
-        />
-        <path
-          d="M-20 254c108-36 194-50 300-80s176-66 268-96"
-          fill="none"
-          stroke="#494949"
-          strokeWidth="2"
-        />
-        <path
-          d="M-26 181c104 51 202 82 315 111 69 18 146 35 256 74"
-          fill="none"
-          stroke="#3b3b3b"
-          strokeWidth="2"
-        />
-        <path
-          d="M-30 300c89-22 163-49 244-87 93-43 178-69 344-107"
-          fill="none"
-          stroke="#303030"
-          strokeWidth="2"
-        />
-        <path
-          d="M72 -22 32 382M188 -20 122 382M275 -24 236 383"
-          fill="none"
-          stroke="#194846"
-          strokeWidth="2"
-        />
-        <path
-          d="M56 48h160m-98 61h190m-284 66h140m155 61h170m-375 55h184"
-          fill="none"
-          stroke="#232323"
-          strokeWidth="10"
-        />
-        <path
-          d="M56 48h160m-98 61h190m-284 66h140m155 61h170m-375 55h184"
-          fill="none"
-          stroke="#454545"
-          strokeDasharray="10 16"
-          strokeLinecap="round"
-          strokeWidth="1.5"
-        />
-        <path
-          d="M120 218c59-30 106-46 160-58 41-9 82-26 123-55"
-          fill="none"
-          stroke="#f47b2a"
-          strokeDasharray="6 10"
-          strokeLinecap="round"
-          strokeWidth="2.5"
-          opacity="0.75"
-        />
-
-        <text fill="#6d6d6d" fontSize="12" fontWeight="600" x="46" y="78">
-          Queen St
-        </text>
-        <text fill="#6d6d6d" fontSize="12" fontWeight="600" x="335" y="226">
-          Parkside
-        </text>
-        <text fill="#5b7675" fontSize="12" fontWeight="600" x="174" y="332">
-          River path
-        </text>
-      </svg>
-
-      <MapPin className="left-[28%] top-[42%]" />
-      <MapPin className="left-[66%] top-[24%]" />
-      <MapPin className="left-[84%] top-[72%]" />
-
-      <span className="absolute left-[52%] top-[58%] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-blue-500/25 shadow-lg shadow-blue-500/20">
-        <span className="h-7 w-7 rounded-full border-2 border-blue-200 bg-blue-500 shadow-lg shadow-blue-500/35" />
-      </span>
-
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(0,0,0,0.18)_58%,rgba(0,0,0,0.46)_100%)]" />
-    </div>
-  );
-}
-
-function MapPin({ className }: IconProps) {
-  return (
-    <span
-      className={`absolute flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-court/15 ${className}`}
-    >
-      <svg
-        aria-hidden="true"
-        className="h-12 w-12 drop-shadow-[0_8px_14px_rgba(244,123,42,0.28)]"
-        fill="none"
-        viewBox="0 0 48 48"
-      >
-        <path
-          d="M24 43s12-10.3 12-21a12 12 0 0 0-24 0c0 10.7 12 21 12 21Z"
-          fill="#f47b2a"
-        />
-        <circle cx="24" cy="22" fill="#151515" r="4.5" />
-      </svg>
-    </span>
   );
 }
