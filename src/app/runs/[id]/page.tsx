@@ -7,7 +7,7 @@ import {
   formatTimeRange,
 } from "@/lib/formatters";
 import { currentUser } from "@clerk/nextjs/server";
-import { RsvpStatus } from "@/generated/prisma/enums";
+import { RsvpStatus, RunSourceType } from "@/generated/prisma/enums";
 import { cancelRsvp, rsvpToRun } from "./actions";
 
 type RunDetailsPageProps = {
@@ -54,7 +54,8 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
     notFound();
   }
 
-  const userRsvp = appUser
+  const importedRun = run.sourceType !== RunSourceType.USER;
+  const userRsvp = !importedRun && appUser
     ? await prisma.rsvp.findUnique({
         where: {
           userId_runId: {
@@ -108,7 +109,13 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
           </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div
+          className={
+            importedRun
+              ? "grid gap-4"
+              : "grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]"
+          }
+        >
           <div className="rounded-lg border border-line bg-ink-900/72 p-6">
             <h2 className="text-2xl font-semibold">Venue</h2>
 
@@ -134,12 +141,14 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                 </dd>
               </div>
 
-              <div>
-                <dt className="text-cream/38">Price</dt>
-                <dd className="mt-1 font-medium text-cream">
-                  {formatPrice(run.price)}
-                </dd>
-              </div>
+              {importedRun ? null : (
+                <div>
+                  <dt className="text-cream/38">Price</dt>
+                  <dd className="mt-1 font-medium text-cream">
+                    {formatPrice(run.price)}
+                  </dd>
+                </div>
+              )}
 
               <div>
                 <dt className="text-cream/38">Skill level</dt>
@@ -180,51 +189,53 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
             ) : null}
           </div>
 
-          <div className="rounded-lg border border-line bg-ink-900/78 p-6">
-            <h2 className="text-2xl font-semibold">RSVP</h2>
-            <p className="mt-2 text-cream/60">
-              {goingCount} going
-              {run.maxPlayers ? ` / ${run.maxPlayers} max` : ""}
-            </p>
-            <p className="mt-1 text-sm text-cream/45">
-              {spotsLeft == null
-                ? "No player cap listed."
-                : spotsLeft === 0
-                  ? "This run is full."
-                  : `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left.`}
-            </p>
-
-            {!clerkUser ? (
-              <p className="mt-5 rounded-md border border-line bg-background/70 p-4 text-sm text-cream/68">
-                Sign in to RSVP to this run.
+          {importedRun ? null : (
+            <div className="rounded-lg border border-line bg-ink-900/78 p-6">
+              <h2 className="text-2xl font-semibold">RSVP</h2>
+              <p className="mt-2 text-cream/60">
+                {goingCount} going
+                {run.maxPlayers ? ` / ${run.maxPlayers} max` : ""}
               </p>
-            ) : isGoing ? (
-              <div className="mt-5">
-                <p className="text-sm font-semibold text-court-200">
-                  You are going to this run.
+              <p className="mt-1 text-sm text-cream/45">
+                {spotsLeft == null
+                  ? "No player cap listed."
+                  : spotsLeft === 0
+                    ? "This run is full."
+                    : `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left.`}
+              </p>
+
+              {!clerkUser ? (
+                <p className="mt-5 rounded-md border border-line bg-background/70 p-4 text-sm text-cream/68">
+                  Sign in to RSVP to this run.
                 </p>
-                <form action={cancelRsvpAction} className="mt-4">
+              ) : isGoing ? (
+                <div className="mt-5">
+                  <p className="text-sm font-semibold text-court-200">
+                    You are going to this run.
+                  </p>
+                  <form action={cancelRsvpAction} className="mt-4">
+                    <button
+                      type="submit"
+                      className="rounded-md bg-rose-400 px-4 py-2 text-sm font-semibold text-background transition hover:bg-rose-300"
+                    >
+                      Cancel RSVP
+                    </button>
+                  </form>
+                </div>
+              ) : isFull ? (
+                <p className="mt-5 text-sm text-cream/68">This run is full.</p>
+              ) : (
+                <form action={rsvpToThisRun} className="mt-5">
                   <button
                     type="submit"
-                    className="rounded-md bg-rose-400 px-4 py-2 text-sm font-semibold text-background transition hover:bg-rose-300"
+                    className="w-full rounded-md bg-court px-4 py-2.5 text-sm font-semibold text-background transition hover:bg-court-200"
                   >
-                    Cancel RSVP
+                    RSVP
                   </button>
                 </form>
-              </div>
-            ) : isFull ? (
-              <p className="mt-5 text-sm text-cream/68">This run is full.</p>
-            ) : (
-              <form action={rsvpToThisRun} className="mt-5">
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-court px-4 py-2.5 text-sm font-semibold text-background transition hover:bg-court-200"
-                >
-                  RSVP
-                </button>
-              </form>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-cream/35">Run ID: {run.id}</p>

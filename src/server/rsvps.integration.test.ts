@@ -248,15 +248,40 @@ describe("rsvpUserToRun", () => {
         expect(rsvpCount).toBe(1);
     });
 
-    it("rejects an RSVP for a missing run", async () => {
-        const user = await createUser("missing-run@example.com");
+  it("rejects an RSVP for a missing run", async () => {
+    const user = await createUser("missing-run@example.com");
 
         await expect(
             rsvpUserToRun({
             userId: user.id,
             runId: "missing_run_id",
             }),
-        ).rejects.toThrow("Run not found");
+    ).rejects.toThrow("Run not found");
+  });
+
+  it("rejects an RSVP for an imported run", async () => {
+    const venue = await createVenue();
+    const user = await createUser("imported@example.com");
+
+    const run = await prisma.run.create({
+      data: {
+        title: "Imported pickup",
+        sourceType: RunSourceType.CITY,
+        startTime: new Date("2026-06-20T18:00:00.000Z"),
+        endTime: new Date("2026-06-20T20:00:00.000Z"),
+        maxPlayers: 10,
+        venueId: venue.id,
+      },
     });
+
+    await expect(
+      rsvpUserToRun({
+        userId: user.id,
+        runId: run.id,
+      }),
+    ).rejects.toThrow("RSVPs are only available for user-created runs");
+
+    await expect(prisma.rsvp.count()).resolves.toBe(0);
+  });
 
 });

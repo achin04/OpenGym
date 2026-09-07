@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./db";
-import { RsvpStatus } from "@/generated/prisma/enums";
+import { RsvpStatus, RunSourceType } from "@/generated/prisma/enums";
 
 export async function rsvpUserToRun({
     userId,
@@ -18,11 +18,16 @@ export async function rsvpUserToRun({
                 select: {
                     id: true,
                     maxPlayers: true,
+                    sourceType: true,
                 },
             });
 
             if (!run) {
                 throw new Error(" Run not found. ");
+            }
+
+            if (run.sourceType !== RunSourceType.USER) {
+                throw new Error(" RSVPs are only available for user-created runs. ");
             }
 
             const existingRsvp = await tx.rsvp.findUnique({
