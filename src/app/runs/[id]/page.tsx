@@ -90,9 +90,49 @@ function ArrowUpRightIcon({ className }: IconProps) {
   );
 }
 
-function VenueMapPreview({ address }: { address: string }) {
+function VenueMapPreview({
+  address,
+  mapQuery,
+}: {
+  address: string;
+  mapQuery: string;
+}) {
+  const apiKey = process.env.GOOGLE_MAPS_EMBED_API_KEY;
+  const embedUrl =
+    apiKey && mapQuery
+      ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(
+          apiKey,
+        )}&q=${encodeURIComponent(mapQuery)}`
+      : null;
+
   return (
     <div className="relative min-h-36 overflow-hidden rounded-md border border-white/10 bg-[#111719] shadow-inner shadow-black/40 sm:min-h-44">
+      {/* Stays behind the iframe so the lazy embed fades in over map art instead of an empty box. */}
+      <VenueMapArt address={address} showAddress={!embedUrl} />
+      {embedUrl ? (
+        <iframe
+          title={`Map showing ${address}`}
+          src={embedUrl}
+          loading="lazy"
+          allowFullScreen
+          // The API key is referrer-restricted, so Google rejects requests with no referrer.
+          referrerPolicy="no-referrer-when-downgrade"
+          className="absolute inset-0 h-full w-full border-0"
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function VenueMapArt({
+  address,
+  showAddress,
+}: {
+  address: string;
+  showAddress: boolean;
+}) {
+  return (
+    <>
       <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(0deg,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:32px_32px]" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_62%_46%,rgba(244,123,42,0.25),transparent_28%),linear-gradient(135deg,rgba(25,72,70,0.9),rgba(13,15,16,0.95))]" />
       <div className="absolute left-[-10%] top-[32%] h-8 w-[120%] rotate-[-12deg] border-y border-white/10 bg-white/6" />
@@ -102,10 +142,12 @@ function VenueMapPreview({ address }: { address: string }) {
           <LocationPinIcon className="h-5 w-5" />
         </span>
       </div>
-      <div className="absolute bottom-3 left-3 right-3 rounded-md border border-white/10 bg-background/72 px-3 py-2 text-xs font-medium text-cream/72 backdrop-blur">
-        {address}
-      </div>
-    </div>
+      {showAddress ? (
+        <div className="absolute bottom-3 left-3 right-3 rounded-md border border-white/10 bg-background/72 px-3 py-2 text-xs font-medium text-cream/72 backdrop-blur">
+          {address}
+        </div>
+      ) : null}
+    </>
   );
 }
 
@@ -176,13 +218,23 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   ]
     .filter(Boolean)
     .join(", ");
+  // Geocoding query omits addressLine2 (unit/suite numbers degrade matching) and
+  // pins the region, since Venue has no province/country column and runs are Toronto-only.
+  const venueGeoQuery = [
+    run.venue.addressLine1,
+    run.venue.city,
+    run.venue.postalCode,
+    "ON, Canada",
+  ]
+    .filter(Boolean)
+    .join(", ");
   const sourceLabel = venueSourceLabel(
     run.sourceType,
     run.scheduleSource?.name,
   );
   const sourcePrefix = run.verified ? "Verified via" : "Listed via";
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    venueAddress,
+    venueGeoQuery,
   )}`;
 
   return (
@@ -277,7 +329,10 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                 </div>
 
                 <div className="grid gap-3">
-                  <VenueMapPreview address={venueAddress} />
+                  <VenueMapPreview
+                    address={venueAddress}
+                    mapQuery={venueGeoQuery}
+                  />
                   <a
                     href={directionsUrl}
                     target="_blank"

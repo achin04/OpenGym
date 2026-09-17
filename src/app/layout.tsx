@@ -7,9 +7,8 @@ import { HeaderLink } from "./_components/header-link";
 import {
   ClerkProvider,
   SignInButton,
-  SignUpButton,
+  SignOutButton,
   Show,
-  UserButton,
 } from "@clerk/nextjs";
 
 const geistSans = Geist({
@@ -56,17 +55,15 @@ export default function RootLayout({
                       Sign in
                     </button>
                   </SignInButton>
-
-                  <SignUpButton mode="modal">
-                    <button className="shrink-0 whitespace-nowrap rounded-md bg-court px-3 py-2 font-semibold text-background shadow-lg shadow-court/20 transition duration-200 hover:bg-court-200 hover:shadow-court/35 focus:outline-none focus:ring-2 focus:ring-court/50 sm:px-3.5">
-                      Sign up
-                    </button>
-                  </SignUpButton>
                 </Show>
 
                 <Show when="signed-in">
                   <HeaderLink href="/account">Account</HeaderLink>
-                  <UserButton />
+                  <SignOutButton>
+                    <button className="shrink-0 whitespace-nowrap rounded-lg border border-court bg-court px-3 py-2 font-semibold text-white shadow-lg shadow-court/15 transition duration-200 hover:bg-transparent hover:text-white hover:shadow-none focus:outline-none focus:ring-2 focus:ring-court/45 sm:px-4">
+                      Sign out
+                    </button>
+                  </SignOutButton>
                 </Show>
               </nav>
             </div>
