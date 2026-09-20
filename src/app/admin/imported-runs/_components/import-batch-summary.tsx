@@ -65,30 +65,30 @@ export function ImportBatchSummary({ detail }: ImportBatchSummaryProps) {
 
   return (
     <section className="space-y-6">
-      <div className="grid gap-4 rounded-lg border border-white/10 bg-white/5 p-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 rounded-lg border border-foreground/10 bg-foreground/5 p-6 sm:grid-cols-2 lg:grid-cols-4">
         {countItems.map(([label, value]) => (
           <div key={label}>
             <dt className="text-xs uppercase tracking-wide text-zinc-500">
               {label}
             </dt>
-            <dd className="mt-1 text-2xl font-semibold text-zinc-100">
+            <dd className="mt-1 text-2xl font-semibold text-zinc-900">
               {value}
             </dd>
           </div>
         ))}
       </div>
 
-      <dl className="grid gap-4 rounded-lg border border-white/10 bg-white/5 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="grid gap-4 rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
         {summaryItems.map(([label, value]) => (
           <div key={label}>
             <dt className="text-zinc-500">{label}</dt>
-            <dd className="mt-1 break-words text-zinc-100">{value}</dd>
+            <dd className="mt-1 break-words text-zinc-900">{value}</dd>
           </div>
         ))}
       </dl>
 
       {batch.errorSummary ? (
-        <div className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-100">
+        <div className="rounded-lg border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-800">
           {batch.errorSummary}
         </div>
       ) : null}

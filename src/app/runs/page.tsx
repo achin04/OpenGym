@@ -264,28 +264,28 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
   });
 
   return (
-    <main className="min-h-screen px-5 py-8 text-cream sm:px-6 sm:py-12">
+    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-6xl space-y-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court-200">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
               Basketball Runs
             </p>
             <h1 className="max-w-3xl text-4xl font-semibold tracking-normal sm:text-5xl">
               {location ? `Runs near ${location}` : "Find a run that fits your week"}
             </h1>
-            <p className="max-w-2xl text-cream/62">
+            <p className="max-w-2xl text-foreground/62">
               Search by city, neighborhood, venue, or postal code. Results are
               shown by start time.
             </p>
           </div>
 
           <div className="rounded-lg border border-line bg-ink-900/72 p-4">
-            <p className="text-sm font-medium text-cream/52">Runs found</p>
-            <p className="mt-2 text-2xl font-semibold text-court-200">
+            <p className="text-sm font-medium text-foreground/52">Runs found</p>
+            <p className="mt-2 text-2xl font-semibold text-court">
               {runs.length}
             </p>
-            <p className="mt-1 text-xs text-cream/45">
+            <p className="mt-1 text-xs text-foreground/45">
               Filtered by your current search.
             </p>
           </div>
@@ -298,7 +298,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           <div className="grid gap-1">
             <label
               htmlFor="location"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
+              className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
             >
               City or area
             </label>
@@ -309,14 +309,14 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               defaultValue={location}
               autoComplete="address-level2"
               placeholder="Toronto, gym, postal code"
-              className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition placeholder:text-cream/30 focus:border-court focus:ring-2 focus:ring-court/20"
+              className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
             />
           </div>
 
           <div className="grid gap-1">
             <label
               htmlFor="availability"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
+              className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
             >
               Availability
             </label>
@@ -324,7 +324,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               id="availability"
               name="availability"
               defaultValue={availability}
-              className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+              className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
             >
               {availabilityOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -347,7 +347,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           <div className="flex items-end gap-2">
             <button
               type="submit"
-              className="min-h-11 rounded-md bg-court px-4 text-sm font-semibold text-background transition hover:bg-court-200 focus:outline-none focus:ring-2 focus:ring-court/50"
+              className="min-h-11 rounded-md bg-court px-4 text-sm font-semibold text-foreground transition hover:bg-court-200 focus:outline-none focus:ring-2 focus:ring-court/50"
             >
               Search
             </button>
@@ -358,20 +358,20 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
         </form>
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-          <p className="text-sm font-medium text-cream/62">
+          <p className="text-sm font-medium text-foreground/62">
             {getResultsLabel(runs.length, location)}
           </p>
           <Link
             href="/runs/new"
-            className="rounded-md border border-court/45 px-3 py-2 text-sm font-semibold text-court-200 transition hover:bg-court/10"
+            className="rounded-md border border-court/45 px-3 py-2 text-sm font-semibold text-court transition hover:bg-court/10"
           >
             Add a run
           </Link>
         </div>
 
         {runs.length === 0 ? (
-          <div className="rounded-lg border border-line bg-ink-900/72 p-8 text-cream/68">
-            <p className="text-lg font-semibold text-cream">
+          <div className="rounded-lg border border-line bg-ink-900/72 p-8 text-foreground/68">
+            <p className="text-lg font-semibold text-foreground">
               No runs found for those filters yet.
             </p>
             <p className="mt-2 max-w-2xl">
@@ -381,7 +381,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
             </p>
             <Link
               href="/runs?availability=any"
-              className="mt-5 inline-flex rounded-md bg-court px-4 py-2 text-sm font-semibold text-background transition hover:bg-court-200"
+              className="mt-5 inline-flex rounded-md bg-court px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-court-200"
             >
               Browse all runs
             </Link>
@@ -396,7 +396,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                 key={run.id}
                 className={
                   importedRun
-                    ? "group border-l-4 border-l-sky-400/70 border-y border-r border-y-line border-r-line bg-[#0f1418]/86 p-5 transition hover:border-l-sky-300 hover:bg-[#111923]"
+                    ? "group border-l-4 border-l-sky-400/70 border-y border-r border-y-line border-r-line bg-[#eef3f6]/86 p-5 transition hover:border-l-sky-300 hover:bg-[#e4ecf0]"
                     : "group rounded-lg border border-court/35 bg-ink-900/74 p-5 shadow-lg shadow-court/5 transition hover:border-court/60 hover:bg-ink-900/95"
                 }
               >
@@ -411,8 +411,8 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                     <p
                       className={
                         importedRun
-                          ? "text-xs font-semibold uppercase tracking-[0.14em] text-sky-200"
-                          : "text-xs font-semibold uppercase tracking-[0.14em] text-court-200"
+                          ? "text-xs font-semibold uppercase tracking-[0.14em] text-sky-700"
+                          : "text-xs font-semibold uppercase tracking-[0.14em] text-court"
                       }
                     >
                       {new Intl.DateTimeFormat("en-CA", {
@@ -420,13 +420,13 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                         timeZone: "America/Toronto",
                       }).format(run.startTime)}
                     </p>
-                    <p className="mt-1 text-3xl font-semibold text-cream">
+                    <p className="mt-1 text-3xl font-semibold text-foreground">
                       {new Intl.DateTimeFormat("en-CA", {
                         day: "2-digit",
                         timeZone: "America/Toronto",
                       }).format(run.startTime)}
                     </p>
-                    <p className="mt-1 text-xs text-cream/50">
+                    <p className="mt-1 text-xs text-foreground/50">
                       {new Intl.DateTimeFormat("en-CA", {
                         month: "short",
                         timeZone: "America/Toronto",
@@ -440,8 +440,8 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                         <span
                           className={
                             importedRun
-                              ? "rounded-full border border-sky-300/25 px-2.5 py-1 text-xs font-medium text-sky-100/75"
-                              : "rounded-full bg-court px-2.5 py-1 text-xs font-semibold text-background"
+                              ? "rounded-full border border-sky-400/30 px-2.5 py-1 text-xs font-medium text-sky-700"
+                              : "rounded-full bg-court px-2.5 py-1 text-xs font-semibold text-foreground"
                           }
                         >
                           {importedRun ? runSourceLabel(run.sourceType) : "User run"}
@@ -450,15 +450,15 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
 
                       {importedRun ? null : (
                         <>
-                          <h2 className="text-2xl font-semibold text-cream">
+                          <h2 className="text-2xl font-semibold text-foreground">
                             <Link
                               href={`/runs/${run.id}`}
-                              className="transition group-hover:text-court-200"
+                              className="transition group-hover:text-court"
                             >
                               {run.title}
                             </Link>
                           </h2>
-                          <p className="text-sm text-cream/62">
+                          <p className="text-sm text-foreground/62">
                             {run.venue.name} · {run.venue.city} ·{" "}
                             {run.venue.addressLine1}
                           </p>
@@ -474,29 +474,29 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                       }
                     >
                       <div>
-                        <dt className="text-cream/38">Time</dt>
-                        <dd className="mt-1 font-medium text-cream">
+                        <dt className="text-foreground/38">Time</dt>
+                        <dd className="mt-1 font-medium text-foreground">
                           {formatTimeRange(run.startTime, run.endTime)}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">Address</dt>
-                        <dd className="mt-1 font-medium text-cream">
+                        <dt className="text-foreground/38">Address</dt>
+                        <dd className="mt-1 font-medium text-foreground">
                           {run.venue.addressLine1}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">City</dt>
-                        <dd className="mt-1 font-medium text-cream">
+                        <dt className="text-foreground/38">City</dt>
+                        <dd className="mt-1 font-medium text-foreground">
                           {run.venue.city}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-cream/38">Age</dt>
-                        <dd className="mt-1 font-medium text-cream">
+                        <dt className="text-foreground/38">Age</dt>
+                        <dd className="mt-1 font-medium text-foreground">
                           {formatLabel(run.ageGroup)}
                         </dd>
                       </div>
@@ -504,15 +504,15 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                       {importedRun ? null : (
                         <>
                           <div>
-                            <dt className="text-cream/38">Level</dt>
-                            <dd className="mt-1 font-medium text-cream">
+                            <dt className="text-foreground/38">Level</dt>
+                            <dd className="mt-1 font-medium text-foreground">
                               {formatLabel(run.skillLevel)}
                             </dd>
                           </div>
 
                           <div>
-                            <dt className="text-cream/38">Price</dt>
-                            <dd className="mt-1 font-medium text-cream">
+                            <dt className="text-foreground/38">Price</dt>
+                            <dd className="mt-1 font-medium text-foreground">
                               {formatPrice(run.price)}
                             </dd>
                           </div>
@@ -523,12 +523,12 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                   </div>
 
                   <div className="flex flex-col gap-3 md:items-end">
-                    <span className="text-sm text-cream/48">
+                    <span className="text-sm text-foreground/48">
                       {formatDateTime(run.startTime)}
                     </span>
                     <Link
                       href={`/runs/${run.id}`}
-                      className="rounded-md bg-cream px-4 py-2 text-sm font-semibold text-background transition hover:bg-court-200"
+                      className="rounded-md bg-cream px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-court-200"
                     >
                       View run
                     </Link>

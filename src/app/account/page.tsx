@@ -30,10 +30,10 @@ export default async function AccountPage() {
   });
 
   return (
-    <main className="min-h-screen px-5 py-8 text-cream sm:px-6 sm:py-12">
+    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-6xl space-y-6">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court-200">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
             Account
           </p>
           <h1 className="text-4xl font-semibold tracking-normal sm:text-5xl">
@@ -44,13 +44,13 @@ export default async function AccountPage() {
         <div className="rounded-lg border border-line bg-ink-900/72 p-6">
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-cream/38">Email</dt>
-              <dd className="mt-1 text-cream">{email}</dd>
+              <dt className="text-foreground/38">Email</dt>
+              <dd className="mt-1 text-foreground">{email}</dd>
             </div>
 
             <div>
-              <dt className="text-cream/38">Name</dt>
-              <dd className="mt-1 text-cream">
+              <dt className="text-foreground/38">Name</dt>
+              <dd className="mt-1 text-foreground">
                 {clerkUser?.fullName ?? "No name found"}
               </dd>
             </div>

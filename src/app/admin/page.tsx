@@ -5,10 +5,10 @@ export default async function AdminPage() {
   const clerkUser = await requireAdmin();
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
+    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
       <section className="mx-auto w-full max-w-5xl space-y-8">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
             Admin
           </p>
 
@@ -16,7 +16,7 @@ export default async function AdminPage() {
             OpenGym admin
           </h1>
 
-          <p className="max-w-2xl text-zinc-300">
+          <p className="max-w-2xl text-zinc-600">
             Signed in as {clerkUser.primaryEmailAddress?.emailAddress}.
           </p>
         </div>
@@ -24,40 +24,40 @@ export default async function AdminPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/admin/venues"
-            className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
+            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
           >
             <h2 className="text-xl font-semibold">Venues</h2>
-            <p className="mt-2 text-sm text-zinc-300">
+            <p className="mt-2 text-sm text-zinc-600">
               Manually add gyms and community centres.
             </p>
           </Link>
 
           <Link
             href="/admin/schedule-sources"
-            className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
+            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
           >
             <h2 className="text-xl font-semibold">Schedule Sources</h2>
-            <p className="mt-2 text-sm text-zinc-300">
+            <p className="mt-2 text-sm text-zinc-600">
               Track city and university schedule pages.
             </p>
           </Link>
 
           <Link
             href="/admin/imported-runs"
-            className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
+            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
           >
             <h2 className="text-xl font-semibold">Imported Runs</h2>
-            <p className="mt-2 text-sm text-zinc-300">
+            <p className="mt-2 text-sm text-zinc-600">
               Add verified runs from official sources.
             </p>
           </Link>
 
           <Link
             href="/admin/imported-venues"
-            className="rounded-lg border border-white/10 bg-white/5 p-6 hover:bg-white/10"
+            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
           >
             <h2 className="text-xl font-semibold">Imported Venues</h2>
-            <p className="mt-2 text-sm text-zinc-300">
+            <p className="mt-2 text-sm text-zinc-600">
               Review venues created from source locations.
             </p>
           </Link>

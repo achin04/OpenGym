@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090a0c;
-  --foreground: #f5efe5;
+  --background: #ffffff;
+  --foreground: #0f1013;
   --court: #f47b2a;
   --court-200: #ffc68f;
   --cream: #f8efe0;
-  --ink-800: #17181c;
-  --ink-900: #0f1013;
-  --line: rgba(248, 239, 224, 0.12);
+  --ink-800: #ece7dd;
+  --ink-900: #f5f2ec;
+  --line: rgba(15, 16, 19, 0.12);
 }
 
 @theme inline {
@@ -43,19 +43,19 @@ body {
 
 ::selection {
   background: rgba(244, 123, 42, 0.35);
-  color: var(--cream);
+  color: var(--foreground);
 }
 
 input,
 select,
 textarea {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 .court-grid {
   background-image:
-    linear-gradient(rgba(248, 239, 224, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(248, 239, 224, 0.055) 1px, transparent 1px);
+    linear-gradient(rgba(15, 16, 19, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 16, 19, 0.06) 1px, transparent 1px);
   background-size: 2.75rem 2.75rem;
 }
 

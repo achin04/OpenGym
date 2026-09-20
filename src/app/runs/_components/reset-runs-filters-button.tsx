@@ -35,7 +35,7 @@ export function ResetRunsFiltersButton() {
         window.dispatchEvent(new Event(RESET_RUNS_FILTERS_EVENT));
         router.replace("/runs");
       }}
-      className="min-h-11 rounded-md border border-line px-4 py-3 text-sm font-semibold text-cream/70 transition hover:border-court/50 hover:text-cream focus:outline-none focus:ring-2 focus:ring-court/35"
+      className="min-h-11 rounded-md border border-line px-4 py-3 text-sm font-semibold text-foreground/70 transition hover:border-court/50 hover:text-foreground focus:outline-none focus:ring-2 focus:ring-court/35"
     >
       Reset
     </button>

@@ -77,7 +77,7 @@ export function SourceFilterWithAdvanced({
 
       <label
         htmlFor="sourceType"
-        className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
+        className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
       >
         Source
       </label>
@@ -88,7 +88,7 @@ export function SourceFilterWithAdvanced({
           name="sourceType"
           value={selectedSourceType}
           onChange={(event) => setSelectedSourceType(event.target.value)}
-          className="min-h-11 min-w-0 flex-1 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+          className="min-h-11 min-w-0 flex-1 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
         >
           {sourceOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -102,11 +102,11 @@ export function SourceFilterWithAdvanced({
           aria-expanded={open}
           aria-label="Advanced filters"
           onClick={() => setOpen((current) => !current)}
-          className="relative flex min-h-11 w-11 shrink-0 items-center justify-center rounded-md border border-white/10 bg-background text-cream/70 transition hover:border-court/50 hover:text-court-200 focus:outline-none focus:ring-2 focus:ring-court/35"
+          className="relative flex min-h-11 w-11 shrink-0 items-center justify-center rounded-md border border-foreground/10 bg-background text-foreground/70 transition hover:border-court/50 hover:text-court focus:outline-none focus:ring-2 focus:ring-court/35"
         >
           <SlidersIcon />
           {currentAdvancedFilterCount > 0 ? (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-court px-1 text-[11px] font-semibold text-background">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-court px-1 text-[11px] font-semibold text-foreground">
               {currentAdvancedFilterCount}
             </span>
           ) : null}
@@ -117,13 +117,13 @@ export function SourceFilterWithAdvanced({
         <div
           role="dialog"
           aria-label="Advanced filters"
-          className="absolute right-0 top-full z-20 mt-2 w-[calc(100vw-2.5rem)] max-w-[24rem] rounded-lg border border-line bg-ink-950 p-4 shadow-2xl shadow-black/40"
+          className="absolute right-0 top-full z-20 mt-2 w-[calc(100vw-2.5rem)] max-w-[24rem] rounded-lg border border-line bg-ink-900 p-4 shadow-2xl shadow-black/10"
         >
           <div className="grid gap-3">
             <div className="grid gap-1">
               <label
                 htmlFor="skillLevel"
-                className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
+                className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
               >
                 Skill
               </label>
@@ -131,7 +131,7 @@ export function SourceFilterWithAdvanced({
                 id="skillLevel"
                 value={selectedSkillLevel}
                 onChange={(event) => setSelectedSkillLevel(event.target.value)}
-                className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
               >
                 {skillOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -144,7 +144,7 @@ export function SourceFilterWithAdvanced({
             <div className="grid gap-1">
               <label
                 htmlFor="ageGroup"
-                className="text-xs font-semibold uppercase tracking-[0.14em] text-cream/45"
+                className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
               >
                 Age
               </label>
@@ -152,7 +152,7 @@ export function SourceFilterWithAdvanced({
                 id="ageGroup"
                 value={selectedAgeGroup}
                 onChange={(event) => setSelectedAgeGroup(event.target.value)}
-                className="min-h-11 rounded-md border border-white/10 bg-background px-3 text-sm text-cream outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
               >
                 {ageOptions.map((option) => (
                   <option key={option.value} value={option.value}>

@@ -43,18 +43,18 @@ export function ImportItemTable({
       <div>
         <h2 className="text-2xl font-semibold">{title}</h2>
         {description ? (
-          <p className="mt-2 max-w-3xl text-sm text-zinc-400">{description}</p>
+          <p className="mt-2 max-w-3xl text-sm text-zinc-500">{description}</p>
         ) : null}
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-sm text-zinc-400">
+        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-sm text-zinc-500">
           No items in this group.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-white/10">
+        <div className="overflow-x-auto rounded-lg border border-foreground/10">
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
-            <thead className="bg-white/5 text-xs uppercase tracking-wide text-zinc-400">
+            <thead className="bg-foreground/5 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-3 font-semibold">Title</th>
                 <th className="px-4 py-3 font-semibold">Date and time</th>
@@ -68,14 +68,14 @@ export function ImportItemTable({
             </thead>
             <tbody className="divide-y divide-white/10">
               {items.map((item) => (
-                <tr key={item.id} className="bg-white/[0.03] align-top">
-                  <td className="px-4 py-4 text-zinc-100">
+                <tr key={item.id} className="bg-foreground/[0.03] align-top">
+                  <td className="px-4 py-4 text-zinc-900">
                     {displayValue(item.payload?.title)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     {itemTimeLabel(item)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     <div>
                       {displayValue(
                         item.payload?.location?.sourceName ??
@@ -86,17 +86,17 @@ export function ImportItemTable({
                       ID {displayValue(item.payload?.sourceLocationId)}
                     </div>
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     {formatLabel(item.action)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     {formatLabel(item.reviewStatus)}
                   </td>
                   <td className="px-4 py-4">
                     {item.runId ? (
                       <Link
                         href={`/runs/${item.runId}`}
-                        className="font-semibold text-emerald-300 hover:text-emerald-200"
+                        className="font-semibold text-emerald-600 hover:text-emerald-700"
                       >
                         View run
                       </Link>
@@ -104,19 +104,19 @@ export function ImportItemTable({
                       <span className="text-zinc-500">None</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     {item.errorMessage ??
                       item.payload?.venueMatchReason ??
                       "None"}
                   </td>
-                  <td className="px-4 py-4 text-zinc-300">
+                  <td className="px-4 py-4 text-zinc-600">
                     {item.fieldDiffs.length === 0 ? (
                       <span className="text-zinc-500">None</span>
                     ) : (
                       <ul className="space-y-2">
                         {item.fieldDiffs.map((diff) => (
                           <li key={diff.field}>
-                            <div className="font-medium text-zinc-100">
+                            <div className="font-medium text-zinc-900">
                               {diff.field}
                             </div>
                             <div className="text-xs text-zinc-500">

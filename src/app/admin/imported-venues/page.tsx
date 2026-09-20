@@ -36,18 +36,18 @@ export default async function AdminImportedVenuesPage() {
   const venueCreations = await getAdminImportedVenueCreations();
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
+    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
       <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="space-y-4">
           <Link
             href="/admin"
-            className="text-sm font-semibold text-emerald-300 hover:text-emerald-200"
+            className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
           >
             Back to admin
           </Link>
 
           <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
               Admin
             </p>
 
@@ -55,7 +55,7 @@ export default async function AdminImportedVenuesPage() {
               Imported Venues
             </h1>
 
-            <p className="max-w-3xl text-zinc-300">
+            <p className="max-w-3xl text-zinc-600">
               Review venues that were automatically created from source
               locations during dry-run imports.
             </p>
@@ -63,13 +63,13 @@ export default async function AdminImportedVenuesPage() {
         </div>
 
         {venueCreations.length === 0 ? (
-          <div className="rounded-lg border border-white/10 bg-white/5 p-6 text-zinc-300">
+          <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-zinc-600">
             No imported venues have been created yet.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-white/10">
+          <div className="overflow-x-auto rounded-lg border border-foreground/10">
             <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
-              <thead className="bg-white/5 text-xs uppercase tracking-wide text-zinc-400">
+              <thead className="bg-foreground/5 text-xs uppercase tracking-wide text-zinc-500">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Created</th>
                   <th className="px-4 py-3 font-semibold">Batch</th>
@@ -82,14 +82,14 @@ export default async function AdminImportedVenuesPage() {
               </thead>
               <tbody className="divide-y divide-white/10">
                 {venueCreations.map((row) => (
-                  <tr key={row.id} className="bg-white/[0.03] align-top">
-                    <td className="px-4 py-4 text-zinc-300">
+                  <tr key={row.id} className="bg-foreground/[0.03] align-top">
+                    <td className="px-4 py-4 text-zinc-600">
                       {formatDateTime(row.createdAt)}
                     </td>
                     <td className="px-4 py-4">
                       <Link
                         href={`/admin/imported-runs/${row.batch.id}`}
-                        className="font-semibold text-emerald-300 hover:text-emerald-200"
+                        className="font-semibold text-emerald-600 hover:text-emerald-700"
                       >
                         View batch
                       </Link>
@@ -101,12 +101,12 @@ export default async function AdminImportedVenuesPage() {
                         {row.batch.scheduleSource.name}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-zinc-300">
-                      <div className="font-medium text-zinc-100">
+                    <td className="px-4 py-4 text-zinc-600">
+                      <div className="font-medium text-zinc-900">
                         {row.sourceUrl ? (
                           <a
                             href={row.sourceUrl}
-                            className="text-emerald-300 hover:text-emerald-200"
+                            className="text-emerald-600 hover:text-emerald-700"
                           >
                             {row.sourceName}
                           </a>
@@ -118,8 +118,8 @@ export default async function AdminImportedVenuesPage() {
                         {sourceAddress(row)}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-zinc-300">
-                      <div className="font-medium text-zinc-100">
+                    <td className="px-4 py-4 text-zinc-600">
+                      <div className="font-medium text-zinc-900">
                         {row.venue ? row.venue.name : "Removed venue"}
                       </div>
                       <div className="mt-1 text-xs text-zinc-500">
@@ -128,13 +128,13 @@ export default async function AdminImportedVenuesPage() {
                       {row.venue?.websiteUrl ? (
                         <a
                           href={row.venue.websiteUrl}
-                          className="mt-2 inline-block text-xs font-semibold text-emerald-300 hover:text-emerald-200"
+                          className="mt-2 inline-block text-xs font-semibold text-emerald-600 hover:text-emerald-700"
                         >
                           Venue website
                         </a>
                       ) : null}
                     </td>
-                    <td className="px-4 py-4 text-zinc-300">
+                    <td className="px-4 py-4 text-zinc-600">
                       <div>ID {row.externalVenueRef.externalId}</div>
                       <div className="mt-1 text-xs text-zinc-500">
                         {row.externalVenueRef.id}
@@ -144,8 +144,8 @@ export default async function AdminImportedVenuesPage() {
                       <span
                         className={
                           row.removedAt
-                            ? "rounded-full border border-zinc-500/40 px-3 py-1 text-xs font-semibold text-zinc-400"
-                            : "rounded-full border border-emerald-400/30 px-3 py-1 text-xs font-semibold text-emerald-200"
+                            ? "rounded-full border border-zinc-500/40 px-3 py-1 text-xs font-semibold text-zinc-500"
+                            : "rounded-full border border-emerald-400/30 px-3 py-1 text-xs font-semibold text-emerald-700"
                         }
                       >
                         {row.removedAt

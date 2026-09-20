@@ -39,8 +39,8 @@ function SubmitButton({
   const { pending } = useFormStatus();
   const toneClass =
     tone === "danger"
-      ? "border-rose-400/40 text-rose-200 hover:border-rose-300/70 hover:bg-rose-500/10"
-      : "border-emerald-400/40 text-emerald-200 hover:border-emerald-300/70 hover:bg-emerald-500/10";
+      ? "border-rose-400/40 text-rose-700 hover:border-rose-300/70 hover:bg-rose-500/10"
+      : "border-emerald-400/40 text-emerald-700 hover:border-emerald-300/70 hover:bg-emerald-500/10";
 
   return (
     <button
@@ -62,8 +62,8 @@ function StateMessage({ state }: { state: AdminActionState }) {
     <p
       className={
         state.status === "success"
-          ? "text-xs font-medium text-emerald-200"
-          : "text-xs font-medium text-rose-200"
+          ? "text-xs font-medium text-emerald-700"
+          : "text-xs font-medium text-rose-700"
       }
     >
       {state.message}
@@ -91,15 +91,15 @@ function TextField({
   const error = fieldError(state, name);
 
   return (
-    <label className="grid gap-1 text-xs font-medium text-zinc-300">
+    <label className="grid gap-1 text-xs font-medium text-zinc-600">
       <span>{label}</span>
       <input
         type={type}
         name={name}
         defaultValue={defaultValue}
-        className="min-w-0 rounded-md border border-white/10 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-emerald-300"
+        className="min-w-0 rounded-md border border-foreground/10 bg-white px-3 py-2 text-sm text-foreground outline-none focus:border-emerald-300"
       />
-      {error ? <span className="text-rose-200">{error}</span> : null}
+      {error ? <span className="text-rose-700">{error}</span> : null}
     </label>
   );
 }
@@ -124,11 +124,11 @@ export function ImportedVenueActions({
 
   return (
     <div className="grid min-w-[260px] gap-3">
-      <details className="group rounded-md border border-white/10 bg-zinc-950/70">
-        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-emerald-200 hover:text-emerald-100">
+      <details className="group rounded-md border border-foreground/10 bg-zinc-50/70">
+        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800">
           Change
         </summary>
-        <form action={updateAction} className="grid gap-3 border-t border-white/10 p-3">
+        <form action={updateAction} className="grid gap-3 border-t border-foreground/10 p-3">
           <input
             type="hidden"
             name="importedVenueCreationId"
