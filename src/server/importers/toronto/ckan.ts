@@ -318,6 +318,12 @@ async function datastoreSearch(
     resource_id: searchOptions.resourceId,
     limit: searchOptions.limit,
     offset: searchOptions.offset ?? 0,
+    // CKAN's datastore_search paginates with LIMIT/OFFSET and gives no
+    // ordering guarantee across requests unless a sort is specified. Without
+    // this, sequential pages against a live table can return overlapping or
+    // skipped rows even when the total record count still matches. `_id` is
+    // CKAN's own stable surrogate key and is present on every resource we use.
+    sort: "_id asc",
   });
   const payload = await fetchJson(url, clientOptions);
 
@@ -421,7 +427,18 @@ export async function fetchAllDatastoreRecords(
     );
 
     fields ??= page.fields;
-    expectedTotal = page.total;
+
+    if (expectedTotal === null) {
+      // Capture the total from the first page only. Re-reading it on every
+      // page would let a mid-fetch refresh on the CKAN host silently blend
+      // rows from the old and new snapshot into one "complete" result -
+      // exactly the moment a refresh-triggered import is most likely to run.
+      expectedTotal = page.total;
+    } else if (page.total !== expectedTotal) {
+      throw new Error(
+        `DataStore ${resource.name} total changed mid-fetch from ${expectedTotal} to ${page.total} at offset ${offset}; the source was likely updated while paging`,
+      );
+    }
 
     if (page.records.length === 0 && records.length < expectedTotal) {
       throw new Error(
