@@ -54,9 +54,12 @@ export type TorontoSourceHealthIssue = {
   code:
     | "DROP_IN_EMPTY"
     | "DROP_IN_TOTAL_MISMATCH"
+    | "DROP_IN_DUPLICATE_IDS"
     | "LOCATIONS_EMPTY"
     | "LOCATIONS_TOTAL_MISMATCH"
-    | "FACILITIES_TOTAL_MISMATCH";
+    | "LOCATIONS_DUPLICATE_IDS"
+    | "FACILITIES_TOTAL_MISMATCH"
+    | "FACILITIES_DUPLICATE_IDS";
   severity: "error";
   message: string;
 };
@@ -232,6 +235,16 @@ function summarizeResourceForHash(resource: CkanResource): JsonObject {
   };
 }
 
+// Counts unique CKAN `_id` values among fetched records. `_id` is CKAN's own
+// stable surrogate key, present on every resource we use. If this is smaller
+// than records.length, some rows were fetched more than once - which,
+// combined with a records.length that still matched the reported total,
+// means other real rows were silently never fetched at all. A matching
+// record count alone cannot detect this; identity can.
+function countDistinctIds(records: Pick<DatastorePage, "records">["records"]): number {
+  return new Set(records.map((record) => record._id)).size;
+}
+
 export function evaluateTorontoSourceHealth({
   dropInPage,
   locationsPage,
@@ -259,6 +272,15 @@ export function evaluateTorontoSourceHealth({
     });
   }
 
+  const dropInDistinctIds = countDistinctIds(dropInPage.records);
+  if (dropInDistinctIds !== dropInPage.records.length) {
+    issues.push({
+      code: "DROP_IN_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Drop-in resource returned ${dropInPage.records.length} records but only ${dropInDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
+    });
+  }
+
   if (locationsPage.records.length === 0) {
     issues.push({
       code: "LOCATIONS_EMPTY",
@@ -275,11 +297,29 @@ export function evaluateTorontoSourceHealth({
     });
   }
 
+  const locationsDistinctIds = countDistinctIds(locationsPage.records);
+  if (locationsDistinctIds !== locationsPage.records.length) {
+    issues.push({
+      code: "LOCATIONS_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Locations resource returned ${locationsPage.records.length} records but only ${locationsDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
+    });
+  }
+
   if (facilitiesPage.records.length !== facilitiesPage.total) {
     issues.push({
       code: "FACILITIES_TOTAL_MISMATCH",
       severity: "error",
       message: `Toronto Facilities resource returned ${facilitiesPage.records.length} records but reported total ${facilitiesPage.total}.`,
+    });
+  }
+
+  const facilitiesDistinctIds = countDistinctIds(facilitiesPage.records);
+  if (facilitiesDistinctIds !== facilitiesPage.records.length) {
+    issues.push({
+      code: "FACILITIES_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Facilities resource returned ${facilitiesPage.records.length} records but only ${facilitiesDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
     });
   }
 

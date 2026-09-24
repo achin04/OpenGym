@@ -126,6 +126,24 @@ describe("evaluateTorontoSourceHealth", () => {
       "FACILITIES_TOTAL_MISMATCH",
     ]);
   });
+
+  it("reports duplicate ids even when the record count matches the total", () => {
+    // A matching count alone doesn't prove the fetch was correct: here the
+    // same row (_id: 1) was fetched twice, so a different real row was never
+    // fetched at all, even though records.length === total for every page.
+    const health = evaluateTorontoSourceHealth({
+      dropInPage: { records: [{ _id: 1 }, { _id: 1 }], total: 2 },
+      locationsPage: { records: [{ _id: 2 }, { _id: 2 }], total: 2 },
+      facilitiesPage: { records: [{ _id: 3 }, { _id: 3 }], total: 2 },
+    });
+
+    expect(health.isCompleteSnapshot).toBe(false);
+    expect(health.issues.map((issue) => issue.code)).toEqual([
+      "DROP_IN_DUPLICATE_IDS",
+      "LOCATIONS_DUPLICATE_IDS",
+      "FACILITIES_DUPLICATE_IDS",
+    ]);
+  });
 });
 
 describe("findDuplicateTorontoSourceOccurrences", () => {
