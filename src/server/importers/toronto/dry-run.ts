@@ -719,6 +719,38 @@ function countBasketballRecords(skippedRows: TorontoDropInSkippedRow[]): number 
     .length;
 }
 
+// The Toronto feed is a rolling window, not a fixed schedule: each refresh
+// covers whatever forward-looking date range Toronto happened to publish
+// that day, and that range shifts every time. There is no fixed calendar
+// boundary anywhere in the source, so the only way to know what a given
+// snapshot actually covers is to look at the candidates it produced and take
+// the min/max of their start times. Missing-run detection (a later commit)
+// needs this to tell "genuinely cancelled" apart from "aged out of the
+// window" - it can only do that by comparing a run's date against the
+// window this specific batch observed, not some constant.
+export function computeBasketballWindow(
+  candidates: NormalizedRunCandidate[],
+): { start: Date; end: Date } | null {
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  let start = candidates[0].startTime;
+  let end = candidates[0].startTime;
+
+  for (const candidate of candidates) {
+    if (candidate.startTime < start) {
+      start = candidate.startTime;
+    }
+
+    if (candidate.startTime > end) {
+      end = candidate.startTime;
+    }
+  }
+
+  return { start, end };
+}
+
 function summarizeImportItems(items: ImportItemDraft[]) {
   return {
     createdCount: items.filter((item) => item.action === ImportItemAction.CREATE)
@@ -1104,6 +1136,14 @@ export async function runTorontoDryRunImport({
     const duplicates = findDuplicateTorontoSourceOccurrences(
       normalization.candidates,
     );
+    // Only trust a window computed from a snapshot we know is complete - an
+    // incomplete fetch can't be trusted to represent the true date range,
+    // and such a batch can never be applied anyway (assertDryRunBatchCanApply
+    // requires isCompleteSnapshot), so there is no missing-run decision that
+    // would ever read this window back.
+    const basketballWindow = health.isCompleteSnapshot
+      ? computeBasketballWindow(normalization.candidates)
+      : null;
     const duplicateSourceOccurrenceIds = new Set(
       duplicates.map((duplicate) => duplicate.sourceOccurrenceId),
     );
@@ -1175,6 +1215,8 @@ export async function runTorontoDryRunImport({
         basketballRecordCount:
           normalization.candidates.length +
           countBasketballRecords(normalization.skipped),
+        basketballWindowStartAt: basketballWindow?.start ?? null,
+        basketballWindowEndAt: basketballWindow?.end ?? null,
         createdCount: itemCounts.createdCount,
         updatedCount: itemCounts.updatedCount,
         unchangedCount: itemCounts.unchangedCount,

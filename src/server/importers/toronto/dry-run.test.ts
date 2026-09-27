@@ -5,6 +5,7 @@ import {
   SkillLevel,
 } from "@/generated/prisma/enums";
 import {
+  computeBasketballWindow,
   createTorontoSnapshotHash,
   diffTorontoRunCandidate,
   evaluateTorontoSourceHealth,
@@ -143,6 +144,41 @@ describe("evaluateTorontoSourceHealth", () => {
       "LOCATIONS_DUPLICATE_IDS",
       "FACILITIES_DUPLICATE_IDS",
     ]);
+  });
+});
+
+describe("computeBasketballWindow", () => {
+  it("returns null for an empty candidate list", () => {
+    expect(computeBasketballWindow([])).toBeNull();
+  });
+
+  it("returns the same instant as both bounds for a single candidate", () => {
+    const only = candidate({ startTime: new Date("2026-09-20T14:00:00.000Z") });
+
+    expect(computeBasketballWindow([only])).toEqual({
+      start: new Date("2026-09-20T14:00:00.000Z"),
+      end: new Date("2026-09-20T14:00:00.000Z"),
+    });
+  });
+
+  it("finds the min and max start time regardless of input order", () => {
+    const middle = candidate({
+      sourceExternalId: "middle",
+      startTime: new Date("2026-09-25T18:00:00.000Z"),
+    });
+    const latest = candidate({
+      sourceExternalId: "latest",
+      startTime: new Date("2026-10-29T18:00:00.000Z"),
+    });
+    const earliest = candidate({
+      sourceExternalId: "earliest",
+      startTime: new Date("2026-09-17T18:00:00.000Z"),
+    });
+
+    expect(computeBasketballWindow([middle, latest, earliest])).toEqual({
+      start: new Date("2026-09-17T18:00:00.000Z"),
+      end: new Date("2026-10-29T18:00:00.000Z"),
+    });
   });
 });
 

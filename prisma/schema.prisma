@@ -226,6 +226,8 @@ model ImportBatch {
   locationsRecordCount             Int                     @default(0)
   facilitiesRecordCount            Int                     @default(0)
   basketballRecordCount            Int                     @default(0)
+  basketballWindowStartAt          DateTime?
+  basketballWindowEndAt            DateTime?
   createdCount                     Int                     @default(0)
   updatedCount                     Int                     @default(0)
   unchangedCount                   Int                     @default(0)

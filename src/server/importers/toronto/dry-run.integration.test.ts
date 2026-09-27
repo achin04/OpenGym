@@ -17,7 +17,7 @@ import type {
   DatastorePage,
   TorontoCkanClient,
 } from "./ckan";
-import { runTorontoDryRunImport } from "./dry-run";
+import { computeBasketballWindow, runTorontoDryRunImport } from "./dry-run";
 import {
   normalizeTorontoDropInRunCandidate,
   torontoDropInRowSchema,
@@ -220,6 +220,9 @@ describe("runTorontoDryRunImport", () => {
     const unchangedCandidate =
       normalizeTorontoDropInRunCandidate(unchangedRow);
     const updateCandidate = normalizeTorontoDropInRunCandidate(updateRow);
+    const createCandidate = normalizeTorontoDropInRunCandidate(createRow);
+    const skippedRowCandidate =
+      normalizeTorontoDropInRunCandidate(skippedRow);
     const oldUpdateStartTime = new Date("2026-06-22T20:00:00.000Z");
     const existingUnchangedRun = await prisma.run.create({
       data: {
@@ -314,6 +317,23 @@ describe("runTorontoDryRunImport", () => {
     expect(batch.snapshotHash).toMatch(/^[a-f0-9]{64}$/);
     expect(batch.completedAt?.toISOString()).toBe(
       "2026-07-17T12:00:00.000Z",
+    );
+
+    // The observed window is a persisted DB column, not just an in-memory
+    // value - reuse the already-unit-tested computeBasketballWindow to build
+    // the expectation, so this test verifies the write actually reached the
+    // batch row rather than re-deriving the min/max logic by hand.
+    const expectedWindow = computeBasketballWindow([
+      unchangedCandidate,
+      updateCandidate,
+      createCandidate,
+      skippedRowCandidate,
+    ]);
+    expect(batch.basketballWindowStartAt?.toISOString()).toBe(
+      expectedWindow?.start.toISOString(),
+    );
+    expect(batch.basketballWindowEndAt?.toISOString()).toBe(
+      expectedWindow?.end.toISOString(),
     );
 
     const items = await prisma.importItem.findMany({
