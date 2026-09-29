@@ -10,7 +10,9 @@ import {
   diffTorontoRunCandidate,
   evaluateTorontoSourceHealth,
   findDuplicateTorontoSourceOccurrences,
+  missingRunItems,
 } from "./dry-run";
+import type { MissingImportedRun } from "./dry-run";
 import type { NormalizedRunCandidate, TorontoDropInRow } from "./normalization";
 
 vi.mock("server-only", () => ({}));
@@ -179,6 +181,85 @@ describe("computeBasketballWindow", () => {
       start: new Date("2026-09-17T18:00:00.000Z"),
       end: new Date("2026-10-29T18:00:00.000Z"),
     });
+  });
+});
+
+function missingRun(
+  overrides: Partial<MissingImportedRun> = {},
+): MissingImportedRun {
+  return {
+    id: "run-1",
+    title: "Basketball",
+    sourceExternalId: "toronto-drop-in:127611:329:2026-09-25:18:00",
+    sourceSeriesId: "toronto-drop-in:127611:329",
+    startTime: new Date("2026-09-25T22:00:00.000Z"),
+    endTime: new Date("2026-09-25T23:30:00.000Z"),
+    ...overrides,
+  };
+}
+
+describe("missingRunItems", () => {
+  it("builds a MISSING item per run, keyed by its sourceExternalId", () => {
+    const window = {
+      start: new Date("2026-09-17T00:00:00.000Z"),
+      end: new Date("2026-10-29T23:59:59.000Z"),
+    };
+    const usedSourceKeys = new Set<string>();
+
+    const items = missingRunItems([missingRun()], window, usedSourceKeys);
+
+    expect(items).toEqual([
+      {
+        sourceKey: "toronto-drop-in:127611:329:2026-09-25:18:00",
+        sourceOccurrenceId: "toronto-drop-in:127611:329:2026-09-25:18:00",
+        sourceSeriesId: "toronto-drop-in:127611:329",
+        action: "MISSING",
+        reviewStatus: "PENDING",
+        runId: "run-1",
+        normalizedPayload: {
+          kind: "missing_run",
+          runId: "run-1",
+          title: "Basketball",
+          startTime: "2026-09-25T22:00:00.000Z",
+          endTime: "2026-09-25T23:30:00.000Z",
+          sourceExternalId: "toronto-drop-in:127611:329:2026-09-25:18:00",
+          sourceSeriesId: "toronto-drop-in:127611:329",
+        },
+        errorMessage:
+          "Run was not present in this Toronto snapshot (observed window 2026-09-17..2026-10-29).",
+      },
+    ]);
+    expect(usedSourceKeys.has("toronto-drop-in:127611:329:2026-09-25:18:00")).toBe(
+      true,
+    );
+  });
+
+  it("falls back to undefined sourceSeriesId when the run has none", () => {
+    const window = {
+      start: new Date("2026-09-17T00:00:00.000Z"),
+      end: new Date("2026-10-29T23:59:59.000Z"),
+    };
+
+    const items = missingRunItems(
+      [missingRun({ sourceSeriesId: null })],
+      window,
+      new Set<string>(),
+    );
+
+    expect(items[0].sourceSeriesId).toBeUndefined();
+  });
+
+  it("returns nothing for an empty list", () => {
+    expect(
+      missingRunItems(
+        [],
+        {
+          start: new Date("2026-09-17T00:00:00.000Z"),
+          end: new Date("2026-10-29T23:59:59.000Z"),
+        },
+        new Set<string>(),
+      ),
+    ).toEqual([]);
   });
 });
 

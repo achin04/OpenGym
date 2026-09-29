@@ -101,6 +101,7 @@ export type TorontoDryRunImportSummary = {
     createdCount: number;
     updatedCount: number;
     unchangedCount: number;
+    missingCount: number;
     skippedCount: number;
     errorCount: number;
   };
@@ -559,6 +560,81 @@ async function findExistingImportedRuns(
   );
 }
 
+// An active, previously-imported run whose scheduled date falls inside this
+// snapshot's observed window but who this snapshot's own candidates never
+// produced - i.e. Toronto should still be listing it, but isn't.
+export type MissingImportedRun = {
+  id: string;
+  title: string;
+  sourceExternalId: string;
+  sourceSeriesId: string | null;
+  startTime: Date;
+  endTime: Date;
+};
+
+async function findMissingImportedRuns(
+  db: TorontoDryRunPrisma,
+  scheduleSourceId: string,
+  window: { start: Date; end: Date },
+  seenSourceExternalIds: ReadonlySet<string>,
+): Promise<MissingImportedRun[]> {
+  const runs = await db.run.findMany({
+    where: {
+      scheduleSourceId,
+      sourceStatus: SourceRunStatus.ACTIVE,
+      startTime: {
+        gte: window.start,
+        lte: window.end,
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+      sourceExternalId: true,
+      sourceSeriesId: true,
+      startTime: true,
+      endTime: true,
+    },
+  });
+
+  return runs.flatMap((run) => {
+    if (!run.sourceExternalId || seenSourceExternalIds.has(run.sourceExternalId)) {
+      return [];
+    }
+
+    return [{ ...run, sourceExternalId: run.sourceExternalId }];
+  });
+}
+
+export function missingRunItems(
+  missingRuns: MissingImportedRun[],
+  window: { start: Date; end: Date },
+  usedSourceKeys: Set<string>,
+): ImportItemDraft[] {
+  const windowLabel = `${window.start.toISOString().slice(0, 10)}..${window.end
+    .toISOString()
+    .slice(0, 10)}`;
+
+  return missingRuns.map((run) => ({
+    sourceKey: makeUniqueSourceKey(run.sourceExternalId, usedSourceKeys),
+    sourceOccurrenceId: run.sourceExternalId,
+    sourceSeriesId: run.sourceSeriesId ?? undefined,
+    action: ImportItemAction.MISSING,
+    reviewStatus: ImportReviewStatus.PENDING,
+    runId: run.id,
+    normalizedPayload: {
+      kind: "missing_run",
+      runId: run.id,
+      title: run.title,
+      startTime: run.startTime.toISOString(),
+      endTime: run.endTime.toISOString(),
+      sourceExternalId: run.sourceExternalId,
+      sourceSeriesId: run.sourceSeriesId,
+    },
+    errorMessage: `Run was not present in this Toronto snapshot (observed window ${windowLabel}).`,
+  }));
+}
+
 function comparableValue(value: unknown): JsonPrimitive {
   if (value === null || value === undefined) {
     return null;
@@ -760,6 +836,8 @@ function summarizeImportItems(items: ImportItemDraft[]) {
     unchangedCount: items.filter(
       (item) => item.action === ImportItemAction.UNCHANGED,
     ).length,
+    missingCount: items.filter((item) => item.action === ImportItemAction.MISSING)
+      .length,
     skippedCount: items.filter((item) => item.action === ImportItemAction.SKIPPED)
       .length,
     errorCount: items.filter((item) => item.action === ImportItemAction.ERROR)
@@ -1159,17 +1237,31 @@ export async function runTorontoDryRunImport({
       })),
       ...skippedDropInItems(normalization.skipped, usedSourceKeys),
       ...(health.isCompleteSnapshot
-        ? await processCandidates({
-            db,
-            batchId: batch.id,
-            scheduleSourceId: scheduleSource.id,
-            seenAt,
-            candidates: normalization.candidates,
-            duplicateSourceOccurrenceIds,
-            locationsById: locationIndex.locationsById,
-            existingRunsByExternalId,
-            usedSourceKeys,
-          })
+        ? [
+            ...(await processCandidates({
+              db,
+              batchId: batch.id,
+              scheduleSourceId: scheduleSource.id,
+              seenAt,
+              candidates: normalization.candidates,
+              duplicateSourceOccurrenceIds,
+              locationsById: locationIndex.locationsById,
+              existingRunsByExternalId,
+              usedSourceKeys,
+            })),
+            ...(basketballWindow
+              ? missingRunItems(
+                  await findMissingImportedRuns(
+                    db,
+                    scheduleSource.id,
+                    basketballWindow,
+                    new Set(candidateIds(normalization.candidates)),
+                  ),
+                  basketballWindow,
+                  usedSourceKeys,
+                )
+              : []),
+          ]
         : [
             {
               sourceKey: makeUniqueSourceKey("source-health", usedSourceKeys),
@@ -1220,6 +1312,7 @@ export async function runTorontoDryRunImport({
         createdCount: itemCounts.createdCount,
         updatedCount: itemCounts.updatedCount,
         unchangedCount: itemCounts.unchangedCount,
+        missingCount: itemCounts.missingCount,
         skippedCount: itemCounts.skippedCount,
         errorCount: itemCounts.errorCount,
         errorSummary: errorSummary(health, items),
@@ -1239,6 +1332,7 @@ export async function runTorontoDryRunImport({
         createdCount: true,
         updatedCount: true,
         unchangedCount: true,
+        missingCount: true,
         skippedCount: true,
         errorCount: true,
         dropInResourceId: true,
@@ -1265,6 +1359,7 @@ export async function runTorontoDryRunImport({
         createdCount: updatedBatch.createdCount,
         updatedCount: updatedBatch.updatedCount,
         unchangedCount: updatedBatch.unchangedCount,
+        missingCount: updatedBatch.missingCount,
         skippedCount: updatedBatch.skippedCount,
         errorCount: updatedBatch.errorCount,
       },

@@ -6,6 +6,7 @@ import {
   ImportBatchStatus,
   RunSourceType,
   SkillLevel,
+  SourceRunStatus,
   VenueMatchStatus,
 } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db";
@@ -523,5 +524,219 @@ describe("runTorontoDryRunImport", () => {
       venueId: null,
       matchStatus: VenueMatchStatus.PENDING,
     });
+  });
+
+  it("flags an in-window absent run as MISSING but leaves an aged-out run alone", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await prisma.venue.create({
+      data: {
+        name: "Milliken Park Community Recreation Centre",
+        addressLine1: "4325 McCowan Rd",
+        city: "Toronto",
+        postalCode: "M1V4P1",
+      },
+    });
+
+    // These two rows are the only ones actually fed to the importer this
+    // cycle. Their dates establish the observed window (2026-09-18 to
+    // 2026-09-26) - what actually gets created/updated from them isn't the
+    // point of this test.
+    const windowStartRow = makeDropInRow({
+      _id: 20_001,
+      "Location ID": 405,
+      Course_ID: 111_111,
+      "First Date": "2026-09-18",
+      "Last Date": "2026-09-18",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+    const windowEndRow = makeDropInRow({
+      _id: 20_002,
+      "Location ID": 405,
+      Course_ID: 222_222,
+      "First Date": "2026-09-26",
+      "Last Date": "2026-09-26",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+    const windowStartCandidate = normalizeTorontoDropInRunCandidate(windowStartRow);
+    const windowEndCandidate = normalizeTorontoDropInRunCandidate(windowEndRow);
+
+    // Never fed to the importer this cycle - shaped only to derive a
+    // realistic, timezone-correct startTime/endTime/sourceExternalId to
+    // seed a pre-existing Run with, the same way it would have looked had
+    // it been imported previously.
+    const missingRowShape = makeDropInRow({
+      _id: 20_003,
+      "Location ID": 405,
+      Course_ID: 333_333,
+      "First Date": "2026-09-22",
+      "Last Date": "2026-09-22",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+    const missingCandidate = normalizeTorontoDropInRunCandidate(missingRowShape);
+
+    const agedOutRowShape = makeDropInRow({
+      _id: 20_004,
+      "Location ID": 405,
+      Course_ID: 444_444,
+      "First Date": "2026-06-01",
+      "Last Date": "2026-06-01",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+    const agedOutCandidate = normalizeTorontoDropInRunCandidate(agedOutRowShape);
+
+    async function seedRun(candidate: ReturnType<typeof normalizeTorontoDropInRunCandidate>) {
+      return prisma.run.create({
+        data: {
+          title: candidate.title,
+          sourceType: RunSourceType.CITY,
+          startTime: candidate.startTime,
+          endTime: candidate.endTime,
+          verified: true,
+          sourceExternalId: candidate.sourceExternalId,
+          sourceSeriesId: candidate.sourceSeriesId,
+          venueId: venue.id,
+          scheduleSourceId: scheduleSource.id,
+        },
+      });
+    }
+
+    const inWindowMissingRun = await seedRun(missingCandidate);
+    const agedOutRun = await seedRun(agedOutCandidate);
+
+    const summary = await runTorontoDryRunImport({
+      ckanClient: createFakeCkanClient({
+        dropInRecords: [windowStartRow, windowEndRow],
+        locationRecords: locations.sampleRecords,
+      }),
+      now: new Date("2026-09-25T12:00:00.000Z"),
+      trigger: "integration-test",
+    });
+
+    expect(summary.counts.missingCount).toBe(1);
+
+    const missingItems = await prisma.importItem.findMany({
+      where: {
+        batchId: summary.batchId,
+        action: ImportItemAction.MISSING,
+      },
+    });
+    expect(missingItems).toHaveLength(1);
+    expect(missingItems[0]).toMatchObject({
+      runId: inWindowMissingRun.id,
+      sourceOccurrenceId: missingCandidate.sourceExternalId,
+    });
+
+    const batch = await prisma.importBatch.findUniqueOrThrow({
+      where: {
+        id: summary.batchId,
+      },
+    });
+    expect(batch.missingCount).toBe(1);
+    expect(batch.basketballWindowStartAt).toEqual(windowStartCandidate.startTime);
+    expect(batch.basketballWindowEndAt).toEqual(windowEndCandidate.startTime);
+
+    // Detection only - the dry-run never writes to Run rows.
+    const runsAfter = await prisma.run.findMany({
+      where: {
+        id: { in: [inWindowMissingRun.id, agedOutRun.id] },
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+    for (const run of runsAfter) {
+      expect(run.sourceStatus).toBe(SourceRunStatus.ACTIVE);
+      expect(run.sourceMissCount).toBe(0);
+      expect(run.sourceMissingSince).toBeNull();
+    }
+  });
+
+  it("proposes resetting a REMOVED run back to ACTIVE if it reappears in the feed, without writing to it yet", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await prisma.venue.create({
+      data: {
+        name: "Milliken Park Community Recreation Centre",
+        addressLine1: "4325 McCowan Rd",
+        city: "Toronto",
+        postalCode: "M1V4P1",
+      },
+    });
+
+    const row = makeDropInRow({
+      _id: 20_010,
+      "Location ID": 405,
+      Course_ID: 999_999,
+      "First Date": "2026-09-25",
+      "Last Date": "2026-09-25",
+      "Start Hour": 18,
+      "Start Minute": 0,
+      "End Hour": 19,
+      "End Min": 30,
+    });
+    const candidate = normalizeTorontoDropInRunCandidate(row);
+
+    const removedRun = await prisma.run.create({
+      data: {
+        title: "Old Title Before Removal",
+        sourceType: RunSourceType.CITY,
+        startTime: candidate.startTime,
+        endTime: candidate.endTime,
+        verified: true,
+        sourceExternalId: candidate.sourceExternalId,
+        sourceSeriesId: candidate.sourceSeriesId,
+        sourceStatus: SourceRunStatus.REMOVED,
+        sourceMissCount: 2,
+        sourceMissingSince: new Date("2026-09-10T00:00:00.000Z"),
+        venueId: venue.id,
+        scheduleSourceId: scheduleSource.id,
+      },
+    });
+
+    const summary = await runTorontoDryRunImport({
+      ckanClient: createFakeCkanClient({
+        dropInRecords: [row],
+        locationRecords: locations.sampleRecords,
+      }),
+      now: new Date("2026-09-25T12:00:00.000Z"),
+      trigger: "integration-test",
+    });
+
+    expect(summary.counts).toMatchObject({
+      updatedCount: 1,
+      missingCount: 0,
+    });
+
+    const item = await prisma.importItem.findFirstOrThrow({
+      where: {
+        batchId: summary.batchId,
+        sourceOccurrenceId: candidate.sourceExternalId,
+      },
+    });
+    expect(item.action).toBe(ImportItemAction.UPDATE);
+    expect(item.runId).toBe(removedRun.id);
+    expect(item.normalizedPayload).toMatchObject({
+      sourceStatus: SourceRunStatus.ACTIVE,
+    });
+
+    // The dry-run only proposes the reset via the ordinary UPDATE path - it
+    // does not itself write to the Run row. That happens on apply.
+    const runAfterDryRun = await prisma.run.findUniqueOrThrow({
+      where: {
+        id: removedRun.id,
+      },
+    });
+    expect(runAfterDryRun.sourceStatus).toBe(SourceRunStatus.REMOVED);
   });
 });
