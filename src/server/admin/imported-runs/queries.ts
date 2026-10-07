@@ -363,6 +363,7 @@ export async function getAdminImportBatchDetail(
       unchanged: items.filter(
         (item) => item.action === ImportItemAction.UNCHANGED,
       ),
+      missing: items.filter((item) => item.action === ImportItemAction.MISSING),
       skipped: items.filter((item) => item.action === ImportItemAction.SKIPPED),
       error: items.filter((item) => item.action === ImportItemAction.ERROR),
     },

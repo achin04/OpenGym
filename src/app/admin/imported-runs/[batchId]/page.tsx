@@ -95,6 +95,12 @@ export default async function AdminImportBatchDetailPage({
           />
 
           <ImportItemTable
+            title="Missing"
+            description="Active imported runs that fell inside this snapshot's observed date window but were not found in it. Two consecutive misses mark a run as removed."
+            items={detail.itemGroups.missing}
+          />
+
+          <ImportItemTable
             title="Skipped"
             description="Candidates that were not ready for import. Venue-related skips now indicate manual review exceptions."
             items={detail.itemGroups.skipped}
