@@ -8,6 +8,7 @@ import {
 } from "@/lib/formatters";
 import { currentUser } from "@clerk/nextjs/server";
 import { RsvpStatus, RunSourceType } from "@/generated/prisma/enums";
+import { sourceStatusNotice } from "@/lib/runs/source-status";
 import { cancelRsvp, rsvpToRun } from "./actions";
 
 type RunDetailsPageProps = {
@@ -190,7 +191,16 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   }
 
   const importedRun = run.sourceType !== RunSourceType.USER;
-  const userRsvp = !importedRun && appUser
+  const sourceLabel = venueSourceLabel(
+    run.sourceType,
+    run.scheduleSource?.name,
+  );
+  // A delisted run keeps its page so shared links and search results do not
+  // break, but it must say the source no longer lists it and must not offer an
+  // RSVP. Imported runs never have RSVPs in the first place.
+  const sourceNotice = sourceStatusNotice(run.sourceStatus, sourceLabel);
+  const showRsvp = !importedRun && !sourceNotice;
+  const userRsvp = showRsvp && appUser
     ? await prisma.rsvp.findUnique({
         where: {
           userId_runId: {
@@ -228,10 +238,6 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
   ]
     .filter(Boolean)
     .join(", ");
-  const sourceLabel = venueSourceLabel(
-    run.sourceType,
-    run.scheduleSource?.name,
-  );
   const sourcePrefix = run.verified ? "Verified via" : "Listed via";
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
     venueGeoQuery,
@@ -253,13 +259,27 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
               {run.description ?? "No description has been added yet."}
             </p>
           </div>
+
+          {sourceNotice ? (
+            <div
+              role="status"
+              className="max-w-3xl rounded-lg border border-amber-300/40 bg-amber-50 p-5"
+            >
+              <p className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-800">
+                {sourceNotice.heading}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-amber-900/80">
+                {sourceNotice.body}
+              </p>
+            </div>
+          ) : null}
         </div>
 
         <div
           className={
-            importedRun
-              ? "grid gap-4"
-              : "grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]"
+            showRsvp
+              ? "grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]"
+              : "grid gap-4"
           }
         >
           <div className="space-y-4">
@@ -347,7 +367,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
             </div>
           </div>
 
-          {importedRun ? null : (
+          {showRsvp ? (
             <div className="rounded-lg border border-line bg-ink-900/78 p-6">
               <h2 className="text-2xl font-semibold">RSVP</h2>
               <p className="mt-2 text-foreground/60">
@@ -393,7 +413,7 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                 </form>
               )}
             </div>
-          )}
+          ) : null}
         </div>
 
         <p className="text-xs text-foreground/35">Run ID: {run.id}</p>
