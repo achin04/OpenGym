@@ -26,16 +26,84 @@ async function cleanDatabase() {
   await prisma.user.deleteMany();
 }
 
-async function createScheduleSource() {
+async function createScheduleSource(suffix = "") {
   return prisma.scheduleSource.create({
     data: {
-      name: "City of Toronto Drop-In Apply Test",
+      name: `City of Toronto Drop-In Apply Test${suffix}`,
       sourceType: RunSourceType.CITY,
-      url: "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/",
-      providerKey: "toronto-drop-in",
+      url: `https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/${suffix}`,
+      providerKey: `toronto-drop-in${suffix}`,
       externalDatasetId: "1a5be46a-4039-48cd-a2d2-8e702abf9516",
     },
   });
+}
+
+// An already-imported Run, with its delisting counters set to whatever state a
+// test needs to start from.
+async function createImportedRun({
+  scheduleSourceId,
+  venueId,
+  sourceExternalId,
+  sourceStatus = SourceRunStatus.ACTIVE,
+  sourceMissCount = 0,
+  sourceMissingSince = null,
+}: {
+  scheduleSourceId: string;
+  venueId: string;
+  sourceExternalId: string;
+  sourceStatus?: SourceRunStatus;
+  sourceMissCount?: number;
+  sourceMissingSince?: Date | null;
+}) {
+  return prisma.run.create({
+    data: {
+      title: "Adult Basketball",
+      sourceType: RunSourceType.CITY,
+      startTime: new Date("2026-07-20T22:00:00.000Z"),
+      endTime: new Date("2026-07-21T00:00:00.000Z"),
+      skillLevel: SkillLevel.OPEN,
+      ageGroup: AgeGroup.ADULT,
+      verified: true,
+      sourceExternalId,
+      sourceFingerprint: `${sourceExternalId}:fingerprint`,
+      sourceStatus,
+      sourceMissCount,
+      sourceMissingSince,
+      venueId,
+      scheduleSourceId,
+    },
+  });
+}
+
+// The shape runTorontoDryRunImport produces for an in-window run that was not
+// in the snapshot (see missingRunItems in src/server/importers/toronto/dry-run.ts):
+// a summary payload rather than a full run payload, linked to the Run by id.
+function missingItemData({
+  batchId,
+  run,
+}: {
+  batchId: string;
+  run: { id: string; sourceExternalId: string | null };
+}) {
+  return {
+    batchId,
+    sourceKey: `missing-${run.sourceExternalId}`,
+    sourceOccurrenceId: run.sourceExternalId,
+    action: ImportItemAction.MISSING,
+    reviewStatus: ImportReviewStatus.PENDING,
+    runId: run.id,
+    normalizedPayload: {
+      kind: "missing_run",
+      runId: run.id,
+      title: "Adult Basketball",
+      startTime: "2026-07-20T22:00:00.000Z",
+      endTime: "2026-07-21T00:00:00.000Z",
+      sourceExternalId: run.sourceExternalId,
+      sourceSeriesId: null,
+    },
+    errorMessage:
+      "Run was not present in this Toronto snapshot (observed window 2026-07-18..2026-08-29).",
+  };
 }
 
 async function createVenue(name = "Apply Test Community Centre") {
@@ -323,6 +391,141 @@ describe("applyImportBatch", () => {
         },
       }),
     ).resolves.toBe(1);
+  });
+
+  it("counts a first miss without delisting the run", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await createVenue();
+    const run = await createImportedRun({
+      scheduleSourceId: scheduleSource.id,
+      venueId: venue.id,
+      sourceExternalId: "source-missing-1",
+    });
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: missingItemData({ batchId: batch.id, run }),
+    });
+
+    const result = await applyImportBatch(batch.id);
+
+    expect(result.counts.missingCount).toBe(1);
+    expect(result.affectedRunIds).toEqual([run.id]);
+
+    const updated = await prisma.run.findUniqueOrThrow({
+      where: {
+        id: run.id,
+      },
+    });
+
+    // One miss is only an observation: the run stays ACTIVE and therefore stays
+    // on the public listing.
+    expect(updated.sourceStatus).toBe(SourceRunStatus.ACTIVE);
+    expect(updated.sourceMissCount).toBe(1);
+    expect(updated.sourceMissingSince).not.toBeNull();
+  });
+
+  it("marks a run REMOVED on the second miss and keeps the first miss timestamp", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await createVenue();
+    const firstMissAt = new Date("2026-07-10T12:00:00.000Z");
+    const run = await createImportedRun({
+      scheduleSourceId: scheduleSource.id,
+      venueId: venue.id,
+      sourceExternalId: "source-missing-2",
+      sourceMissCount: 1,
+      sourceMissingSince: firstMissAt,
+    });
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: missingItemData({ batchId: batch.id, run }),
+    });
+
+    const result = await applyImportBatch(batch.id);
+
+    expect(result.counts.missingCount).toBe(1);
+    await expect(
+      prisma.run.findUniqueOrThrow({
+        where: {
+          id: run.id,
+        },
+      }),
+    ).resolves.toMatchObject({
+      sourceStatus: SourceRunStatus.REMOVED,
+      sourceMissCount: 2,
+      // "Missing since" is the start of the absence, so the second miss must
+      // not overwrite it.
+      sourceMissingSince: firstMissAt,
+    });
+  });
+
+  it("errors instead of delisting a run that belongs to another schedule source", async () => {
+    const scheduleSource = await createScheduleSource();
+    const otherScheduleSource = await createScheduleSource("-other");
+    const venue = await createVenue();
+    const otherSourceRun = await createImportedRun({
+      scheduleSourceId: otherScheduleSource.id,
+      venueId: venue.id,
+      sourceExternalId: "source-missing-3",
+    });
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: missingItemData({ batchId: batch.id, run: otherSourceRun }),
+    });
+
+    const result = await applyImportBatch(batch.id);
+
+    expect(result.counts).toMatchObject({
+      missingCount: 0,
+      errorCount: 1,
+    });
+    await expect(
+      prisma.run.findUniqueOrThrow({
+        where: {
+          id: otherSourceRun.id,
+        },
+      }),
+    ).resolves.toMatchObject({
+      sourceStatus: SourceRunStatus.ACTIVE,
+      sourceMissCount: 0,
+      sourceMissingSince: null,
+    });
+  });
+
+  it("does not advance the miss count for a run that is already removed", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await createVenue();
+    const firstMissAt = new Date("2026-07-10T12:00:00.000Z");
+    const run = await createImportedRun({
+      scheduleSourceId: scheduleSource.id,
+      venueId: venue.id,
+      sourceExternalId: "source-missing-4",
+      sourceStatus: SourceRunStatus.REMOVED,
+      sourceMissCount: 2,
+      sourceMissingSince: firstMissAt,
+    });
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: missingItemData({ batchId: batch.id, run }),
+    });
+
+    const result = await applyImportBatch(batch.id);
+
+    expect(result.counts).toMatchObject({
+      missingCount: 0,
+      unchangedCount: 1,
+      errorCount: 0,
+    });
+    await expect(
+      prisma.run.findUniqueOrThrow({
+        where: {
+          id: run.id,
+        },
+      }),
+    ).resolves.toMatchObject({
+      sourceStatus: SourceRunStatus.REMOVED,
+      sourceMissCount: 2,
+      sourceMissingSince: firstMissAt,
+    });
   });
 
   it("rejects invalid and non-dry-run batches", async () => {

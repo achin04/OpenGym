@@ -6,6 +6,7 @@ import {
   ImportBatchStatus,
   ImportItemAction,
   ImportReviewStatus,
+  SourceRunStatus,
 } from "@/generated/prisma/enums";
 import { parseImportRunApplyPayload } from "@/lib/admin/imported-runs/apply-payload-parsing";
 import type { ImportRunApplyPayload } from "@/lib/admin/imported-runs/apply-payload-parsing";
@@ -22,6 +23,13 @@ const APPLY_TRIGGER_PREFIX = "apply:";
 // outright - a genuinely stuck apply should still fail loudly rather than
 // hang forever.
 const APPLY_TRANSACTION_TIMEOUT_MS = 120_000;
+
+// How many consecutive complete snapshots a run has to be absent from before
+// it is delisted. One miss is indistinguishable from a transient publishing gap
+// on Toronto's side, so acting on a single absence would let one bad feed
+// refresh hide runs that are still happening. Two means the source has had a
+// full weekly refresh to republish the run and did not.
+const MISSING_THRESHOLD_FOR_REMOVAL = 2;
 
 type ApplyImportBatchPrisma = Pick<
   PrismaClient,
@@ -46,8 +54,10 @@ type DryRunImportItem = DryRunBatch["items"][number];
 // `existingRunsByExternalId`).
 type ExistingRunByExternalId = Map<string, { id: string }>;
 
-// Existing Run rows targeted by this batch's UPDATE items, keyed by run id.
-// Loaded once before the item loop for the same reason.
+// Existing Run rows targeted by this batch's UPDATE and MISSING items, keyed
+// by run id. Loaded once before the item loop for the same reason. UPDATE only
+// reads sourceFirstSeenAt, to preserve the original first-seen timestamp;
+// MISSING reads the delisting counters so it can advance them.
 type ExistingRunById = Map<
   string,
   {
@@ -55,6 +65,9 @@ type ExistingRunById = Map<
     scheduleSourceId: string | null;
     sourceExternalId: string | null;
     sourceFirstSeenAt: Date | null;
+    sourceStatus: (typeof SourceRunStatus)[keyof typeof SourceRunStatus];
+    sourceMissCount: number;
+    sourceMissingSince: Date | null;
   }
 >;
 
@@ -288,7 +301,7 @@ function runDataFromPayload(
 // pre-existing rows, in a fixed number of queries instead of a handful per
 // item. All three reads are scoped as tightly as the per-item lookups they
 // replace: runsForSource only pulls this batch's own schedule source, and
-// the update/venue lookups only pull the ids this batch actually references.
+// the run/venue lookups only pull the ids this batch actually references.
 async function preloadApplyContext(
   db: ApplyImportBatchTransaction,
   batch: DryRunBatch,
@@ -297,10 +310,12 @@ async function preloadApplyContext(
   existingRunsById: ExistingRunById;
   existingVenueIds: Set<string>;
 }> {
-  const updateRunIds = Array.from(
+  const targetRunIds = Array.from(
     new Set(
       batch.items.flatMap((item) =>
-        item.action === ImportItemAction.UPDATE && item.runId
+        (item.action === ImportItemAction.UPDATE ||
+          item.action === ImportItemAction.MISSING) &&
+        item.runId
           ? [item.runId]
           : [],
       ),
@@ -333,16 +348,19 @@ async function preloadApplyContext(
   });
 
   const runsById =
-    updateRunIds.length > 0
+    targetRunIds.length > 0
       ? await db.run.findMany({
           where: {
-            id: { in: updateRunIds },
+            id: { in: targetRunIds },
           },
           select: {
             id: true,
             scheduleSourceId: true,
             sourceExternalId: true,
             sourceFirstSeenAt: true,
+            sourceStatus: true,
+            sourceMissCount: true,
+            sourceMissingSince: true,
           },
         })
       : [];
@@ -524,6 +542,94 @@ async function applyUpdateItem({
   };
 }
 
+// MISSING items are the delisting path. The dry run found an ACTIVE imported
+// run that sat inside this snapshot's observed date window but was absent from
+// the snapshot itself. Applying one advances that run's miss counter, and only
+// the MISSING_THRESHOLD_FOR_REMOVAL-th consecutive miss moves it out of ACTIVE,
+// which is what drops it from the public listing (src/app/runs/page.tsx).
+//
+// Unlike the create/update paths this never parses normalizedPayload: a MISSING
+// item carries a { kind: "missing_run" } summary rather than a full run payload,
+// so everything below comes from the preloaded Run row and the item's own
+// columns.
+async function applyMissingItem({
+  db,
+  batch,
+  item,
+  existingRunsById,
+}: {
+  db: ApplyImportBatchTransaction;
+  batch: DryRunBatch;
+  item: DryRunImportItem;
+  existingRunsById: ExistingRunById;
+}): Promise<ApplyImportItemDraft> {
+  if (!item.runId) {
+    return errorItem(item, "Missing item is not linked to a Run.");
+  }
+
+  const existingRun = existingRunsById.get(item.runId);
+
+  if (!existingRun) {
+    return errorItem(item, "Missing item target Run was not found.");
+  }
+
+  // Without this check a batch for one schedule source could delist another
+  // source's runs, which is the worst thing this path could do.
+  if (existingRun.scheduleSourceId !== batch.scheduleSourceId) {
+    return errorItem(
+      item,
+      "Missing item target Run belongs to a different schedule source.",
+    );
+  }
+
+  if (existingRun.sourceExternalId !== item.sourceOccurrenceId) {
+    return errorItem(
+      item,
+      "Missing item target Run does not match its source occurrence.",
+    );
+  }
+
+  // The dry run only proposes MISSING for ACTIVE runs, but it ran before this
+  // apply did. If the run has left ACTIVE since then it is already delisted, so
+  // record the observation without advancing the counter - that stops a late
+  // apply from counting a single absence twice.
+  if (existingRun.sourceStatus !== SourceRunStatus.ACTIVE) {
+    return {
+      ...skippedAuditItem(item),
+      action: ImportItemAction.UNCHANGED,
+      reviewStatus: ImportReviewStatus.AUTO_APPROVED,
+      runId: existingRun.id,
+      errorMessage: `Run is no longer active (${existingRun.sourceStatus}); miss count left at ${existingRun.sourceMissCount}.`,
+    };
+  }
+
+  const nextMissCount = existingRun.sourceMissCount + 1;
+  const shouldRemove = nextMissCount >= MISSING_THRESHOLD_FOR_REMOVAL;
+
+  await db.run.update({
+    where: {
+      id: existingRun.id,
+    },
+    data: {
+      sourceMissCount: nextMissCount,
+      // "Missing since" is when the absence started, so the first miss's
+      // timestamp is kept by every later miss. A run that reappears in the feed
+      // comes back as an UPDATE item and runDataFromPayload resets this to null.
+      sourceMissingSince: existingRun.sourceMissingSince ?? new Date(),
+      ...(shouldRemove ? { sourceStatus: SourceRunStatus.REMOVED } : {}),
+    },
+  });
+
+  return {
+    ...skippedAuditItem(item),
+    reviewStatus: ImportReviewStatus.AUTO_APPROVED,
+    runId: existingRun.id,
+    errorMessage: shouldRemove
+      ? `Run was absent from ${nextMissCount} consecutive snapshots and is now marked REMOVED.`
+      : `Run was absent from ${nextMissCount} of the ${MISSING_THRESHOLD_FOR_REMOVAL} consecutive snapshots needed to remove it.`,
+  };
+}
+
 async function applyDryRunItem({
   db,
   batch,
@@ -551,6 +657,10 @@ async function applyDryRunItem({
 
   if (item.action === ImportItemAction.UPDATE) {
     return applyUpdateItem({ db, batch, item, existingRunsById, existingVenueIds });
+  }
+
+  if (item.action === ImportItemAction.MISSING) {
+    return applyMissingItem({ db, batch, item, existingRunsById });
   }
 
   return skippedAuditItem(item);
@@ -604,6 +714,8 @@ export async function applyImportBatch(
           facilitiesResourceLastModifiedAt:
             dryRunBatch.facilitiesResourceLastModifiedAt,
           snapshotHash: dryRunBatch.snapshotHash,
+          basketballWindowStartAt: dryRunBatch.basketballWindowStartAt,
+          basketballWindowEndAt: dryRunBatch.basketballWindowEndAt,
           startedAt,
           dropInRecordCount: dryRunBatch.dropInRecordCount,
           locationsRecordCount: dryRunBatch.locationsRecordCount,
