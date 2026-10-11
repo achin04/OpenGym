@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { AutomatedImportPanel } from "@/app/admin/_components/automated-import-panel";
 import { requireAdmin } from "@/server/admin";
+import { getAdminAutomatedImportStatus } from "@/server/admin/imported-runs/queries";
 
 export default async function AdminPage() {
   const clerkUser = await requireAdmin();
+  const automatedImportStatus = await getAdminAutomatedImportStatus();
 
   return (
     <main className="min-h-screen bg-white px-6 py-12 text-foreground">
@@ -20,6 +23,8 @@ export default async function AdminPage() {
             Signed in as {clerkUser.primaryEmailAddress?.emailAddress}.
           </p>
         </div>
+
+        <AutomatedImportPanel status={automatedImportStatus} />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link

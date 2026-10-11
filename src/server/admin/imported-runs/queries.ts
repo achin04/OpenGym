@@ -3,6 +3,7 @@ import "server-only";
 import type { PrismaClient } from "@/generated/prisma/client";
 import {
   ImportBatchMode,
+  ImportBatchStatus,
   ImportItemAction,
   VenueMatchStatus,
 } from "@/generated/prisma/enums";
@@ -288,6 +289,104 @@ export async function getAdminVenueOptions(
     },
     orderBy: [{ city: "asc" }, { name: "asc" }],
   });
+}
+
+export type AdminAutomatedImportStatus = {
+  scheduleSource: {
+    id: string;
+    name: string;
+    lastSuccessfulImportAt: Date | null;
+  };
+  // True while an import holds an unexpired lease. Read against the current
+  // time rather than trusting the column, because a crashed run leaves its
+  // lease behind until it expires.
+  importInFlight: boolean;
+  latestDryRun: {
+    id: string;
+    status: ImportBatchStatus;
+    trigger: string | null;
+    startedAt: Date;
+    completedAt: Date | null;
+    isCompleteSnapshot: boolean;
+    createdCount: number;
+    updatedCount: number;
+    missingCount: number;
+    skippedCount: number;
+    errorCount: number;
+    // A dry run with no matching apply batch published nothing. When the
+    // automated gate declines a batch this is how an admin finds out, so it is
+    // the one fact this panel exists to surface.
+    isApplied: boolean;
+  };
+};
+
+// Reports on whichever source ran most recently, rather than hardcoding
+// Toronto, so this keeps working when a second municipality is added.
+export async function getAdminAutomatedImportStatus(
+  db: ImportedRunsQueryPrisma = defaultPrisma,
+): Promise<AdminAutomatedImportStatus | null> {
+  const latestDryRun = await db.importBatch.findFirst({
+    where: {
+      mode: ImportBatchMode.DRY_RUN,
+    },
+    select: {
+      id: true,
+      scheduleSourceId: true,
+      status: true,
+      trigger: true,
+      startedAt: true,
+      completedAt: true,
+      isCompleteSnapshot: true,
+      createdCount: true,
+      updatedCount: true,
+      missingCount: true,
+      skippedCount: true,
+      errorCount: true,
+      scheduleSource: {
+        select: {
+          id: true,
+          name: true,
+          lastSuccessfulImportAt: true,
+          importLeaseExpiresAt: true,
+        },
+      },
+    },
+    orderBy: {
+      startedAt: "desc",
+    },
+  });
+
+  if (!latestDryRun) {
+    return null;
+  }
+
+  const appliedBatch = await db.importBatch.findFirst({
+    where: {
+      scheduleSourceId: latestDryRun.scheduleSourceId,
+      mode: ImportBatchMode.APPLY,
+      trigger: applyTriggerForBatch(latestDryRun.id),
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  const { scheduleSource, ...batch } = latestDryRun;
+
+  return {
+    scheduleSource: {
+      id: scheduleSource.id,
+      name: scheduleSource.name,
+      lastSuccessfulImportAt: scheduleSource.lastSuccessfulImportAt,
+    },
+    importInFlight:
+      !!scheduleSource.importLeaseExpiresAt &&
+      scheduleSource.importLeaseExpiresAt.getTime() > Date.now(),
+    latestDryRun: {
+      ...batch,
+      isApplied: !!appliedBatch,
+    },
+  };
 }
 
 export async function getAdminImportBatchDetail(
