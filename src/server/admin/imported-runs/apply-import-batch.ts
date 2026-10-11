@@ -110,7 +110,10 @@ function fail(message: string): never {
   throw new ApplyImportBatchError(message);
 }
 
-function applyTriggerForBatch(batchId: string) {
+// The APPLY batch's trigger is what makes applying idempotent: a second apply
+// of the same dry run finds the existing batch and returns it untouched.
+// Exported so every reader of that relationship derives it the same way.
+export function applyTriggerForBatch(batchId: string) {
   return `${APPLY_TRIGGER_PREFIX}${batchId}`;
 }
 

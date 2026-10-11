@@ -7,6 +7,7 @@ import {
   VenueMatchStatus,
 } from "@/generated/prisma/enums";
 import { prisma as defaultPrisma } from "@/server/db";
+import { applyTriggerForBatch } from "./apply-import-batch";
 import {
   parseImportFieldDiffDisplay,
   parseImportItemPayloadDisplay,
@@ -22,12 +23,6 @@ type ImportedRunsQueryPrisma = Pick<
   | "importedVenueCreation"
   | "venue"
 >;
-
-const APPLY_TRIGGER_PREFIX = "apply:";
-
-function applyTriggerForBatch(batchId: string) {
-  return `${APPLY_TRIGGER_PREFIX}${batchId}`;
-}
 
 export type AdminImportBatchListItem = Awaited<
   ReturnType<typeof getAdminImportBatches>
