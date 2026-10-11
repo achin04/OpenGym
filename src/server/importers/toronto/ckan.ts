@@ -15,6 +15,15 @@ const REQUEST_TIMEOUT_MS = 20_000;
 const USER_AGENT =
   "OpenGym Toronto CKAN client (server import pipeline; contact: repository owner)";
 
+// The DataStore resource names this importer reads, matched case- and
+// separator-insensitively by findActiveResourceByName. Named here rather than
+// inline so refresh detection and the dry run cannot drift apart on them.
+export const TORONTO_RESOURCE_NAMES = {
+  dropIn: "Drop-in",
+  locations: "Locations",
+  facilities: "Facilities",
+} as const;
+
 export type JsonRecord = Record<string, unknown>;
 
 type FetchLike = typeof fetch;
@@ -175,7 +184,7 @@ function describeMissingFields(
   return missing.length > 0 ? missing.join(", ") : "none";
 }
 
-function findActiveResourceByName(
+export function findActiveResourceByName(
   pkg: CkanPackage,
   expectedName: string,
 ): CkanResource | null {
@@ -189,6 +198,25 @@ function findActiveResourceByName(
       );
     }) ?? null
   );
+}
+
+// CKAN reports a resource's last change under three different keys depending
+// on how the resource was published, and on this dataset `last_modified` is
+// null on every active resource - so the fallbacks are load-bearing, not
+// defensive. Kept here, next to the schema that defines those keys, because
+// both the dry run and refresh detection have to read them the same way.
+export function resourceModifiedAt(resource: CkanResource): Date | null {
+  const value =
+    resource.last_modified ??
+    resource.last_modified_date ??
+    resource.metadata_modified;
+
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function formatCkanError(error: unknown): string {
@@ -379,7 +407,12 @@ export async function findDropInResource(
   pkg: CkanPackage,
   options: TorontoCkanClientOptions = {},
 ): Promise<CkanResource> {
-  return findVerifiedResource(pkg, "Drop-in", DROP_IN_REQUIRED_FIELDS, options);
+  return findVerifiedResource(
+    pkg,
+    TORONTO_RESOURCE_NAMES.dropIn,
+    DROP_IN_REQUIRED_FIELDS,
+    options,
+  );
 }
 
 export async function findLocationsResource(
@@ -388,7 +421,7 @@ export async function findLocationsResource(
 ): Promise<CkanResource> {
   return findVerifiedResource(
     pkg,
-    "Locations",
+    TORONTO_RESOURCE_NAMES.locations,
     LOCATIONS_REQUIRED_FIELDS,
     options,
   );
@@ -400,7 +433,7 @@ export async function findFacilitiesResource(
 ): Promise<CkanResource> {
   return findVerifiedResource(
     pkg,
-    "Facilities",
+    TORONTO_RESOURCE_NAMES.facilities,
     FACILITIES_REQUIRED_FIELDS,
     options,
   );

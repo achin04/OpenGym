@@ -18,6 +18,7 @@ import {
   type DatastorePage,
   TORONTO_CKAN_PACKAGE_ID,
   createTorontoCkanClient,
+  resourceModifiedAt,
   type TorontoCkanClient,
 } from "./ckan";
 import {
@@ -208,20 +209,6 @@ function stableJsonStringify(value: unknown): string {
 
 export function createTorontoSnapshotHash(value: unknown): string {
   return createHash("sha256").update(stableJsonStringify(value)).digest("hex");
-}
-
-function resourceModifiedAt(resource: CkanResource): Date | null {
-  const value =
-    resource.last_modified ??
-    resource.last_modified_date ??
-    resource.metadata_modified;
-
-  if (!value) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 function summarizeResourceForHash(resource: CkanResource): JsonObject {
