@@ -35,7 +35,7 @@ const TORONTO_DROP_IN_PROVIDER_KEY = "toronto-drop-in";
 const TORONTO_DROP_IN_SOURCE_URL =
   "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/";
 
-type TorontoDryRunPrisma = Pick<
+export type TorontoDryRunPrisma = Pick<
   PrismaClient,
   | "$transaction"
   | "scheduleSource"
@@ -1093,7 +1093,9 @@ async function processCandidates({
   return items;
 }
 
-async function findTorontoScheduleSource(db: TorontoDryRunPrisma) {
+// Exported so the auto-import orchestrator can resolve the source id before
+// the dry run exists, which refresh detection needs.
+export async function findTorontoScheduleSource(db: TorontoDryRunPrisma) {
   const byProviderKey = await db.scheduleSource.findUnique({
     where: {
       providerKey: TORONTO_DROP_IN_PROVIDER_KEY,
