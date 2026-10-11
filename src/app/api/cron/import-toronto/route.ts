@@ -44,12 +44,14 @@ function isAuthorized(request: Request, secret: string): boolean {
 function summarize(result: TorontoAutoImportResult) {
   return {
     status: result.status,
-    refresh: {
-      hasRefreshed: result.refresh.hasRefreshed,
-      reason: result.refresh.reason,
-      details: result.refresh.details,
-      comparedBatchId: result.refresh.comparedBatchId,
-    },
+    refresh: result.refresh
+      ? {
+          hasRefreshed: result.refresh.hasRefreshed,
+          reason: result.refresh.reason,
+          details: result.refresh.details,
+          comparedBatchId: result.refresh.comparedBatchId,
+        }
+      : null,
     dryRun: result.dryRun
       ? {
           batchId: result.dryRun.batchId,

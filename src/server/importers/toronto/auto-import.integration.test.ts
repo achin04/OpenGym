@@ -193,13 +193,13 @@ describe("runTorontoAutoImport", () => {
     });
 
     expect(result.status).toBe("SKIPPED_NO_REFRESH");
-    expect(result.refresh.reason).toBe("UNCHANGED");
+    expect(result.refresh?.reason).toBe("UNCHANGED");
     expect(result.dryRun).toBeNull();
     expect(result.apply).toBeNull();
 
     // The important half: no new batch, so six quiet days a week cost nothing.
     await expect(prisma.importBatch.count()).resolves.toBe(1);
-    expect(result.refresh.comparedBatchId).toBe(baseline.id);
+    expect(result.refresh?.comparedBatchId).toBe(baseline.id);
   });
 
   it("imports and applies when the source has refreshed", async () => {
@@ -212,7 +212,7 @@ describe("runTorontoAutoImport", () => {
       ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
     });
 
-    expect(result.refresh.reason).toBe("RESOURCE_MODIFIED");
+    expect(result.refresh?.reason).toBe("RESOURCE_MODIFIED");
     expect(result.status).toBe("IMPORTED_AND_APPLIED");
     expect(result.dryRun?.isCompleteSnapshot).toBe(true);
     expect(result.gate?.canAutoApply).toBe(true);
@@ -230,6 +230,164 @@ describe("runTorontoAutoImport", () => {
         },
       }),
     ).resolves.toBe(result.dryRun?.counts.createdCount);
+  });
+
+  it("declines to start while another import holds the lease", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createMatchingBatch(scheduleSource.id);
+    await prisma.scheduleSource.update({
+      where: { id: scheduleSource.id },
+      data: {
+        importLeaseExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+      },
+    });
+
+    const result = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+    });
+
+    expect(result.status).toBe("SKIPPED_LOCKED");
+    // Detection never ran, so there is nothing to report about the source.
+    expect(result.refresh).toBeNull();
+    await expect(prisma.importBatch.count()).resolves.toBe(1);
+  });
+
+  it("ignores an expired lease left behind by a crashed run", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    await createMatchingBatch(scheduleSource.id);
+    await prisma.scheduleSource.update({
+      where: { id: scheduleSource.id },
+      data: {
+        importLeaseExpiresAt: new Date(Date.now() - 60 * 1000),
+      },
+    });
+
+    const result = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+    });
+
+    expect(result.status).toBe("IMPORTED_AND_APPLIED");
+  });
+
+  it("lets only one of two concurrent imports through", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    await createMatchingBatch(scheduleSource.id);
+
+    // Started together on purpose: the lease is claimed with a single
+    // conditional UPDATE, so this is the race it has to survive.
+    const results = await Promise.all([
+      runTorontoAutoImport({
+        db: prisma,
+        ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+      }),
+      runTorontoAutoImport({
+        db: prisma,
+        ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+      }),
+    ]);
+
+    // Asserted as an invariant rather than as two exact statuses: whichever
+    // call loses the race skips, and if it loses by enough to see the winner's
+    // finished batch it skips as SKIPPED_NO_REFRESH instead. Either is correct;
+    // importing twice is not.
+    const imported = results.filter(
+      (result) => result.status === "IMPORTED_AND_APPLIED",
+    );
+    expect(imported).toHaveLength(1);
+    expect(results.map((result) => result.status)).toContainEqual(
+      expect.stringMatching(/^SKIPPED_/),
+    );
+
+    // One dry run on top of the baseline, and one apply batch - not two of each.
+    await expect(
+      prisma.importBatch.count({ where: { mode: ImportBatchMode.DRY_RUN } }),
+    ).resolves.toBe(2);
+    await expect(
+      prisma.importBatch.count({ where: { mode: ImportBatchMode.APPLY } }),
+    ).resolves.toBe(1);
+  });
+
+  it("releases the lease after a successful import", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    await createMatchingBatch(scheduleSource.id);
+
+    await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+    });
+
+    await expect(
+      prisma.scheduleSource.findUniqueOrThrow({
+        where: { id: scheduleSource.id },
+      }),
+    ).resolves.toMatchObject({ importLeaseExpiresAt: null });
+  });
+
+  it("releases the lease even when the import fails", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createMatchingBatch(scheduleSource.id);
+    const failingClient = createFakeCkanClient("2026-07-08T12:00:00.000Z");
+
+    await expect(
+      runTorontoAutoImport({
+        db: prisma,
+        ckanClient: {
+          ...failingClient,
+          fetchAllDatastoreRecords: async () => {
+            throw new Error("CKAN is down");
+          },
+        },
+      }),
+    ).rejects.toThrow("CKAN is down");
+
+    // A failure costs one cycle, not every cycle until the lease expires.
+    await expect(
+      prisma.scheduleSource.findUniqueOrThrow({
+        where: { id: scheduleSource.id },
+      }),
+    ).resolves.toMatchObject({ importLeaseExpiresAt: null });
+  });
+
+  it("records when imported data last reached the site", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    await createMatchingBatch(scheduleSource.id);
+
+    await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient("2026-07-08T12:00:00.000Z"),
+      now: new Date("2026-07-08T13:00:00.000Z"),
+    });
+
+    await expect(
+      prisma.scheduleSource.findUniqueOrThrow({
+        where: { id: scheduleSource.id },
+      }),
+    ).resolves.toMatchObject({
+      lastSuccessfulImportAt: new Date("2026-07-08T13:00:00.000Z"),
+    });
+  });
+
+  it("leaves the last-import timestamp alone when nothing was published", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createMatchingBatch(scheduleSource.id);
+
+    const result = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient(),
+    });
+
+    expect(result.status).toBe("SKIPPED_NO_REFRESH");
+    await expect(
+      prisma.scheduleSource.findUniqueOrThrow({
+        where: { id: scheduleSource.id },
+      }),
+    ).resolves.toMatchObject({ lastSuccessfulImportAt: null });
   });
 
   it("builds the batch but leaves it for review when the gate declines", async () => {
