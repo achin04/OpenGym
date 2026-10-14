@@ -232,6 +232,93 @@ describe("runTorontoAutoImport", () => {
     ).resolves.toBe(result.dryRun?.counts.createdCount);
   });
 
+  it("applies a batch an earlier run left unapplied", async () => {
+    await createScheduleSource();
+    await createVenues();
+
+    // Build a real batch, then simulate the apply having failed by running the
+    // import with a client the source has not moved past: the dry run exists,
+    // nothing was published, and refresh detection would now say UNCHANGED.
+    const first = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient(),
+      limits: { maxMissingCount: -1 },
+    });
+    expect(first.status).toBe("IMPORTED_HELD_FOR_REVIEW");
+
+    const second = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient(),
+    });
+
+    expect(second.status).toBe("APPLIED_PENDING_BATCH");
+    expect(second.recoveredPendingBatch).toBe(true);
+    expect(second.apply?.applyBatchId).toBeTruthy();
+    expect(second.dryRun).toBeNull();
+
+    // The recovered batch is the one the first run built, not a new one.
+    await expect(
+      prisma.importBatch.count({ where: { mode: ImportBatchMode.DRY_RUN } }),
+    ).resolves.toBe(1);
+    await expect(prisma.run.count()).resolves.toBe(
+      first.dryRun?.counts.createdCount,
+    );
+  });
+
+  it("leaves a pending batch alone when the gate still refuses it", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    const batch = await prisma.importBatch.create({
+      data: {
+        scheduleSourceId: scheduleSource.id,
+        trigger: "test",
+        mode: ImportBatchMode.DRY_RUN,
+        status: ImportBatchStatus.PARTIAL,
+        isCompleteSnapshot: true,
+        completedAt: new Date(),
+        // An error item is the gate's reason to hold a batch for a person, and
+        // that reason does not expire just because a later run came along.
+        errorCount: 1,
+        dropInResourceId: dropInResource.id,
+        locationsResourceId: locationsResource.id,
+        facilitiesResourceId: facilitiesResource.id,
+        dropInResourceLastModifiedAt: new Date(SOURCE_MODIFIED_AT),
+        locationsResourceLastModifiedAt: new Date(SOURCE_MODIFIED_AT),
+        facilitiesResourceLastModifiedAt: new Date(SOURCE_MODIFIED_AT),
+      },
+    });
+
+    const result = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient(),
+    });
+
+    // Falls through to detection, which sees the source unchanged.
+    expect(result.status).toBe("SKIPPED_NO_REFRESH");
+    expect(result.refresh?.comparedBatchId).toBe(batch.id);
+    await expect(
+      prisma.importBatch.count({ where: { mode: ImportBatchMode.APPLY } }),
+    ).resolves.toBe(0);
+  });
+
+  it("ignores a pending batch too old to trust", async () => {
+    const scheduleSource = await createScheduleSource();
+    await createVenues();
+    // createMatchingBatch completed in July, far past the gate's age limit, so
+    // its observed window can no longer justify publishing anything.
+    await createMatchingBatch(scheduleSource.id);
+
+    const result = await runTorontoAutoImport({
+      db: prisma,
+      ckanClient: createFakeCkanClient(),
+    });
+
+    expect(result.status).toBe("SKIPPED_NO_REFRESH");
+    await expect(
+      prisma.importBatch.count({ where: { mode: ImportBatchMode.APPLY } }),
+    ).resolves.toBe(0);
+  });
+
   it("declines to start while another import holds the lease", async () => {
     const scheduleSource = await createScheduleSource();
     await createMatchingBatch(scheduleSource.id);
