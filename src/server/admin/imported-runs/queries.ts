@@ -36,6 +36,17 @@ export type AdminImportedVenueCreationListItem = Awaited<
   ReturnType<typeof getAdminImportedVenueCreations>
 >[number];
 
+// The Run an item acted on, when it has one. Apply items deliberately store no
+// payloads once their Run exists (see canRecoverPayloadsFromRun), so this is
+// what the admin tables render for them instead of a duplicated copy.
+export type AdminImportItemRunDisplay = {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  venueName: string | null;
+};
+
 export type AdminImportItemDisplay = {
   id: string;
   sourceKey: string;
@@ -49,6 +60,7 @@ export type AdminImportItemDisplay = {
   updatedAt: Date;
   payload: ImportItemPayloadDisplay | null;
   fieldDiffs: ImportFieldDiffDisplay[];
+  run: AdminImportItemRunDisplay | null;
 };
 
 export type AdminPendingVenueGroup = {
@@ -87,6 +99,13 @@ function toImportItemDisplay(item: {
   errorMessage: string | null;
   createdAt: Date;
   updatedAt: Date;
+  run?: {
+    id: string;
+    title: string;
+    startTime: Date;
+    endTime: Date;
+    venue: { name: string } | null;
+  } | null;
 }): AdminImportItemDisplay {
   return {
     id: item.id,
@@ -101,6 +120,15 @@ function toImportItemDisplay(item: {
     updatedAt: item.updatedAt,
     payload: parseImportItemPayloadDisplay(item.normalizedPayload),
     fieldDiffs: parseImportFieldDiffDisplay(item.fieldDiff),
+    run: item.run
+      ? {
+          id: item.run.id,
+          title: item.run.title,
+          startTime: item.run.startTime,
+          endTime: item.run.endTime,
+          venueName: item.run.venue?.name ?? null,
+        }
+      : null,
   };
 }
 
@@ -409,6 +437,21 @@ export async function getAdminImportBatchDetail(
       },
       items: {
         orderBy: [{ action: "asc" }, { sourceKey: "asc" }],
+        include: {
+          run: {
+            select: {
+              id: true,
+              title: true,
+              startTime: true,
+              endTime: true,
+              venue: {
+                select: {
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       },
     },
   });

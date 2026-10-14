@@ -1,19 +1,28 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  AgeGroup,
   ImportBatchMode,
   ImportBatchStatus,
+  ImportItemAction,
+  ImportReviewStatus,
   RunSourceType,
+  SkillLevel,
 } from "@/generated/prisma/enums";
 import { prisma } from "@/server/db";
 import { applyImportBatch } from "./apply-import-batch";
-import { getAdminAutomatedImportStatus } from "./queries";
+import {
+  getAdminAutomatedImportStatus,
+  getAdminImportBatchDetail,
+} from "./queries";
 
 vi.mock("server-only", () => ({}));
 
 async function cleanDatabase() {
   await prisma.importItem.deleteMany();
   await prisma.importBatch.deleteMany();
+  await prisma.run.deleteMany();
   await prisma.scheduleSource.deleteMany();
+  await prisma.venue.deleteMany();
 }
 
 async function createScheduleSource(
@@ -57,6 +66,71 @@ async function createDryRunBatch(
     },
   });
 }
+
+describe("getAdminImportBatchDetail", () => {
+  beforeEach(async () => {
+    await cleanDatabase();
+  });
+
+  afterAll(async () => {
+    await cleanDatabase();
+    await prisma.$disconnect();
+  });
+
+  it("renders an apply item from its linked run when it carries no payload", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await prisma.venue.create({
+      data: {
+        name: "Trim Test Community Centre",
+        addressLine1: "5 Trim Way",
+        city: "Toronto",
+      },
+    });
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: {
+        batchId: batch.id,
+        sourceKey: "create-1",
+        sourceOccurrenceId: "source-detail-1",
+        action: ImportItemAction.CREATE,
+        reviewStatus: ImportReviewStatus.PENDING,
+        normalizedPayload: {
+          title: "Adult Basketball",
+          description: null,
+          sourceType: RunSourceType.CITY,
+          startTime: "2026-10-20T22:00:00.000Z",
+          endTime: "2026-10-21T00:00:00.000Z",
+          price: null,
+          skillLevel: SkillLevel.OPEN,
+          ageGroup: AgeGroup.ADULT,
+          maxPlayers: null,
+          verified: true,
+          sourceUrl: null,
+          sourceExternalId: "source-detail-1",
+          sourceSeriesId: null,
+          sourceFingerprint: "source-detail-1:fingerprint",
+          sourceStatus: "ACTIVE",
+          reviewStatus: ImportReviewStatus.PENDING,
+          venueId: venue.id,
+          scheduleSourceId: scheduleSource.id,
+        },
+      },
+    });
+
+    const result = await applyImportBatch(batch.id);
+    const detail = await getAdminImportBatchDetail(result.applyBatchId, prisma);
+    const item = detail?.itemGroups.create[0];
+
+    // The payload is gone, so everything the admin table shows for this row has
+    // to come off the linked run instead.
+    expect(item?.payload).toBeNull();
+    expect(item?.run?.title).toBe("Adult Basketball");
+    expect(item?.run?.startTime).toEqual(
+      new Date("2026-10-20T22:00:00.000Z"),
+    );
+    expect(item?.run?.venueName).toBe("Trim Test Community Centre");
+  });
+});
 
 describe("getAdminAutomatedImportStatus", () => {
   beforeEach(async () => {

@@ -683,6 +683,29 @@ function jsonInput(value: unknown): Prisma.InputJsonValue | undefined {
   return value === null ? undefined : (value as Prisma.InputJsonValue);
 }
 
+// An apply item records what happened. The content of the change is already
+// stored twice over - on the dry-run item it mirrors, and in the Run it points
+// at - so copying rawPayload and normalizedPayload onto it writes a third copy
+// of the same JSON. Measured on a real snapshot that is about 1.4 KB per item,
+// or roughly 2.6 MB per weekly refresh, which is the single largest source of
+// growth in this database.
+//
+// Payloads are kept whenever there is no Run to recover them from. A SKIPPED
+// item's payload carries the venue-matching detail that is the entire reason it
+// was skipped, and an ERROR item's payload is what makes the error diagnosable;
+// neither has a Run. fieldDiff is always kept: it is small (null on every row
+// in practice) and is the only record of what an UPDATE actually changed.
+function canRecoverPayloadsFromRun(item: ApplyImportItemDraft): boolean {
+  if (
+    item.action === ImportItemAction.SKIPPED ||
+    item.action === ImportItemAction.ERROR
+  ) {
+    return false;
+  }
+
+  return !!item.runId;
+}
+
 export async function applyImportBatch(
   batchId: string,
   db: ApplyImportBatchPrisma = defaultPrisma,
@@ -750,19 +773,27 @@ export async function applyImportBatch(
 
       if (applyItems.length > 0) {
         await tx.importItem.createMany({
-          data: applyItems.map((item) => ({
-            batchId: applyBatch.id,
-            sourceKey: item.sourceKey,
-            sourceOccurrenceId: item.sourceOccurrenceId,
-            sourceSeriesId: item.sourceSeriesId,
-            action: item.action,
-            reviewStatus: item.reviewStatus,
-            runId: item.runId,
-            rawPayload: jsonInput(item.rawPayload),
-            normalizedPayload: jsonInput(item.normalizedPayload),
-            fieldDiff: jsonInput(item.fieldDiff),
-            errorMessage: item.errorMessage,
-          })),
+          data: applyItems.map((item) => {
+            const recoverable = canRecoverPayloadsFromRun(item);
+
+            return {
+              batchId: applyBatch.id,
+              sourceKey: item.sourceKey,
+              sourceOccurrenceId: item.sourceOccurrenceId,
+              sourceSeriesId: item.sourceSeriesId,
+              action: item.action,
+              reviewStatus: item.reviewStatus,
+              runId: item.runId,
+              rawPayload: recoverable
+                ? undefined
+                : jsonInput(item.rawPayload),
+              normalizedPayload: recoverable
+                ? undefined
+                : jsonInput(item.normalizedPayload),
+              fieldDiff: jsonInput(item.fieldDiff),
+              errorMessage: item.errorMessage,
+            };
+          }),
         });
       }
 

@@ -393,6 +393,95 @@ describe("applyImportBatch", () => {
     ).resolves.toBe(1);
   });
 
+  it("stores no duplicate payloads on an apply item whose run exists", async () => {
+    const scheduleSource = await createScheduleSource();
+    const venue = await createVenue();
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.create({
+      data: {
+        batchId: batch.id,
+        sourceKey: "create-1",
+        sourceOccurrenceId: "source-trim-1",
+        action: ImportItemAction.CREATE,
+        reviewStatus: ImportReviewStatus.PENDING,
+        rawPayload: { "Course Title": "Basketball" },
+        normalizedPayload: runPayload({
+          scheduleSourceId: scheduleSource.id,
+          venueId: venue.id,
+          sourceExternalId: "source-trim-1",
+        }),
+      },
+    });
+
+    const result = await applyImportBatch(batch.id);
+    const applyItem = await prisma.importItem.findFirstOrThrow({
+      where: {
+        batchId: result.applyBatchId,
+      },
+    });
+
+    // The change is recoverable from the Run and from the dry-run item, so the
+    // apply row records only what happened.
+    expect(applyItem.runId).not.toBeNull();
+    expect(applyItem.rawPayload).toBeNull();
+    expect(applyItem.normalizedPayload).toBeNull();
+
+    // The dry-run item it mirrors is untouched, which is what makes the apply
+    // row's payloads redundant rather than lost.
+    const dryRunItem = await prisma.importItem.findFirstOrThrow({
+      where: {
+        batchId: batch.id,
+      },
+    });
+    expect(dryRunItem.normalizedPayload).not.toBeNull();
+  });
+
+  it("keeps payloads on skipped and errored apply items, which have no run", async () => {
+    const scheduleSource = await createScheduleSource();
+    const batch = await createDryRunBatch(scheduleSource.id);
+    await prisma.importItem.createMany({
+      data: [
+        {
+          batchId: batch.id,
+          sourceKey: "skipped-1",
+          action: ImportItemAction.SKIPPED,
+          reviewStatus: ImportReviewStatus.PENDING,
+          // The venue-matching detail is the entire reason it was skipped.
+          normalizedPayload: {
+            venueMatchStatus: "PENDING",
+            venueMatchReason: "No venue matched this location.",
+            sourceLocationId: "63",
+          },
+          errorMessage: "Skipped by dry run.",
+        },
+        {
+          batchId: batch.id,
+          sourceKey: "error-1",
+          action: ImportItemAction.ERROR,
+          reviewStatus: ImportReviewStatus.PENDING,
+          normalizedPayload: { issues: ["something went wrong"] },
+          errorMessage: "Errored during dry run.",
+        },
+      ],
+    });
+
+    const result = await applyImportBatch(batch.id);
+    const applyItems = await prisma.importItem.findMany({
+      where: {
+        batchId: result.applyBatchId,
+      },
+      orderBy: {
+        sourceKey: "asc",
+      },
+    });
+
+    expect(applyItems).toHaveLength(2);
+    for (const item of applyItems) {
+      expect(item.runId).toBeNull();
+      expect(item.normalizedPayload).not.toBeNull();
+    }
+  });
+
   it("counts a first miss without delisting the run", async () => {
     const scheduleSource = await createScheduleSource();
     const venue = await createVenue();

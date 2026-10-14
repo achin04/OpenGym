@@ -16,21 +16,40 @@ function displayValue(value: string | number | boolean | null | undefined) {
   return String(value);
 }
 
-function itemTimeLabel(item: AdminImportItemDisplay) {
-  const startTime = item.payload?.startTime
-    ? new Date(item.payload.startTime)
-    : null;
-  const endTime = item.payload?.endTime ? new Date(item.payload.endTime) : null;
+function parsedDate(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
 
-  if (!startTime || Number.isNaN(startTime.getTime())) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+// Apply items store no payload once their Run exists, so the Run is the source
+// for these columns. The payload still wins when present, because a dry-run
+// item describes what is *proposed* and may differ from the Run as it stands.
+function itemTimeLabel(item: AdminImportItemDisplay) {
+  const startTime = parsedDate(item.payload?.startTime) ?? item.run?.startTime;
+  const endTime = parsedDate(item.payload?.endTime) ?? item.run?.endTime;
+
+  if (!startTime) {
     return "Unknown";
   }
 
-  if (!endTime || Number.isNaN(endTime.getTime())) {
+  if (!endTime) {
     return formatDateTime(startTime);
   }
 
   return `${formatDateTime(startTime)} to ${formatDateTime(endTime)}`;
+}
+
+function itemLocationLabel(item: AdminImportItemDisplay) {
+  return (
+    item.payload?.location?.sourceName ??
+    item.payload?.sourceLocationId ??
+    item.run?.venueName ??
+    null
+  );
 }
 
 export function ImportItemTable({
@@ -70,21 +89,18 @@ export function ImportItemTable({
               {items.map((item) => (
                 <tr key={item.id} className="bg-foreground/[0.03] align-top">
                   <td className="px-4 py-4 text-zinc-900">
-                    {displayValue(item.payload?.title)}
+                    {displayValue(item.payload?.title ?? item.run?.title)}
                   </td>
                   <td className="px-4 py-4 text-zinc-600">
                     {itemTimeLabel(item)}
                   </td>
                   <td className="px-4 py-4 text-zinc-600">
-                    <div>
-                      {displayValue(
-                        item.payload?.location?.sourceName ??
-                          item.payload?.sourceLocationId,
-                      )}
-                    </div>
-                    <div className="mt-1 text-xs text-zinc-500">
-                      ID {displayValue(item.payload?.sourceLocationId)}
-                    </div>
+                    <div>{displayValue(itemLocationLabel(item))}</div>
+                    {item.payload?.sourceLocationId ? (
+                      <div className="mt-1 text-xs text-zinc-500">
+                        ID {item.payload.sourceLocationId}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-4 text-zinc-600">
                     {formatLabel(item.action)}
