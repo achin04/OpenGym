@@ -14,6 +14,11 @@ import {
   SkillLevel,
   SourceRunStatus,
 } from "@/generated/prisma/enums";
+import {
+  availabilityOptions,
+  getAvailabilityRange,
+  type AvailabilityFilter,
+} from "@/lib/runs/availability";
 import { prisma } from "@/server/db";
 
 type RunsPageProps = {
@@ -25,17 +30,6 @@ type RunsPageProps = {
     sourceType?: string | string[];
   }>;
 };
-
-type AvailabilityFilter = "upcoming" | "today" | "tonight" | "week" | "weekend" | "any";
-
-const availabilityOptions: { value: AvailabilityFilter; label: string }[] = [
-  { value: "upcoming", label: "Upcoming" },
-  { value: "today", label: "Today" },
-  { value: "tonight", label: "Tonight" },
-  { value: "week", label: "Next 7 days" },
-  { value: "weekend", label: "Weekend" },
-  { value: "any", label: "Any time" },
-];
 
 const skillOptions = [
   { value: "", label: "Any level" },
@@ -82,66 +76,6 @@ function parseEnumValue<T extends Record<string, string>>(
   return Object.values(enumObject).includes(candidate)
     ? (candidate as T[keyof T])
     : "";
-}
-
-function startOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(0, 0, 0, 0);
-  return nextDate;
-}
-
-function endOfDay(date: Date) {
-  const nextDate = new Date(date);
-  nextDate.setHours(23, 59, 59, 999);
-  return nextDate;
-}
-
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}
-
-function getAvailabilityRange(availability: AvailabilityFilter, now: Date) {
-  if (availability === "any") {
-    return undefined;
-  }
-
-  if (availability === "today") {
-    return {
-      gte: now,
-      lte: endOfDay(now),
-    };
-  }
-
-  if (availability === "tonight") {
-    const tonightStart = new Date(now);
-    tonightStart.setHours(Math.max(now.getHours(), 17), 0, 0, 0);
-    const tonightEnd = new Date(now);
-    tonightEnd.setHours(23, 59, 59, 999);
-
-    return {
-      gte: tonightStart,
-      lte: tonightEnd,
-    };
-  }
-
-  if (availability === "weekend") {
-    const day = now.getDay();
-    const daysUntilSaturday = (6 - day + 7) % 7;
-    const weekendStart = startOfDay(addDays(now, daysUntilSaturday));
-    const weekendEnd = startOfDay(addDays(weekendStart, 2));
-
-    return {
-      gte: weekendStart,
-      lt: weekendEnd,
-    };
-  }
-
-  return {
-    gte: now,
-    lte: addDays(now, availability === "week" ? 7 : 60),
-  };
 }
 
 function getResultsLabel(count: number, location: string) {
@@ -229,11 +163,9 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
 
   const where: Prisma.RunWhereInput = {
     sourceStatus: SourceRunStatus.ACTIVE,
-    ...(availabilityRange
-      ? {
-          startTime: availabilityRange,
-        }
-      : {}),
+    // Always bounded: getAvailabilityRange floors every option at the present,
+    // so a past run can never appear in the listing.
+    startTime: availabilityRange,
     ...(locationFilter ? locationFilter : {}),
     ...(skillLevel
       ? {
