@@ -123,6 +123,10 @@ model ScheduleSource {
   licenseUrl             String?
   config                 Json?
   lastSuccessfulImportAt DateTime?
+  // Lease held by an in-flight automated import, so two overlapping runs cannot
+  // both import. Stores an expiry rather than a boolean so a crashed run stops
+  // blocking imports on its own instead of needing manual clearing.
+  importLeaseExpiresAt   DateTime?
   runs                   Run[]
   externalVenueRefs      ExternalVenueRef[]
   importBatches          ImportBatch[]
@@ -226,6 +230,8 @@ model ImportBatch {
   locationsRecordCount             Int                     @default(0)
   facilitiesRecordCount            Int                     @default(0)
   basketballRecordCount            Int                     @default(0)
+  basketballWindowStartAt          DateTime?
+  basketballWindowEndAt            DateTime?
   createdCount                     Int                     @default(0)
   updatedCount                     Int                     @default(0)
   unchangedCount                   Int                     @default(0)

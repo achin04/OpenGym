@@ -1,8 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
-import { BrandMark } from "./_components/brand";
-
-const popularLocations = ["Toronto", "Etobicoke", "North York", "Scarborough"];
 
 const filterFeatures = [
   {
@@ -24,18 +20,15 @@ const filterFeatures = [
 
 export default function Home() {
   return (
-    <main className="px-5 pb-16 pt-14 text-cream sm:px-6 sm:pb-20 sm:pt-16 lg:pt-20">
+    <main className="px-5 pb-16 pt-14 text-foreground sm:px-6 sm:pb-20 sm:pt-16 lg:pt-20">
       <section className="mx-auto w-full max-w-7xl">
         <div className="max-w-4xl">
           <div className="space-y-5">
-            <h1 className="flex max-w-4xl items-start gap-4 text-4xl font-semibold tracking-normal text-cream sm:items-center sm:gap-5 sm:text-5xl">
-              <BrandMark glow size="hero" />
-              <span>
-                Find basketball runs{" "}
-                <span className="text-[#f47b2a]">near you.</span>
-              </span>
+            <h1 className="max-w-4xl text-4xl font-semibold tracking-normal text-foreground sm:text-5xl">
+              Find basketball runs{" "}
+              <span className="text-[#f47b2a]">near you.</span>
             </h1>
-            <p className="max-w-[34rem] text-lg leading-8 text-cream/68">
+            <p className="max-w-[34rem] text-lg leading-8 text-foreground/68">
               Enter a city or neighborhood, set when you can play, and OpenGym
               shows available drop-in runs.
             </p>
@@ -43,10 +36,10 @@ export default function Home() {
 
           <form
             action="/runs"
-            className="mt-9 grid gap-2 rounded-xl border border-[#444] bg-[#111111]/95 p-2 shadow-2xl shadow-black/25 transition duration-200 focus-within:border-court/80 focus-within:shadow-court/10 sm:grid-cols-[minmax(0,1fr)_13rem_4.5rem] sm:items-center"
+            className="mt-9 grid gap-2 rounded-xl border border-[#e0e0dd] bg-[#f7f6f4]/95 p-2 shadow-2xl shadow-black/10 transition duration-200 focus-within:border-court/80 focus-within:shadow-court/10 sm:grid-cols-[minmax(0,1fr)_13rem_4.5rem] sm:items-center"
           >
-            <div className="flex min-h-14 items-center gap-3 rounded-lg border border-[#292929] bg-[#101010] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
-              <LocationIcon className="h-5 w-5 shrink-0 text-court-200" />
+            <div className="flex min-h-14 items-center gap-3 rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
+              <LocationIcon className="h-5 w-5 shrink-0 text-court" />
               <label
                 htmlFor="home-location"
                 className="sr-only"
@@ -59,11 +52,11 @@ export default function Home() {
                 type="search"
                 autoComplete="address-level2"
                 placeholder="Toronto, North York, Scarborough"
-                className="h-full min-w-0 flex-1 bg-transparent text-base text-[#F4F4F4] outline-none placeholder:text-[#8e8e8e]"
+                className="h-full min-w-0 flex-1 bg-transparent text-base text-[#1a1a1a] outline-none placeholder:text-[#8e8e8e]"
               />
             </div>
 
-            <div className="flex min-h-14 items-center rounded-lg border border-[#292929] bg-[#101010] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
+            <div className="flex min-h-14 items-center rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
               <label
                 htmlFor="home-availability"
                 className="sr-only"
@@ -74,7 +67,7 @@ export default function Home() {
                 id="home-availability"
                 name="availability"
                 defaultValue="upcoming"
-                className="h-full w-full bg-transparent text-base text-[#F4F4F4] outline-none"
+                className="h-full w-full bg-transparent text-base text-[#1a1a1a] outline-none"
               >
                 <option value="upcoming">Upcoming</option>
                 <option value="today">Today</option>
@@ -87,27 +80,14 @@ export default function Home() {
             <button
               type="submit"
               aria-label="Find runs"
-              className="inline-flex min-h-14 items-center justify-center rounded-lg bg-[#f47b2a] text-background shadow-lg shadow-[#f47b2a]/20 transition duration-200 hover:bg-[#ffc68f] hover:shadow-[#f47b2a]/30 focus:outline-none focus:ring-2 focus:ring-[#f47b2a]/50"
+              className="inline-flex min-h-14 items-center justify-center rounded-lg bg-[#f47b2a] text-foreground shadow-lg shadow-[#f47b2a]/20 transition duration-200 hover:bg-[#ffc68f] hover:shadow-[#f47b2a]/30 focus:outline-none focus:ring-2 focus:ring-[#f47b2a]/50"
             >
               <SearchIcon className="h-6 w-6" />
             </button>
           </form>
-
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-[#A8A8A8]">
-            <span className="font-semibold text-cream/78">Popular:</span>
-            {popularLocations.map((area) => (
-              <Link
-                key={area}
-                href={`/runs?location=${encodeURIComponent(area)}&availability=upcoming`}
-                className="rounded-full border border-[#3d332c] bg-[#101010]/60 px-4 py-2 font-medium text-cream/76 transition duration-200 hover:border-court/70 hover:bg-court/10 hover:text-court-200 focus:outline-none focus:ring-2 focus:ring-court/35"
-              >
-                {area}
-              </Link>
-            ))}
-          </div>
         </div>
 
-        <section className="relative mt-16 min-h-[32rem] overflow-hidden rounded-xl border border-[#3a3029] bg-[#131313] p-6 shadow-2xl shadow-black/20 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:p-12">
+        <section className="relative mt-16 min-h-[32rem] overflow-hidden rounded-xl border border-[#e6ded2] bg-[#f7f5f0] p-6 shadow-2xl shadow-black/10 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:p-12">
           <Image
             src="/torontoSkyline.avif"
             alt=""
@@ -132,10 +112,10 @@ export default function Home() {
                   <div
                     key={feature.label}
                     className={`sm:px-7 lg:px-9 ${index === 0 ? "sm:pl-0" : ""} ${
-                      index > 0 ? "sm:border-l sm:border-white/14" : ""
+                      index > 0 ? "sm:border-l sm:border-foreground/14" : ""
                     }`}
                   >
-                    <Icon className="h-9 w-9 text-court-200" />
+                    <Icon className="h-9 w-9 text-court" />
                     <h3 className="mt-6 text-xl font-semibold text-[#F4F4F4]">
                       {feature.label}
                     </h3>

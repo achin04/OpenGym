@@ -18,6 +18,7 @@ import {
   type DatastorePage,
   TORONTO_CKAN_PACKAGE_ID,
   createTorontoCkanClient,
+  resourceModifiedAt,
   type TorontoCkanClient,
 } from "./ckan";
 import {
@@ -34,7 +35,7 @@ const TORONTO_DROP_IN_PROVIDER_KEY = "toronto-drop-in";
 const TORONTO_DROP_IN_SOURCE_URL =
   "https://open.toronto.ca/dataset/registered-programs-and-drop-in-courses-offering/";
 
-type TorontoDryRunPrisma = Pick<
+export type TorontoDryRunPrisma = Pick<
   PrismaClient,
   | "$transaction"
   | "scheduleSource"
@@ -54,9 +55,12 @@ export type TorontoSourceHealthIssue = {
   code:
     | "DROP_IN_EMPTY"
     | "DROP_IN_TOTAL_MISMATCH"
+    | "DROP_IN_DUPLICATE_IDS"
     | "LOCATIONS_EMPTY"
     | "LOCATIONS_TOTAL_MISMATCH"
-    | "FACILITIES_TOTAL_MISMATCH";
+    | "LOCATIONS_DUPLICATE_IDS"
+    | "FACILITIES_TOTAL_MISMATCH"
+    | "FACILITIES_DUPLICATE_IDS";
   severity: "error";
   message: string;
 };
@@ -98,6 +102,7 @@ export type TorontoDryRunImportSummary = {
     createdCount: number;
     updatedCount: number;
     unchangedCount: number;
+    missingCount: number;
     skippedCount: number;
     errorCount: number;
   };
@@ -206,20 +211,6 @@ export function createTorontoSnapshotHash(value: unknown): string {
   return createHash("sha256").update(stableJsonStringify(value)).digest("hex");
 }
 
-function resourceModifiedAt(resource: CkanResource): Date | null {
-  const value =
-    resource.last_modified ??
-    resource.last_modified_date ??
-    resource.metadata_modified;
-
-  if (!value) {
-    return null;
-  }
-
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
 function summarizeResourceForHash(resource: CkanResource): JsonObject {
   return {
     id: resource.id,
@@ -230,6 +221,16 @@ function summarizeResourceForHash(resource: CkanResource): JsonObject {
     lastModifiedDate: resource.last_modified_date ?? null,
     metadataModified: resource.metadata_modified ?? null,
   };
+}
+
+// Counts unique CKAN `_id` values among fetched records. `_id` is CKAN's own
+// stable surrogate key, present on every resource we use. If this is smaller
+// than records.length, some rows were fetched more than once - which,
+// combined with a records.length that still matched the reported total,
+// means other real rows were silently never fetched at all. A matching
+// record count alone cannot detect this; identity can.
+function countDistinctIds(records: Pick<DatastorePage, "records">["records"]): number {
+  return new Set(records.map((record) => record._id)).size;
 }
 
 export function evaluateTorontoSourceHealth({
@@ -259,6 +260,15 @@ export function evaluateTorontoSourceHealth({
     });
   }
 
+  const dropInDistinctIds = countDistinctIds(dropInPage.records);
+  if (dropInDistinctIds !== dropInPage.records.length) {
+    issues.push({
+      code: "DROP_IN_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Drop-in resource returned ${dropInPage.records.length} records but only ${dropInDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
+    });
+  }
+
   if (locationsPage.records.length === 0) {
     issues.push({
       code: "LOCATIONS_EMPTY",
@@ -275,11 +285,29 @@ export function evaluateTorontoSourceHealth({
     });
   }
 
+  const locationsDistinctIds = countDistinctIds(locationsPage.records);
+  if (locationsDistinctIds !== locationsPage.records.length) {
+    issues.push({
+      code: "LOCATIONS_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Locations resource returned ${locationsPage.records.length} records but only ${locationsDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
+    });
+  }
+
   if (facilitiesPage.records.length !== facilitiesPage.total) {
     issues.push({
       code: "FACILITIES_TOTAL_MISMATCH",
       severity: "error",
       message: `Toronto Facilities resource returned ${facilitiesPage.records.length} records but reported total ${facilitiesPage.total}.`,
+    });
+  }
+
+  const facilitiesDistinctIds = countDistinctIds(facilitiesPage.records);
+  if (facilitiesDistinctIds !== facilitiesPage.records.length) {
+    issues.push({
+      code: "FACILITIES_DUPLICATE_IDS",
+      severity: "error",
+      message: `Toronto Facilities resource returned ${facilitiesPage.records.length} records but only ${facilitiesDistinctIds} distinct _id values; some rows were duplicated and others were likely missed.`,
     });
   }
 
@@ -519,6 +547,81 @@ async function findExistingImportedRuns(
   );
 }
 
+// An active, previously-imported run whose scheduled date falls inside this
+// snapshot's observed window but who this snapshot's own candidates never
+// produced - i.e. Toronto should still be listing it, but isn't.
+export type MissingImportedRun = {
+  id: string;
+  title: string;
+  sourceExternalId: string;
+  sourceSeriesId: string | null;
+  startTime: Date;
+  endTime: Date;
+};
+
+async function findMissingImportedRuns(
+  db: TorontoDryRunPrisma,
+  scheduleSourceId: string,
+  window: { start: Date; end: Date },
+  seenSourceExternalIds: ReadonlySet<string>,
+): Promise<MissingImportedRun[]> {
+  const runs = await db.run.findMany({
+    where: {
+      scheduleSourceId,
+      sourceStatus: SourceRunStatus.ACTIVE,
+      startTime: {
+        gte: window.start,
+        lte: window.end,
+      },
+    },
+    select: {
+      id: true,
+      title: true,
+      sourceExternalId: true,
+      sourceSeriesId: true,
+      startTime: true,
+      endTime: true,
+    },
+  });
+
+  return runs.flatMap((run) => {
+    if (!run.sourceExternalId || seenSourceExternalIds.has(run.sourceExternalId)) {
+      return [];
+    }
+
+    return [{ ...run, sourceExternalId: run.sourceExternalId }];
+  });
+}
+
+export function missingRunItems(
+  missingRuns: MissingImportedRun[],
+  window: { start: Date; end: Date },
+  usedSourceKeys: Set<string>,
+): ImportItemDraft[] {
+  const windowLabel = `${window.start.toISOString().slice(0, 10)}..${window.end
+    .toISOString()
+    .slice(0, 10)}`;
+
+  return missingRuns.map((run) => ({
+    sourceKey: makeUniqueSourceKey(run.sourceExternalId, usedSourceKeys),
+    sourceOccurrenceId: run.sourceExternalId,
+    sourceSeriesId: run.sourceSeriesId ?? undefined,
+    action: ImportItemAction.MISSING,
+    reviewStatus: ImportReviewStatus.PENDING,
+    runId: run.id,
+    normalizedPayload: {
+      kind: "missing_run",
+      runId: run.id,
+      title: run.title,
+      startTime: run.startTime.toISOString(),
+      endTime: run.endTime.toISOString(),
+      sourceExternalId: run.sourceExternalId,
+      sourceSeriesId: run.sourceSeriesId,
+    },
+    errorMessage: `Run was not present in this Toronto snapshot (observed window ${windowLabel}).`,
+  }));
+}
+
 function comparableValue(value: unknown): JsonPrimitive {
   if (value === null || value === undefined) {
     return null;
@@ -679,6 +782,38 @@ function countBasketballRecords(skippedRows: TorontoDropInSkippedRow[]): number 
     .length;
 }
 
+// The Toronto feed is a rolling window, not a fixed schedule: each refresh
+// covers whatever forward-looking date range Toronto happened to publish
+// that day, and that range shifts every time. There is no fixed calendar
+// boundary anywhere in the source, so the only way to know what a given
+// snapshot actually covers is to look at the candidates it produced and take
+// the min/max of their start times. Missing-run detection (a later commit)
+// needs this to tell "genuinely cancelled" apart from "aged out of the
+// window" - it can only do that by comparing a run's date against the
+// window this specific batch observed, not some constant.
+export function computeBasketballWindow(
+  candidates: NormalizedRunCandidate[],
+): { start: Date; end: Date } | null {
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  let start = candidates[0].startTime;
+  let end = candidates[0].startTime;
+
+  for (const candidate of candidates) {
+    if (candidate.startTime < start) {
+      start = candidate.startTime;
+    }
+
+    if (candidate.startTime > end) {
+      end = candidate.startTime;
+    }
+  }
+
+  return { start, end };
+}
+
 function summarizeImportItems(items: ImportItemDraft[]) {
   return {
     createdCount: items.filter((item) => item.action === ImportItemAction.CREATE)
@@ -688,6 +823,8 @@ function summarizeImportItems(items: ImportItemDraft[]) {
     unchangedCount: items.filter(
       (item) => item.action === ImportItemAction.UNCHANGED,
     ).length,
+    missingCount: items.filter((item) => item.action === ImportItemAction.MISSING)
+      .length,
     skippedCount: items.filter((item) => item.action === ImportItemAction.SKIPPED)
       .length,
     errorCount: items.filter((item) => item.action === ImportItemAction.ERROR)
@@ -956,7 +1093,9 @@ async function processCandidates({
   return items;
 }
 
-async function findTorontoScheduleSource(db: TorontoDryRunPrisma) {
+// Exported so the auto-import orchestrator can resolve the source id before
+// the dry run exists, which refresh detection needs.
+export async function findTorontoScheduleSource(db: TorontoDryRunPrisma) {
   const byProviderKey = await db.scheduleSource.findUnique({
     where: {
       providerKey: TORONTO_DROP_IN_PROVIDER_KEY,
@@ -1064,6 +1203,14 @@ export async function runTorontoDryRunImport({
     const duplicates = findDuplicateTorontoSourceOccurrences(
       normalization.candidates,
     );
+    // Only trust a window computed from a snapshot we know is complete - an
+    // incomplete fetch can't be trusted to represent the true date range,
+    // and such a batch can never be applied anyway (assertDryRunBatchCanApply
+    // requires isCompleteSnapshot), so there is no missing-run decision that
+    // would ever read this window back.
+    const basketballWindow = health.isCompleteSnapshot
+      ? computeBasketballWindow(normalization.candidates)
+      : null;
     const duplicateSourceOccurrenceIds = new Set(
       duplicates.map((duplicate) => duplicate.sourceOccurrenceId),
     );
@@ -1079,17 +1226,31 @@ export async function runTorontoDryRunImport({
       })),
       ...skippedDropInItems(normalization.skipped, usedSourceKeys),
       ...(health.isCompleteSnapshot
-        ? await processCandidates({
-            db,
-            batchId: batch.id,
-            scheduleSourceId: scheduleSource.id,
-            seenAt,
-            candidates: normalization.candidates,
-            duplicateSourceOccurrenceIds,
-            locationsById: locationIndex.locationsById,
-            existingRunsByExternalId,
-            usedSourceKeys,
-          })
+        ? [
+            ...(await processCandidates({
+              db,
+              batchId: batch.id,
+              scheduleSourceId: scheduleSource.id,
+              seenAt,
+              candidates: normalization.candidates,
+              duplicateSourceOccurrenceIds,
+              locationsById: locationIndex.locationsById,
+              existingRunsByExternalId,
+              usedSourceKeys,
+            })),
+            ...(basketballWindow
+              ? missingRunItems(
+                  await findMissingImportedRuns(
+                    db,
+                    scheduleSource.id,
+                    basketballWindow,
+                    new Set(candidateIds(normalization.candidates)),
+                  ),
+                  basketballWindow,
+                  usedSourceKeys,
+                )
+              : []),
+          ]
         : [
             {
               sourceKey: makeUniqueSourceKey("source-health", usedSourceKeys),
@@ -1135,9 +1296,12 @@ export async function runTorontoDryRunImport({
         basketballRecordCount:
           normalization.candidates.length +
           countBasketballRecords(normalization.skipped),
+        basketballWindowStartAt: basketballWindow?.start ?? null,
+        basketballWindowEndAt: basketballWindow?.end ?? null,
         createdCount: itemCounts.createdCount,
         updatedCount: itemCounts.updatedCount,
         unchangedCount: itemCounts.unchangedCount,
+        missingCount: itemCounts.missingCount,
         skippedCount: itemCounts.skippedCount,
         errorCount: itemCounts.errorCount,
         errorSummary: errorSummary(health, items),
@@ -1157,6 +1321,7 @@ export async function runTorontoDryRunImport({
         createdCount: true,
         updatedCount: true,
         unchangedCount: true,
+        missingCount: true,
         skippedCount: true,
         errorCount: true,
         dropInResourceId: true,
@@ -1183,6 +1348,7 @@ export async function runTorontoDryRunImport({
         createdCount: updatedBatch.createdCount,
         updatedCount: updatedBatch.updatedCount,
         unchangedCount: updatedBatch.unchangedCount,
+        missingCount: updatedBatch.missingCount,
         skippedCount: updatedBatch.skippedCount,
         errorCount: updatedBatch.errorCount,
       },

@@ -10,6 +10,13 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // CLI-only (migrate, generate, studio, seed) - the running app never
+    // reads this file, it builds its own PrismaPg adapter from DATABASE_URL
+    // directly in src/server/db.ts. Migrations need a direct connection, not
+    // a pooled one (PgBouncer transaction pooling can break Prisma's
+    // migration-lock and history bookkeeping), so prefer the unpooled URL
+    // here and fall back to DATABASE_URL where no separate one exists, e.g.
+    // local dev against a single, unpooled Postgres instance.
+    url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
   },
 });

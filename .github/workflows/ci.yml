@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    name: Lint, typecheck and test
+    runs-on: ubuntu-latest
+
+    services:
+      # Integration tests run against a real PostgreSQL instance, pinned to
+      # the same major version as local development and the managed Neon
+      # database so CI cannot pass on behaviour that production would reject.
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: opengym_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # vitest.integration.config.ts loads .env.test, which is gitignored and
+      # therefore absent here. dotenv no-ops on a missing file and never
+      # overrides an already-set variable, so this is what both the Prisma CLI
+      # and src/server/db.ts resolve to in CI.
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/opengym_test?schema=public
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # postinstall runs `prisma generate`, so the generated client that lint
+      # and typecheck depend on is in place after this step.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Apply migrations to the test database
+        run: npx prisma migrate deploy
+
+      - name: Integration tests
+        run: npm run test:integration

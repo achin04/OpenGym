@@ -15,16 +15,16 @@ export default async function NewImportedRunPage() {
   });
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12 text-white">
+    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
       <section className="mx-auto w-full max-w-5xl space-y-8">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-300">
+          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
             Admin
           </p>
           <h1 className="text-4xl font-semibold tracking-normal">
             New Imported Run
           </h1>
-          <p className="max-w-2xl text-zinc-300">
+          <p className="max-w-2xl text-zinc-600">
             Manually add a verified run from an official city or university
             schedule.
           </p>
@@ -32,19 +32,19 @@ export default async function NewImportedRunPage() {
 
         <form
           action={createImportedRun}
-          className="grid gap-6 rounded-lg border border-white/10 bg-white/5 p-6"
+          className="grid gap-6 rounded-lg border border-foreground/10 bg-foreground/5 p-6"
         >
           <input
             name="title"
             required
             placeholder="Title"
-            className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
           />
 
           <select
             name="venueId"
             required
-            className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
           >
             <option value="">Select a venue</option>
             {venues.map((venue) => (
@@ -57,7 +57,7 @@ export default async function NewImportedRunPage() {
           <select
             name="scheduleSourceId"
             required
-            className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
           >
             <option value="">Select a schedule source</option>
             {scheduleSources.map((source) => (
@@ -72,7 +72,7 @@ export default async function NewImportedRunPage() {
             type="url"
             required
             placeholder="Exact source URL"
-            className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -80,13 +80,13 @@ export default async function NewImportedRunPage() {
               name="startTime"
               type="datetime-local"
               required
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             />
             <input
               name="endTime"
               type="datetime-local"
               required
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             />
           </div>
 
@@ -94,7 +94,7 @@ export default async function NewImportedRunPage() {
             name="description"
             rows={4}
             placeholder="Description"
-            className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
           />
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -104,7 +104,7 @@ export default async function NewImportedRunPage() {
               min="0"
               step="0.01"
               placeholder="Price"
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             />
             <input
               name="maxPlayers"
@@ -112,7 +112,7 @@ export default async function NewImportedRunPage() {
               min="1"
               step="1"
               placeholder="Max players"
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             />
           </div>
 
@@ -120,7 +120,7 @@ export default async function NewImportedRunPage() {
             <select
               name="skillLevel"
               defaultValue="OPEN"
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             >
               <option value="OPEN">Open</option>
               <option value="BEGINNER">Beginner</option>
@@ -131,7 +131,7 @@ export default async function NewImportedRunPage() {
             <select
               name="ageGroup"
               defaultValue="ADULT"
-              className="rounded-md border border-white/10 bg-zinc-900 px-3 py-2 text-white"
+              className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground"
             >
               <option value="ADULT">Adult</option>
               <option value="ALL_AGES">All ages</option>
