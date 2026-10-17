@@ -7,7 +7,7 @@ import { HeaderLink } from "./_components/header-link";
 import {
   ClerkProvider,
   SignInButton,
-  SignOutButton,
+  UserButton,
   Show,
 } from "@clerk/nextjs";
 
@@ -32,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up">
+    <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
       <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
         <body className="min-h-full text-foreground">
           <header className="sticky top-0 z-30 border-b border-[#e6ded2] bg-[#faf8f4]/92 shadow-[0_1px_22px_rgba(15,16,19,0.06)] backdrop-blur-xl">
@@ -49,22 +49,25 @@ export default function RootLayout({
               <nav className="flex shrink-0 items-center gap-1 text-sm sm:gap-3">
                 <HeaderLink href="/runs">Runs</HeaderLink>
 
-                <Show when="signed-out">
-                  <SignInButton mode="modal">
-                    <button className="shrink-0 whitespace-nowrap rounded-lg border border-court bg-court px-3 py-2 font-semibold text-foreground shadow-lg shadow-court/15 transition duration-200 hover:bg-transparent hover:text-foreground hover:shadow-none focus:outline-none focus:ring-2 focus:ring-court/45 sm:px-4">
-                      Sign in
-                    </button>
-                  </SignInButton>
-                </Show>
+                {/* Fixed-size slot so the avatar and the sign-in button occupy the
+                    same geometry. Clerk resolves the session on the client, so
+                    without this the header reflows once auth state arrives. */}
+                <div className="flex h-10 min-w-[92px] shrink-0 items-center justify-end">
+                  <Show when="signed-out">
+                    <SignInButton mode="modal">
+                      <button className="shrink-0 whitespace-nowrap rounded-lg border border-court bg-court px-3 py-2 font-semibold text-foreground shadow-lg shadow-court/15 transition duration-200 hover:bg-transparent hover:text-foreground hover:shadow-none focus:outline-none focus:ring-2 focus:ring-court/45 sm:px-4">
+                        Sign in
+                      </button>
+                    </SignInButton>
+                  </Show>
 
-                <Show when="signed-in">
-                  <HeaderLink href="/account">Account</HeaderLink>
-                  <SignOutButton>
-                    <button className="shrink-0 whitespace-nowrap rounded-lg border border-court bg-court px-3 py-2 font-semibold text-foreground shadow-lg shadow-court/15 transition duration-200 hover:bg-transparent hover:text-foreground hover:shadow-none focus:outline-none focus:ring-2 focus:ring-court/45 sm:px-4">
-                      Sign out
-                    </button>
-                  </SignOutButton>
-                </Show>
+                  <Show when="signed-in">
+                    <UserButton
+                      userProfileUrl="/account"
+                      userProfileMode="navigation"
+                    />
+                  </Show>
+                </div>
               </nav>
             </div>
           </header>
