@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
-import { BrandLockup } from "./_components/brand";
+import { BrandMark } from "./_components/brand";
 import { HeaderLink } from "./_components/header-link";
 import { navButtonClass } from "./_components/nav-button";
 import {
@@ -22,13 +22,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Loaded for the nav buttons, whose Figma spec is Inter Medium 15/18, and for
-// the brand lockup's label, which matches them at semibold. Everything else on
-// the page stays on Geist.
+// Loaded only for the nav buttons, whose Figma spec is Inter Medium 15/18.
+// Everything else on the page stays on Geist.
 const inter = Inter({
   variable: "--font-inter-src",
   subsets: ["latin"],
-  weight: ["500", "600"],
+  weight: ["500"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +51,7 @@ export default function RootLayout({
                 aria-label="OpenGym home"
                 className="rounded-md transition duration-200 hover:opacity-90 focus:outline-none focus-visible:outline-none"
               >
-                <BrandLockup />
+                <BrandMark />
               </Link>
 
               {/* 30px: the Figma export's 18px, widened by two thirds. The
