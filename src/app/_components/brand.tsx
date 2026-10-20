@@ -19,7 +19,9 @@ export function BrandLockup() {
   return (
     <span className="flex min-w-0 items-center gap-3">
       <BrandMark />
-      <span className="hidden text-sm font-semibold uppercase tracking-[0.13em] text-court sm:inline">
+      {/* Inter, to match the nav buttons; size, weight, tracking and colour
+          are unchanged. */}
+      <span className="hidden font-inter text-sm font-semibold uppercase tracking-[0.13em] text-court sm:inline">
         Drop-in runs
       </span>
     </span>

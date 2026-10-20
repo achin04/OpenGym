@@ -22,12 +22,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Loaded only for the nav buttons, whose Figma spec is Inter Medium 15/18.
-// Everything else on the page stays on Geist.
+// Loaded for the nav buttons, whose Figma spec is Inter Medium 15/18, and for
+// the brand lockup's label, which matches them at semibold. Everything else on
+// the page stays on Geist.
 const inter = Inter({
   variable: "--font-inter-src",
   subsets: ["latin"],
-  weight: ["500"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -49,10 +50,9 @@ export default function RootLayout({
               <Link
                 href="/"
                 aria-label="OpenGym home"
-                className="relative rounded-md transition duration-200 hover:opacity-90 focus:outline-none focus-visible:outline-none"
+                className="rounded-md transition duration-200 hover:opacity-90 focus:outline-none focus-visible:outline-none"
               >
                 <BrandLockup />
-                <span className="absolute -bottom-3 left-12 hidden h-px w-24 bg-gradient-to-r from-court via-court/70 to-transparent sm:block" />
               </Link>
 
               {/* 30px: the Figma export's 18px, widened by two thirds. The
@@ -81,7 +81,7 @@ export default function RootLayout({
                         centred 2px lower than the box is. The avatar casts no
                         shadow, so centring it on the box leaves it looking
                         high; half the shadow offset puts it right. */}
-                    <div className="translate-y-[2px]">
+                    <div className="translate-y-[3px]">
                       <UserButton
                         userProfileUrl="/account"
                         userProfileMode="navigation"
