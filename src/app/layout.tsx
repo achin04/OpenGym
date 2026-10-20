@@ -76,10 +76,17 @@ export default function RootLayout({
                   </Show>
 
                   <Show when="signed-in">
-                    <UserButton
-                      userProfileUrl="/account"
-                      userProfileMode="navigation"
-                    />
+                    {/* Optical, not geometric, centring. The buttons drop a 4px
+                        shadow below their box, so the mass the eye reads is
+                        centred 2px lower than the box is. The avatar casts no
+                        shadow, so centring it on the box leaves it looking
+                        high; half the shadow offset puts it right. */}
+                    <div className="translate-y-[2px]">
+                      <UserButton
+                        userProfileUrl="/account"
+                        userProfileMode="navigation"
+                      />
+                    </div>
                   </Show>
                 </div>
               </nav>
