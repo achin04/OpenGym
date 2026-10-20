@@ -55,7 +55,10 @@ export default function RootLayout({
                 <span className="absolute -bottom-3 left-12 hidden h-px w-24 bg-gradient-to-r from-court via-court/70 to-transparent sm:block" />
               </Link>
 
-              <nav className="flex shrink-0 items-center gap-1 text-sm sm:gap-3">
+              {/* 18px matches the gap between the two buttons in the Figma export.
+                  The buttons' 4px offset shadow eats into it, leaving 14px of
+                  visible air. */}
+              <nav className="flex shrink-0 items-center gap-2 text-sm sm:gap-[18px]">
                 <HeaderLink href="/runs">Runs</HeaderLink>
 
                 {/* The slot reserves height only, not width. Clerk resolves the
