@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { BrandLockup } from "./_components/brand";
 import { HeaderLink } from "./_components/header-link";
+import { navButtonClass } from "./_components/nav-button";
 import {
   ClerkProvider,
   SignInButton,
@@ -21,6 +22,14 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Loaded only for the nav buttons, whose Figma spec is Inter Medium 15/18.
+// Everything else on the page stays on Geist.
+const inter = Inter({
+  variable: "--font-inter-src",
+  subsets: ["latin"],
+  weight: ["500"],
+});
+
 export const metadata: Metadata = {
   title: "OpenGym",
   description: "Find, join, and create indoor basketball runs.",
@@ -33,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}>
         <body className="min-h-full text-foreground">
           <header className="sticky top-0 z-30 border-b border-[#e6ded2] bg-[#faf8f4]/92 shadow-[0_1px_22px_rgba(15,16,19,0.06)] backdrop-blur-xl">
             <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
@@ -51,13 +60,12 @@ export default function RootLayout({
 
                 {/* Fixed-size slot so the avatar and the sign-in button occupy the
                     same geometry. Clerk resolves the session on the client, so
-                    without this the header reflows once auth state arrives. */}
-                <div className="flex h-10 min-w-[92px] shrink-0 items-center justify-end">
+                    without this the header reflows once auth state arrives. The
+                    height covers the 46px button plus its 4px offset shadow. */}
+                <div className="flex h-[50px] min-w-[100px] shrink-0 items-center justify-end">
                   <Show when="signed-out">
                     <SignInButton mode="modal">
-                      <button className="shrink-0 whitespace-nowrap rounded-lg border border-court bg-court px-3 py-2 font-semibold text-foreground shadow-lg shadow-court/15 transition duration-200 hover:bg-transparent hover:text-foreground hover:shadow-none focus:outline-none focus:ring-2 focus:ring-court/45 sm:px-4">
-                        Sign in
-                      </button>
+                      <button className={navButtonClass("solid")}>Sign in</button>
                     </SignInButton>
                   </Show>
 

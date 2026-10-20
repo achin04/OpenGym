@@ -9,6 +9,11 @@
   --ink-800: #ece7dd;
   --ink-900: #f5f2ec;
   --line: rgba(15, 16, 19, 0.12);
+  /* Nav button shell, sampled from the Figma export: the border and its hard
+     offset shadow are the same ink, and the accent is the Figma orange, which
+     is deliberately softer than --court. */
+  --btn-ink: #2e2f34;
+  --btn-accent: #ed7640;
 }
 
 @theme inline {
@@ -20,6 +25,9 @@
   --color-ink-800: var(--ink-800);
   --color-ink-900: var(--ink-900);
   --color-line: var(--line);
+  --color-btn-ink: var(--btn-ink);
+  --color-btn-accent: var(--btn-accent);
+  --font-inter: var(--font-inter-src);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
