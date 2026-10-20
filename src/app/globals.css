@@ -97,3 +97,26 @@ textarea {
   transform: translateX(-50%);
   width: 7rem;
 }
+
+/*
+ * Clerk's <UserButton /> is rendered by Clerk's own bundle, loaded from their
+ * CDN at runtime, so its avatar cannot be sized from our markup. Clerk's
+ * documented customisation surface is these `cl-` class names.
+ *
+ * The default trigger avatar is 28px, which read as misaligned next to the
+ * 46px nav buttons -- it was in fact vertically centred, just small enough
+ * that the eye took the size difference for a baseline problem. Matching the
+ * nav button height puts the circle and the buttons on one visual row.
+ *
+ * !important is deliberate: Clerk injects its stylesheet at runtime, so source
+ * order here cannot be relied on to win.
+ */
+.cl-userButtonAvatarBox,
+.cl-userButtonTrigger .cl-avatarBox {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.cl-userButtonTrigger {
+  border-radius: 999px !important;
+}

@@ -58,11 +58,14 @@ export default function RootLayout({
               <nav className="flex shrink-0 items-center gap-1 text-sm sm:gap-3">
                 <HeaderLink href="/runs">Runs</HeaderLink>
 
-                {/* Fixed-size slot so the avatar and the sign-in button occupy the
-                    same geometry. Clerk resolves the session on the client, so
-                    without this the header reflows once auth state arrives. The
-                    height covers the 46px button plus its 4px offset shadow. */}
-                <div className="flex h-[50px] min-w-[100px] shrink-0 items-center justify-end">
+                {/* The slot reserves height only, not width. Clerk resolves the
+                    session on the client, so this keeps the header from
+                    shifting vertically as auth state arrives; the height covers
+                    the 46px control plus the buttons' 4px offset shadow.
+                    Reserving the wider sign-in width as well would leave a
+                    permanent ~50px gap beside the avatar for every signed-in
+                    user, which is the worse of the two artefacts. */}
+                <div className="flex h-[50px] shrink-0 items-center justify-end">
                   <Show when="signed-out">
                     <SignInButton mode="modal">
                       <button className={navButtonClass("solid")}>Sign in</button>
