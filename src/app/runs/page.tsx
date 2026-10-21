@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  formatDateTime,
   formatLabel,
   formatPrice,
   formatTimeRange,
@@ -331,7 +330,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                 key={run.id}
                 className="group rounded-[20px] border-2 border-foreground bg-surface p-5 shadow-[0_6px_0_0_var(--foreground)]"
               >
-                <div className="grid gap-5 md:grid-cols-[7.25rem_minmax(0,1fr)_auto] md:items-start">
+                <div className="grid gap-5 md:grid-cols-[7.25rem_minmax(0,1fr)_auto] md:items-center">
                   <div className="rounded-[10px] border-2 border-foreground bg-court/15 p-4 text-center">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/70">
                       {new Intl.DateTimeFormat("en-CA", {
@@ -376,34 +375,34 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                     <dl
                       className={
                         importedRun
-                          ? "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4"
-                          : "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-6"
+                          ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                          : "grid gap-4 sm:grid-cols-2 lg:grid-cols-6"
                       }
                     >
                       <div>
-                        <dt className="text-foreground/55">Time</dt>
-                        <dd className="mt-1 font-medium text-foreground">
+                        <dt className="text-sm text-foreground/55">Time</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
                           {formatTimeRange(run.startTime, run.endTime)}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-foreground/55">Address</dt>
-                        <dd className="mt-1 font-medium text-foreground">
+                        <dt className="text-sm text-foreground/55">Address</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
                           {run.venue.addressLine1}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-foreground/55">City</dt>
-                        <dd className="mt-1 font-medium text-foreground">
+                        <dt className="text-sm text-foreground/55">City</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
                           {run.venue.city}
                         </dd>
                       </div>
 
                       <div>
-                        <dt className="text-foreground/55">Age</dt>
-                        <dd className="mt-1 font-medium text-foreground">
+                        <dt className="text-sm text-foreground/55">Age</dt>
+                        <dd className="mt-1 text-base font-semibold text-foreground">
                           {formatLabel(run.ageGroup)}
                         </dd>
                       </div>
@@ -411,15 +410,15 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                       {importedRun ? null : (
                         <>
                           <div>
-                            <dt className="text-foreground/55">Level</dt>
-                            <dd className="mt-1 font-medium text-foreground">
+                            <dt className="text-sm text-foreground/55">Level</dt>
+                            <dd className="mt-1 text-base font-semibold text-foreground">
                               {formatLabel(run.skillLevel)}
                             </dd>
                           </div>
 
                           <div>
-                            <dt className="text-foreground/55">Price</dt>
-                            <dd className="mt-1 font-medium text-foreground">
+                            <dt className="text-sm text-foreground/55">Price</dt>
+                            <dd className="mt-1 text-base font-semibold text-foreground">
                               {formatPrice(run.price)}
                             </dd>
                           </div>
@@ -430,21 +429,12 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
                   </div>
 
                   <div className="flex flex-col items-start gap-3 md:items-end">
-                    {/* Mark and timestamp share a row so the right-hand column
-                        does not grow taller than the card's own content. */}
-                    <div className="flex items-center gap-3">
-                      <SourceChip
-                        sourceType={run.sourceType}
-                        label={
-                          importedRun
-                            ? runSourceLabel(run.sourceType)
-                            : "User run"
-                        }
-                      />
-                      <span className="text-sm text-foreground/60">
-                        {formatDateTime(run.startTime)}
-                      </span>
-                    </div>
+                    <SourceChip
+                      sourceType={run.sourceType}
+                      label={
+                        importedRun ? runSourceLabel(run.sourceType) : "User run"
+                      }
+                    />
                     <Link
                       href={`/runs/${run.id}`}
                       className={raisedButtonClass()}
