@@ -14,7 +14,7 @@ export default async function NewRunPage() {
   });
 
   return (
-    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-6xl space-y-8">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">

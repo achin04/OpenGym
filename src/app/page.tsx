@@ -1,4 +1,5 @@
-import Image from "next/image";
+import { availabilityOptions } from "@/lib/runs/availability";
+import { TorontoSkyline } from "./_components/toronto-skyline";
 
 const filterFeatures = [
   {
@@ -20,115 +21,114 @@ const filterFeatures = [
 
 export default function Home() {
   return (
-    <main className="px-5 pb-16 pt-14 text-foreground sm:px-6 sm:pb-20 sm:pt-16 lg:pt-20">
-      <section className="mx-auto w-full max-w-7xl">
-        <div className="max-w-4xl">
-          <div className="space-y-5">
-            <h1 className="max-w-4xl text-4xl font-semibold tracking-normal text-foreground sm:text-5xl">
-              Find basketball runs{" "}
-              <span className="text-[#f47b2a]">near you.</span>
-            </h1>
-            <p className="max-w-[34rem] text-lg leading-8 text-foreground/68">
-              Enter a city or neighborhood, set when you can play, and OpenGym
-              shows available drop-in runs.
-            </p>
-          </div>
+    <main className="pb-10 pt-14 text-foreground">
+      <section className="mx-auto w-full max-w-7xl px-6">
+        {/*
+          clamp() rather than breakpoints: the headline is the one element that
+          should track viewport width continuously. 8.6vw is tuned so that
+          "Find basketball runs" fills the 1280px container and "near you."
+          falls to a second line on its own, which is the composition the
+          design calls for -- no manual <br /> needed.
+        */}
+        <h1 className="mb-10 mt-6 text-[clamp(52px,8.6vw,124px)] font-bold leading-[0.98] tracking-[-0.035em] text-foreground">
+          Find basketball runs <span className="text-court">near you.</span>
+        </h1>
 
-          <form
-            action="/runs"
-            className="mt-9 grid gap-2 rounded-xl border border-[#e0e0dd] bg-[#f7f6f4]/95 p-2 shadow-2xl shadow-black/10 transition duration-200 focus-within:border-court/80 focus-within:shadow-court/10 sm:grid-cols-[minmax(0,1fr)_13rem_4.5rem] sm:items-center"
-          >
-            <div className="flex min-h-14 items-center gap-3 rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
-              <LocationIcon className="h-5 w-5 shrink-0 text-court" />
-              <label
-                htmlFor="home-location"
-                className="sr-only"
-              >
-                City or area
-              </label>
-              <input
-                id="home-location"
-                name="location"
-                type="search"
-                autoComplete="address-level2"
-                placeholder="Toronto, North York, Scarborough"
-                className="h-full min-w-0 flex-1 bg-transparent text-base text-[#1a1a1a] outline-none placeholder:text-[#8e8e8e]"
+        <form action="/runs" className="flex flex-wrap items-stretch gap-4">
+          {/*
+            flex-[999_1_640px] is the trick that keeps the button beside the
+            bar until the bar is genuinely squeezed. The huge grow factor means
+            every spare pixel in the row goes to the bar rather than the
+            button; the 640px basis is what the bar needs before it is allowed
+            to wrap. No media query can express "wrap when you run out of
+            room" as directly as this.
+          */}
+          <div className="flex min-w-0 flex-[999_1_640px] flex-wrap overflow-hidden rounded-[20px] border-2 border-foreground bg-white shadow-[0_6px_0_0_var(--foreground)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-court">
+            <label htmlFor="home-location" className="sr-only">
+              City or neighbourhood
+            </label>
+            <input
+              id="home-location"
+              name="location"
+              type="search"
+              autoComplete="address-level2"
+              placeholder="North York, Scarborough, Etobicoke…"
+              className="min-h-[72px] min-w-0 flex-[1_1_240px] bg-transparent px-[22px] text-[18px] text-foreground outline-none placeholder:text-placeholder"
+            />
+
+            <div className="flex min-h-[72px] min-w-0 items-center gap-2 border-l border-line px-[18px]">
+              <CalendarIcon
+                className="h-[18px] w-[18px] shrink-0"
+                strokeWidth={2}
               />
-            </div>
-
-            <div className="flex min-h-14 items-center rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
-              <label
-                htmlFor="home-availability"
-                className="sr-only"
-              >
-                Availability
+              <label htmlFor="home-availability" className="sr-only">
+                When
               </label>
+              {/*
+                A native <select>: it brings keyboard support, the platform
+                picker on mobile and form submission for free, and the only
+                part of it that cannot be styled is the open menu, which the
+                design does not specify.
+              */}
               <select
                 id="home-availability"
                 name="availability"
                 defaultValue="upcoming"
-                className="h-full w-full bg-transparent text-base text-[#1a1a1a] outline-none"
+                className="min-w-0 bg-transparent px-1 py-2 text-[17px] font-medium text-foreground outline-none"
               >
-                <option value="upcoming">Upcoming</option>
-                <option value="today">Today</option>
-                <option value="tonight">Tonight</option>
-                <option value="week">Next 7 days</option>
-                <option value="weekend">Weekend</option>
+                {availabilityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <button
-              type="submit"
-              aria-label="Find runs"
-              className="inline-flex min-h-14 items-center justify-center rounded-lg bg-[#f47b2a] text-foreground shadow-lg shadow-[#f47b2a]/20 transition duration-200 hover:bg-[#ffc68f] hover:shadow-[#f47b2a]/30 focus:outline-none focus:ring-2 focus:ring-[#f47b2a]/50"
-            >
-              <SearchIcon className="h-6 w-6" />
-            </button>
-          </form>
-        </div>
-
-        <section className="relative mt-16 min-h-[32rem] overflow-hidden rounded-xl border border-[#e6ded2] bg-[#f7f5f0] p-6 shadow-2xl shadow-black/10 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:p-12">
-          <Image
-            src="/torontoSkyline.avif"
-            alt=""
-            fill
-            sizes="(min-width: 1280px) 80rem, 100vw"
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-[#050505]/55" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#101010_0%,rgba(16,16,16,0.88)_32%,rgba(16,16,16,0.56)_68%,rgba(16,16,16,0.34)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,16,16,0.1)_0%,rgba(16,16,16,0.08)_52%,#101010_100%)]" />
-
-          <div className="relative z-10 flex min-h-[24rem] flex-col justify-center py-3 sm:py-5 lg:py-6">
-            <h2 className="max-w-4xl text-4xl font-semibold tracking-normal text-[#F4F4F4] sm:text-5xl lg:text-6xl">
-              What you can filter
-            </h2>
-
-            <div className="mt-10 grid gap-8 sm:mt-12 sm:grid-cols-3 sm:gap-0">
-              {filterFeatures.map((feature, index) => {
-                const Icon = feature.icon;
-
-                return (
-                  <div
-                    key={feature.label}
-                    className={`sm:px-7 lg:px-9 ${index === 0 ? "sm:pl-0" : ""} ${
-                      index > 0 ? "sm:border-l sm:border-foreground/14" : ""
-                    }`}
-                  >
-                    <Icon className="h-9 w-9 text-court" />
-                    <h3 className="mt-6 text-xl font-semibold text-[#F4F4F4]">
-                      {feature.label}
-                    </h3>
-                    <p className="mt-3 max-w-64 text-base leading-7 text-[#d2c8bf]">
-                      {feature.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
           </div>
-        </section>
 
+          <button
+            type="submit"
+            className="inline-flex min-h-[76px] flex-[1_1_200px] items-center justify-center gap-[10px] rounded-[20px] border-2 border-foreground bg-court text-[17px] font-extrabold tracking-[0.6px] text-foreground shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)] active:translate-y-[6px] active:shadow-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground motion-reduce:transition-none"
+          >
+            FIND RUNS
+            <ChevronRightIcon className="h-[18px] w-[18px]" />
+          </button>
+        </form>
+      </section>
+
+      <TorontoSkyline className="mt-10 w-full" />
+
+      <section className="mx-auto mt-16 w-full max-w-7xl px-6 lg:mt-20">
+        <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-foreground">
+          What you can filter
+        </h2>
+
+        {/*
+          Three cards in the house style: ink border, hard shadow straight
+          down, surface lighter than the page so they read as raised. The
+          dividers this section used to rely on were vertical hairlines
+          between columns, which only worked against the dark photo; on
+          cream the card edge does that job.
+        */}
+        <div className="mt-10 grid gap-6 sm:grid-cols-3">
+          {filterFeatures.map((feature) => {
+            const Icon = feature.icon;
+
+            return (
+              <div
+                key={feature.label}
+                className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] sm:p-7"
+              >
+                <Icon className="h-9 w-9 text-court" />
+                <h3 className="mt-6 text-xl font-semibold text-foreground">
+                  {feature.label}
+                </h3>
+                <p className="mt-3 text-base leading-7 text-foreground/70">
+                  {feature.description}
+                </p>
+              </div>
+            );
+          })}
+        </div>
       </section>
     </main>
   );
@@ -136,9 +136,16 @@ export default function Home() {
 
 type IconProps = {
   className?: string;
+  /**
+   * The icons are drawn on a 24px grid but used at two very different sizes.
+   * A stroke that reads correctly on the 36px feature icons looks thin at the
+   * 18px size the search bar uses, so the weight is a prop rather than baked
+   * into each path.
+   */
+  strokeWidth?: number;
 };
 
-function LocationIcon({ className }: IconProps) {
+function ChevronRightIcon({ className, strokeWidth = 2.6 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -147,35 +154,11 @@ function LocationIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
     >
       <path
-        d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"
+        d="m9 5 7 7-7 7"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-      <path
-        d="M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function SearchIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="m20 20-4.5-4.5m2-5A7.5 7.5 0 1 1 2.5 10.5a7.5 7.5 0 0 1 15 0Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
+        strokeWidth={strokeWidth}
       />
     </svg>
   );
@@ -201,7 +184,7 @@ function AreaIcon({ className }: IconProps) {
   );
 }
 
-function CalendarIcon({ className }: IconProps) {
+function CalendarIcon({ className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -214,13 +197,13 @@ function CalendarIcon({ className }: IconProps) {
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
       <path
         d="M9 13h3v3H9z"
         stroke="currentColor"
         strokeLinejoin="round"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
     </svg>
   );

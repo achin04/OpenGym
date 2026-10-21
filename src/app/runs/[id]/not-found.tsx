@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function RunNotFound() {
     return (
-        <main className="min-h-screen bg-white px-6 py-12 text-foreground">
+        <main className="flex-1 bg-white px-6 py-12 text-foreground">
           <section className="mx-auto w-full max-w-5xl space-y-4">
             <p className="text-sm font-semibold uppercase tracking-wide text-red-600">
               Run Not Found

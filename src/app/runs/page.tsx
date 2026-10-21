@@ -196,7 +196,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
   });
 
   return (
-    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-6xl space-y-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div className="space-y-3">

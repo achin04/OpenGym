@@ -9,7 +9,7 @@ export default async function AdminImportedRunsPage() {
   const batches = await getAdminImportBatches();
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
+    <main className="flex-1 bg-white px-6 py-12 text-foreground">
       <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-3">

@@ -9,8 +9,8 @@ test("home page search links to filtered runs page", async ({ page }) => {
     }),
   ).toBeVisible();
 
-  await page.getByLabel("City or area").fill("Toronto");
-  await page.getByRole("button", { name: "Find runs" }).click();
+  await page.getByLabel("City or neighbourhood").fill("Toronto");
+  await page.getByRole("button", { name: "FIND RUNS" }).click();
 
   await expect(page).toHaveURL(/\/runs\?location=Toronto/);
   await expect(

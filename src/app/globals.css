@@ -1,19 +1,32 @@
 @import "tailwindcss";
 
+/*
+ * Palette from the homepage design spec.
+ *
+ * The "chunky" interactive style the whole site now uses needs exactly two
+ * colours: --foreground is the ink of every border and every hard shadow, and
+ * --court is the one accent. Earlier there were three near-identical inks and
+ * three near-identical oranges (--btn-ink, --btn-accent and friends), which is
+ * how the header and the hero ended up a few hex points apart. One name per
+ * colour is the rule here.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #0f1013;
-  --court: #f47b2a;
+  --background: #f6f4f1;
+  --foreground: #141414;
+  --court: #ee7b3a;
   --court-200: #ffc68f;
   --cream: #f8efe0;
-  --ink-800: #ece7dd;
-  --ink-900: #f5f2ec;
-  --line: rgba(15, 16, 19, 0.12);
-  /* Nav button shell, sampled from the Figma export: the border and its hard
-     offset shadow are the same ink, and the accent is the Figma orange, which
-     is deliberately softer than --court. */
-  --btn-ink: #2e2f34;
-  --btn-accent: #ed7640;
+  /* Raised surfaces: lighter than the page, so a card reads as sitting above
+     the cream rather than cut out of it. */
+  --surface: #fbfaf8;
+  /* Old name for the same surface. Six files still say `bg-ink-900`; they get
+     migrated to `bg-surface` when those pages are restyled. Keeping the alias
+     means this change does not have to touch them today. */
+  --ink-900: var(--surface);
+  --line: #e4e0da;
+  --placeholder: #6b6b6b;
+  --skyline: #d9d2c8;
+  --link-hover: #b4541c;
 }
 
 @theme inline {
@@ -22,14 +35,13 @@
   --color-court: var(--court);
   --color-court-200: var(--court-200);
   --color-cream: var(--cream);
-  --color-ink-800: var(--ink-800);
+  --color-surface: var(--surface);
   --color-ink-900: var(--ink-900);
   --color-line: var(--line);
-  --color-btn-ink: var(--btn-ink);
-  --color-btn-accent: var(--btn-accent);
-  --font-inter: var(--font-inter-src);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-placeholder: var(--placeholder);
+  --color-skyline: var(--skyline);
+  --color-link-hover: var(--link-hover);
+  --font-sans: var(--font-inter);
 }
 
 html {
@@ -37,20 +49,20 @@ html {
   scroll-padding-top: 6rem;
 }
 
+/*
+ * The three orange gradient layers that used to sit here -- a centre hairline,
+ * a radial arc and a top wash -- are gone. The design is a flat cream field
+ * edge to edge, and a fixed-attachment gradient would have shown through the
+ * skyline band.
+ */
 body {
   background: var(--background);
-  background-image:
-    linear-gradient(90deg, transparent 0 calc(50% - 1px), rgba(244, 123, 42, 0.08) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    radial-gradient(circle at 50% -14rem, transparent 0 23rem, rgba(244, 123, 42, 0.12) 23.05rem 23.18rem, transparent 23.25rem),
-    linear-gradient(180deg, rgba(244, 123, 42, 0.08), transparent 28rem);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
 }
 
 ::selection {
-  background: rgba(244, 123, 42, 0.35);
+  background: rgba(238, 123, 58, 0.35);
   color: var(--foreground);
 }
 

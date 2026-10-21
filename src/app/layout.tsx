@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { BrandMark } from "./_components/brand";
 import { HeaderLink } from "./_components/header-link";
 import { navButtonClass } from "./_components/nav-button";
+import { SiteFooter } from "./_components/site-footer";
 import {
   ClerkProvider,
   SignInButton,
@@ -12,22 +13,19 @@ import {
   Show,
 } from "@clerk/nextjs";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Loaded only for the nav buttons, whose Figma spec is Inter Medium 15/18.
-// Everything else on the page stays on Geist.
+// The design spec names Inter for the whole site, so it is now --font-sans
+// rather than a one-component exception. Geist Sans and Geist Mono are gone:
+// nothing in the app ever applied `font-mono`, and leaving Geist Sans loaded
+// would have meant /runs and /account rendering in a different typeface from
+// the home page.
+//
+// The weight list is exactly what the spec calls for -- 400 body, 500 the
+// "When" select, 600 nav, 700 the headline, 800 the FIND RUNS label. Each
+// weight is a separate download, so this list stays pruned to what is used.
 const inter = Inter({
-  variable: "--font-inter-src",
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["500"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
@@ -42,9 +40,9 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider signInUrl="/sign-in" signUpUrl="/sign-up" afterSignOutUrl="/">
-      <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} h-full antialiased`}>
-        <body className="min-h-full text-foreground">
-          <header className="sticky top-0 z-30 border-b border-[#e6ded2] bg-[#faf8f4]/92 shadow-[0_1px_22px_rgba(15,16,19,0.06)] backdrop-blur-xl">
+      <html lang="en" className={`${inter.variable} h-full antialiased`}>
+        <body className="flex min-h-full flex-col text-foreground">
+          <header className="sticky top-0 z-30 border-b border-line bg-surface/92 shadow-[0_1px_22px_rgba(20,20,20,0.06)] backdrop-blur-xl">
             <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
               <Link
                 href="/"
@@ -92,7 +90,15 @@ export default function RootLayout({
             </div>
           </header>
 
-          <div className="flex-1">{children}</div>
+          {/*
+            `flex-1` only became meaningful once <body> was made a flex column
+            above; before that it was inert. It is what pushes the footer to
+            the bottom of the viewport on short pages such as /sign-in rather
+            than leaving it floating mid-screen.
+          */}
+          <div className="flex flex-1 flex-col">{children}</div>
+
+          <SiteFooter />
         </body>
       </html>
     </ClerkProvider>
