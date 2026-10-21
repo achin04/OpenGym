@@ -74,7 +74,7 @@ export default function Home() {
                 id="home-availability"
                 name="availability"
                 defaultValue="upcoming"
-                className="min-w-0 bg-transparent px-1 py-2 text-[17px] font-medium text-foreground outline-none"
+                className="select-field min-w-0 bg-transparent pl-1 py-2 text-[17px] font-medium text-foreground outline-none"
               >
                 {availabilityOptions.map((option) => (
                   <option key={option.value} value={option.value}>

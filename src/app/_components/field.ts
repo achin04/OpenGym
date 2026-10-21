@@ -13,3 +13,9 @@ export const FIELD =
 
 export const FIELD_LABEL =
   "text-xs font-semibold uppercase tracking-[0.14em] text-foreground/55";
+
+/**
+ * Selects add our own chevron; see `.select-field` in globals.css for why the
+ * native one is replaced rather than nudged with padding.
+ */
+export const SELECT_FIELD = `${FIELD} select-field`;

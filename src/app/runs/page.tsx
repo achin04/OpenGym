@@ -6,7 +6,7 @@ import {
   formatTimeRange,
 } from "@/lib/formatters";
 import type { Prisma } from "@/generated/prisma/client";
-import { FIELD, FIELD_LABEL } from "@/app/_components/field";
+import { FIELD, FIELD_LABEL, SELECT_FIELD } from "@/app/_components/field";
 import { raisedButtonClass } from "@/app/_components/raised-button";
 import { ResetRunsFiltersButton } from "@/app/runs/_components/reset-runs-filters-button";
 import { SourceChip } from "@/app/runs/_components/source-chip";
@@ -259,7 +259,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               id="availability"
               name="availability"
               defaultValue={availability}
-              className={FIELD}
+              className={SELECT_FIELD}
             >
               {availabilityOptions.map((option) => (
                 <option key={option.value} value={option.value}>

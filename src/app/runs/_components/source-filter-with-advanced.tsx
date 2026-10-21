@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { FIELD, FIELD_LABEL } from "@/app/_components/field";
+import { FIELD_LABEL, SELECT_FIELD } from "@/app/_components/field";
 
 export const RESET_RUNS_FILTERS_EVENT = "opengym:reset-runs-filters";
 
@@ -90,7 +90,7 @@ export function SourceFilterWithAdvanced({
           name="sourceType"
           value={selectedSourceType}
           onChange={(event) => setSelectedSourceType(event.target.value)}
-          className={`${FIELD} flex-1`}
+          className={`${SELECT_FIELD} flex-1`}
         >
           {sourceOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -133,7 +133,7 @@ export function SourceFilterWithAdvanced({
                 id="skillLevel"
                 value={selectedSkillLevel}
                 onChange={(event) => setSelectedSkillLevel(event.target.value)}
-                className={FIELD}
+                className={SELECT_FIELD}
               >
                 {skillOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -154,7 +154,7 @@ export function SourceFilterWithAdvanced({
                 id="ageGroup"
                 value={selectedAgeGroup}
                 onChange={(event) => setSelectedAgeGroup(event.target.value)}
-                className={FIELD}
+                className={SELECT_FIELD}
               >
                 {ageOptions.map((option) => (
                   <option key={option.value} value={option.value}>
