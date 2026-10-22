@@ -67,7 +67,7 @@ test("runs page reset restores filter inputs to defaults", async ({ page }) => {
 
   await page.getByRole("button", { name: "Advanced filters" }).click();
   await expect(page.getByLabel("Skill")).toHaveValue("OPEN");
-  await expect(page.getByLabel("Age")).toHaveValue("ADULT");
+  await expect(page.getByLabel("Age", { exact: true })).toHaveValue("ADULT");
 
   await page.getByRole("button", { name: "Reset" }).click();
 
@@ -81,5 +81,5 @@ test("runs page reset restores filter inputs to defaults", async ({ page }) => {
 
   await page.getByRole("button", { name: "Advanced filters" }).click();
   await expect(page.getByLabel("Skill")).toHaveValue("");
-  await expect(page.getByLabel("Age")).toHaveValue("");
+  await expect(page.getByLabel("Age", { exact: true })).toHaveValue("");
 });
