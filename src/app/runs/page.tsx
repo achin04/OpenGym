@@ -21,6 +21,11 @@ import {
   getAvailabilityRange,
   type AvailabilityFilter,
 } from "@/lib/runs/availability";
+import { RunsPagination } from "@/app/runs/_components/runs-pagination";
+import {
+  buildRunsPagination,
+  parsePageParam,
+} from "@/lib/runs/pagination";
 import { prisma } from "@/server/db";
 
 type RunsPageProps = {
@@ -30,6 +35,7 @@ type RunsPageProps = {
     skillLevel?: string | string[];
     ageGroup?: string | string[];
     sourceType?: string | string[];
+    page?: string | string[];
   }>;
 };
 
@@ -80,14 +86,20 @@ function parseEnumValue<T extends Record<string, string>>(
     : "";
 }
 
-function getResultsLabel(count: number, location: string) {
+// Reports the size of the whole result set rather than of the current page, so
+// the number means what it says when the listing runs to dozens of pages.
+function getResultsLabel(
+  count: number,
+  location: string,
+  page: number,
+  pageCount: number,
+) {
   const noun = count === 1 ? "run" : "runs";
+  const found = location
+    ? `${count} ${noun} found near ${location}`
+    : `${count} ${noun} found`;
 
-  if (location) {
-    return `${count} ${noun} found near ${location}`;
-  }
-
-  return `${count} ${noun} found`;
+  return pageCount > 1 ? `${found} · page ${page} of ${pageCount}` : found;
 }
 
 function isImportedRun(sourceType: RunSourceType) {
@@ -186,6 +198,13 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
       : {}),
   };
 
+  // Counted before fetching rather than alongside, because the page has to be
+  // clamped to one that exists before it can be turned into a skip.
+  const totalCount = await prisma.run.count({ where });
+  const pagination = buildRunsPagination(
+    parsePageParam(params.page),
+    totalCount,
+  );
   const runs = await prisma.run.findMany({
     where,
     include: {
@@ -194,8 +213,18 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
     orderBy: {
       startTime: "asc",
     },
-    take: 48,
+    skip: pagination.skip,
+    take: pagination.take,
   });
+  // Rebuilt from the parsed values rather than passed through, so a clamped or
+  // junk page number cannot leak into the page links.
+  const filterParams = {
+    location,
+    availability,
+    skillLevel,
+    ageGroup,
+    sourceType,
+  };
 
   return (
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
@@ -217,7 +246,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           <div className="rounded-[16px] border-2 border-foreground bg-surface p-5 shadow-[0_4px_0_0_var(--foreground)]">
             <p className="text-sm font-semibold text-foreground/60">Runs found</p>
             <p className="mt-2 text-2xl font-semibold text-court">
-              {runs.length}
+              {totalCount}
             </p>
             <p className="mt-1 text-xs text-foreground/55">
               Filtered by your current search.
@@ -293,7 +322,12 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-foreground pb-4">
           <p className="text-sm font-medium text-foreground/70">
-            {getResultsLabel(runs.length, location)}
+            {getResultsLabel(
+              totalCount,
+              location,
+              pagination.page,
+              pagination.pageCount,
+            )}
           </p>
           <Link
             href="/runs/new"
@@ -448,6 +482,12 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
             })}
           </div>
         )}
+
+        <RunsPagination
+          page={pagination.page}
+          pageCount={pagination.pageCount}
+          params={filterParams}
+        />
       </section>
     </main>
   );
