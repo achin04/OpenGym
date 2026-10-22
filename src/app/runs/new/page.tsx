@@ -1,3 +1,10 @@
+import {
+  FIELD,
+  FORM_LABEL,
+  SELECT_FIELD,
+  TEXTAREA_FIELD,
+} from "@/app/_components/field";
+import { raisedButtonClass } from "@/app/_components/raised-button";
 import { prisma } from "@/server/db";
 import { createRun } from "./actions";
 
@@ -15,29 +22,29 @@ export default async function NewRunPage() {
 
   return (
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
-      <section className="mx-auto w-full max-w-6xl space-y-8">
+      <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="space-y-3">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
             Create Run
           </p>
 
-          <h1 className="text-4xl font-semibold tracking-normal sm:text-5xl">
+          <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
             Add a basketball run
           </h1>
 
-          <p className="max-w-2xl text-foreground/62">
+          <p className="max-w-2xl text-foreground/70">
             Share an indoor basketball run with the OpenGym community.
           </p>
         </div>
 
         <form
           action={createRun}
-          className="grid gap-6 rounded-lg border border-line bg-ink-900/72 p-5 text-foreground/70 sm:p-6"
+          className="grid gap-6 rounded-[20px] border-2 border-foreground bg-surface p-5 shadow-[0_6px_0_0_var(--foreground)] sm:p-7"
         >
             <div className="grid gap-2">
               <label
                 htmlFor="title"
-                className="text-sm font-medium text-foreground"
+                className={FORM_LABEL}
               >
                 Title
               </label>
@@ -46,7 +53,7 @@ export default async function NewRunPage() {
                 name="title"
                 type="text"
                 required
-                className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
+                className={FIELD}
                 placeholder="Friday night pickup"
               />
             </div>
@@ -54,7 +61,7 @@ export default async function NewRunPage() {
             <div className="grid gap-2">
               <label
                 htmlFor="venueId"
-                className="text-sm font-medium text-foreground"
+                className={FORM_LABEL}
               >
                 Venue
               </label>
@@ -62,7 +69,7 @@ export default async function NewRunPage() {
                 id="venueId"
                 name="venueId"
                 required
-                className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                className={SELECT_FIELD}
               >
                 <option value="">Select a venue</option>
                 {venues.map((venue) => (
@@ -77,7 +84,7 @@ export default async function NewRunPage() {
               <div className="grid gap-2">
                 <label
                   htmlFor="startTime"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   Start time
                 </label>
@@ -86,14 +93,14 @@ export default async function NewRunPage() {
                   name="startTime"
                   type="datetime-local"
                   required
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={FIELD}
                 />
               </div>
 
               <div className="grid gap-2">
                 <label
                   htmlFor="endTime"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   End time
                 </label>
@@ -102,7 +109,7 @@ export default async function NewRunPage() {
                   name="endTime"
                   type="datetime-local"
                   required
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={FIELD}
                 />
               </div>
             </div>
@@ -110,7 +117,7 @@ export default async function NewRunPage() {
             <div className="grid gap-2">
               <label
                 htmlFor="description"
-                className="text-sm font-medium text-foreground"
+                className={FORM_LABEL}
               >
                 Description
               </label>
@@ -118,7 +125,7 @@ export default async function NewRunPage() {
                 id="description"
                 name="description"
                 rows={4}
-                className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
+                className={TEXTAREA_FIELD}
                 placeholder="Bring a dark and light shirt. Intermediate pace."
               />
             </div>
@@ -127,7 +134,7 @@ export default async function NewRunPage() {
               <div className="grid gap-2">
                 <label
                   htmlFor="price"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   Price
                 </label>
@@ -137,7 +144,7 @@ export default async function NewRunPage() {
                   type="number"
                   min="0"
                   step="0.01"
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={FIELD}
                   placeholder="0.00"
                 />
               </div>
@@ -145,7 +152,7 @@ export default async function NewRunPage() {
               <div className="grid gap-2">
                 <label
                   htmlFor="maxPlayers"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   Max players
                 </label>
@@ -155,7 +162,7 @@ export default async function NewRunPage() {
                   type="number"
                   min="1"
                   step="1"
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={FIELD}
                   placeholder="12"
                 />
               </div>
@@ -165,7 +172,7 @@ export default async function NewRunPage() {
               <div className="grid gap-2">
                 <label
                   htmlFor="skillLevel"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   Skill level
                 </label>
@@ -173,7 +180,7 @@ export default async function NewRunPage() {
                   id="skillLevel"
                   name="skillLevel"
                   defaultValue="OPEN"
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={SELECT_FIELD}
                 >
                   <option value="OPEN">Open</option>
                   <option value="BEGINNER">Beginner</option>
@@ -185,7 +192,7 @@ export default async function NewRunPage() {
               <div className="grid gap-2">
                 <label
                   htmlFor="ageGroup"
-                  className="text-sm font-medium text-foreground"
+                  className={FORM_LABEL}
                 >
                   Age group
                 </label>
@@ -193,7 +200,7 @@ export default async function NewRunPage() {
                   id="ageGroup"
                   name="ageGroup"
                   defaultValue="ADULT"
-                  className="rounded-md border border-foreground/10 bg-background px-3 py-2 text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
+                  className={SELECT_FIELD}
                 >
                   <option value="ADULT">Adult</option>
                   <option value="ALL_AGES">All ages</option>
@@ -205,7 +212,7 @@ export default async function NewRunPage() {
 
             <button
               type="submit"
-              className="w-fit rounded-md bg-court px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-court-200"
+              className={`w-fit ${raisedButtonClass({ variant: "solid" })}`}
             >
               Create run
             </button>
