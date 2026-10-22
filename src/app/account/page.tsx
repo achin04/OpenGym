@@ -33,9 +33,6 @@ export default async function AccountPage() {
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-6">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-            Account
-          </p>
           <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
             Your OpenGym account
           </h1>

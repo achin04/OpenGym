@@ -231,9 +231,6 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
       <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-              Basketball Runs
-            </p>
             <h1 className="max-w-3xl text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
               {location ? `Runs near ${location}` : "Find a run that fits your week"}
             </h1>

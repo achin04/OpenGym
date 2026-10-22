@@ -248,18 +248,14 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="space-y-4">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-            Run Details
-          </p>
-
-          <div className="space-y-3">
-            <h1 className="max-w-3xl text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
-              {run.title}
-            </h1>
-            <p className="max-w-2xl text-foreground/70">
-              {run.description ?? "No description has been added yet."}
-            </p>
-          </div>
+          {/*
+            The run title is no longer shown: for imported runs it is a generic
+            label ("Basketball") that the Tip-off and Venue panels below say
+            better. It stays in the document as a visually hidden h1 so the
+            page still has one heading at the top level, which assistive
+            technology and search engines both rely on.
+          */}
+          <h1 className="sr-only">{run.title}</h1>
 
           {sourceNotice ? (
             <div
@@ -416,8 +412,6 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
             </div>
           ) : null}
         </div>
-
-        <p className="text-xs text-foreground/50">Run ID: {run.id}</p>
       </section>
     </main>
   );

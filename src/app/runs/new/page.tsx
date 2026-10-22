@@ -24,10 +24,6 @@ export default async function NewRunPage() {
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-            Create Run
-          </p>
-
           <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
             Add a basketball run
           </h1>
