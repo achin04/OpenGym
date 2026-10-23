@@ -2,7 +2,7 @@ import { raisedButtonClass } from "@/app/_components/raised-button";
 import { prisma } from "@/server/db";
 import { notFound } from "next/navigation";
 import {
-  formatDateTime,
+  formatDate,
   formatLabel,
   formatPrice,
   formatTimeRange,
@@ -288,18 +288,17 @@ export default async function RunDetailsPage({ params }: RunDetailsPageProps) {
                 {formatTimeRange(run.startTime, run.endTime)}
               </p>
               <p className="mt-3 text-base font-semibold text-foreground/70 sm:text-lg">
-                {formatDateTime(run.startTime)}
+                {formatDate(run.startTime)}
               </p>
             </div>
 
             <div className="rounded-[20px] border-2 border-foreground bg-surface p-7 shadow-[0_6px_0_0_var(--foreground)] sm:p-8">
               <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(16rem,2fr)] lg:items-stretch">
                 <div className="flex flex-col">
-                  <h2 className="text-2xl font-semibold">Venue</h2>
-                  <div className="mt-5">
-                    <p className="text-[1.35rem] font-semibold leading-tight text-foreground">
+                  <div>
+                    <h2 className="text-2xl font-semibold leading-tight text-foreground">
                       {run.venue.name}
-                    </p>
+                    </h2>
                     <p className="mt-3 flex items-start gap-2 text-base leading-6 text-foreground/62">
                       <LocationPinIcon className="mt-0.5 h-5 w-5 shrink-0 text-court" />
                       <span>{venueAddress}</span>

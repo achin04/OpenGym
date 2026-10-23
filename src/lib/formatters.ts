@@ -6,6 +6,13 @@ export function formatDateTime(date: Date) {
   }).format(date);
 }
 
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("en-CA", {
+    dateStyle: "medium",
+    timeZone: "America/Toronto",
+  }).format(date);
+}
+
 export function formatTimeRange(start: Date, end: Date) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     hour: "numeric",
