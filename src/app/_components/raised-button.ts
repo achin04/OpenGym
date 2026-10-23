@@ -11,10 +11,11 @@
  * page-level buttons -- Search, Reset, View run -- where the label length
  * varies and a fixed height would be wrong.
  *
- * The solid variant's label is ink, not white: white on #ee7b3a is about
- * 2.4:1 and fails WCAG AA, while #141414 on it is about 7:1.
+ * Every variant's label is ink, not white: white on #ee7b3a is about 2.4:1
+ * and fails WCAG AA, while #141414 on it is about 7:1. The same holds for the
+ * success and danger fills.
  */
-export type RaisedVariant = "outline" | "solid";
+export type RaisedVariant = "outline" | "solid" | "success" | "danger";
 export type RaisedSize = "nav" | "control";
 
 const BASE =
@@ -32,6 +33,10 @@ const SIZE: Record<RaisedSize, string> = {
 const FILL: Record<RaisedVariant, string> = {
   outline: "bg-white text-foreground",
   solid: "bg-court text-foreground",
+  // Admin only: see --success / --danger in globals.css for why these two
+  // exist when the rest of the site runs on a single accent.
+  success: "bg-success text-foreground",
+  danger: "bg-danger text-foreground",
 };
 
 /** Resting: full shadow, sinking into it on hover and fully on press. */

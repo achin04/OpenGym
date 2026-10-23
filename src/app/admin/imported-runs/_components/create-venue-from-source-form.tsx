@@ -6,6 +6,7 @@ import {
   type AdminActionState,
 } from "@/lib/admin/imported-runs/action-validation";
 import { createVenueFromExternalRefAction } from "../actions";
+import { raisedButtonClass } from "@/app/_components/raised-button";
 
 type CreateVenueFromSourceFormProps = {
   batchId: string;
@@ -46,7 +47,7 @@ export function CreateVenueFromSourceForm({
       <div className="grid gap-2">
         <label
           htmlFor={`name-${externalVenueRef.id}`}
-          className="text-sm font-medium text-zinc-900"
+          className="text-sm font-semibold text-foreground"
         >
           New Venue name
         </label>
@@ -55,17 +56,17 @@ export function CreateVenueFromSourceForm({
           name="name"
           required
           defaultValue={externalVenueRef.sourceName}
-          className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground outline-none focus:border-emerald-300"
+          className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
         />
         {fieldError(state, "name") ? (
-          <p className="text-sm text-rose-700">{fieldError(state, "name")}</p>
+          <p className="text-sm font-semibold text-danger">{fieldError(state, "name")}</p>
         ) : null}
       </div>
 
       <div className="grid gap-2">
         <label
           htmlFor={`addressLine1-${externalVenueRef.id}`}
-          className="text-sm font-medium text-zinc-900"
+          className="text-sm font-semibold text-foreground"
         >
           Address
         </label>
@@ -74,10 +75,10 @@ export function CreateVenueFromSourceForm({
           name="addressLine1"
           required
           defaultValue={externalVenueRef.sourceAddressLine1 ?? ""}
-          className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground outline-none focus:border-emerald-300"
+          className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
         />
         {fieldError(state, "addressLine1") ? (
-          <p className="text-sm text-rose-700">
+          <p className="text-sm font-semibold text-danger">
             {fieldError(state, "addressLine1")}
           </p>
         ) : null}
@@ -87,7 +88,7 @@ export function CreateVenueFromSourceForm({
         <div className="grid gap-2">
           <label
             htmlFor={`city-${externalVenueRef.id}`}
-            className="text-sm font-medium text-zinc-900"
+            className="text-sm font-semibold text-foreground"
           >
             City
           </label>
@@ -96,17 +97,17 @@ export function CreateVenueFromSourceForm({
             name="city"
             required
             defaultValue="Toronto"
-            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground outline-none focus:border-emerald-300"
+            className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
           />
           {fieldError(state, "city") ? (
-            <p className="text-sm text-rose-700">{fieldError(state, "city")}</p>
+            <p className="text-sm font-semibold text-danger">{fieldError(state, "city")}</p>
           ) : null}
         </div>
 
         <div className="grid gap-2">
           <label
             htmlFor={`postalCode-${externalVenueRef.id}`}
-            className="text-sm font-medium text-zinc-900"
+            className="text-sm font-semibold text-foreground"
           >
             Postal code
           </label>
@@ -114,10 +115,10 @@ export function CreateVenueFromSourceForm({
             id={`postalCode-${externalVenueRef.id}`}
             name="postalCode"
             defaultValue={externalVenueRef.sourcePostalCode ?? ""}
-            className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground outline-none focus:border-emerald-300"
+            className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
           />
           {fieldError(state, "postalCode") ? (
-            <p className="text-sm text-rose-700">
+            <p className="text-sm font-semibold text-danger">
               {fieldError(state, "postalCode")}
             </p>
           ) : null}
@@ -127,7 +128,7 @@ export function CreateVenueFromSourceForm({
       <div className="grid gap-2">
         <label
           htmlFor={`websiteUrl-${externalVenueRef.id}`}
-          className="text-sm font-medium text-zinc-900"
+          className="text-sm font-semibold text-foreground"
         >
           Website URL
         </label>
@@ -136,10 +137,10 @@ export function CreateVenueFromSourceForm({
           name="websiteUrl"
           type="url"
           defaultValue={externalVenueRef.sourceUrl ?? ""}
-          className="rounded-md border border-foreground/10 bg-zinc-100 px-3 py-2 text-foreground outline-none focus:border-emerald-300"
+          className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
         />
         {fieldError(state, "websiteUrl") ? (
-          <p className="text-sm text-rose-700">
+          <p className="text-sm font-semibold text-danger">
             {fieldError(state, "websiteUrl")}
           </p>
         ) : null}
@@ -148,7 +149,7 @@ export function CreateVenueFromSourceForm({
       <button
         type="submit"
         disabled={pending}
-        className="w-fit rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-600 disabled:text-zinc-600"
+        className={`w-fit ${raisedButtonClass({ variant: "success" })} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         {pending ? "Creating..." : "Create and Link Venue"}
       </button>
@@ -157,8 +158,8 @@ export function CreateVenueFromSourceForm({
         <p
           className={
             state.status === "success"
-              ? "text-sm text-emerald-700"
-              : "text-sm text-rose-700"
+              ? "text-sm font-semibold text-success"
+              : "text-sm font-semibold text-danger"
           }
           aria-live="polite"
         >

@@ -8,18 +8,18 @@ export default async function AdminPage() {
   const automatedImportStatus = await getAdminAutomatedImportStatus();
 
   return (
-    <main className="flex-1 bg-white px-6 py-12 text-foreground">
-      <section className="mx-auto w-full max-w-5xl space-y-8">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-7xl space-y-8">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
             Admin
           </p>
 
-          <h1 className="text-4xl font-semibold tracking-normal">
+          <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
             OpenGym admin
           </h1>
 
-          <p className="max-w-2xl text-zinc-600">
+          <p className="max-w-2xl text-foreground/70">
             Signed in as {clerkUser.primaryEmailAddress?.emailAddress}.
           </p>
         </div>
@@ -29,40 +29,40 @@ export default async function AdminPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/admin/venues"
-            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
+            className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)]"
           >
             <h2 className="text-xl font-semibold">Venues</h2>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-foreground/70">
               Manually add gyms and community centres.
             </p>
           </Link>
 
           <Link
             href="/admin/schedule-sources"
-            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
+            className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)]"
           >
             <h2 className="text-xl font-semibold">Schedule Sources</h2>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-foreground/70">
               Track city and university schedule pages.
             </p>
           </Link>
 
           <Link
             href="/admin/imported-runs"
-            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
+            className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)]"
           >
             <h2 className="text-xl font-semibold">Imported Runs</h2>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-foreground/70">
               Add verified runs from official sources.
             </p>
           </Link>
 
           <Link
             href="/admin/imported-venues"
-            className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 hover:bg-foreground/10"
+            className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)]"
           >
             <h2 className="text-xl font-semibold">Imported Venues</h2>
-            <p className="mt-2 text-sm text-zinc-600">
+            <p className="mt-2 text-sm text-foreground/70">
               Review venues created from source locations.
             </p>
           </Link>

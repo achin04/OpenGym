@@ -27,6 +27,15 @@
   --placeholder: #6b6b6b;
   --skyline: #d9d2c8;
   --link-hover: #b4541c;
+  /*
+   * Admin only. Approving and rejecting imported data are destructive and
+   * hard to undo, so those controls keep a colour signal the rest of the site
+   * does not need -- orange alone would make a reject button look like a
+   * save button. Both fills take ink labels: against #141414 they clear WCAG
+   * AA comfortably, which white on either would not.
+   */
+  --success: #3aa76d;
+  --danger: #e5574e;
 }
 
 @theme inline {
@@ -41,6 +50,8 @@
   --color-placeholder: var(--placeholder);
   --color-skyline: var(--skyline);
   --color-link-hover: var(--link-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
   --font-sans: var(--font-inter);
 }
 

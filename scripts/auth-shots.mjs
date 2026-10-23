@@ -32,10 +32,17 @@ const EMAIL = process.env.TEST_EMAIL ?? "opengym+clerk_test@example.com";
 const PASSWORD = process.env.TEST_PASSWORD ?? "OpenGymTest!2026";
 const CODE = "424242";
 
-const PAGES = [
-  { path: "/account", name: "account" },
-  { path: "/runs/new", name: "runs-new" },
-];
+// Override with PAGES=/admin,/admin/venues to capture a different set. Admin
+// routes additionally need TEST_EMAIL to be listed in the server's
+// ADMIN_EMAILS, which is read at server start, not per request.
+const PAGES = (process.env.PAGES ?? "/account,/runs/new")
+  .split(",")
+  .map((path) => path.trim())
+  .filter(Boolean)
+  .map((path) => ({
+    path,
+    name: path.replace(/^\//, "").replace(/\//g, "-") || "home",
+  }));
 
 mkdirSync(OUT, { recursive: true });
 
