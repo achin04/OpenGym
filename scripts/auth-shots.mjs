@@ -8,15 +8,14 @@
  * no real credentials and keeps no secrets in the repo. It only works against
  * a development instance; a production key will reject the test identity.
  *
- * REQUIRES bot protection to be off for the instance, or Clerk's testing
- * token. Cloudflare Turnstile is enabled by default on Clerk development
- * instances; it refuses headless browsers, so the sign-up form silently
- * stalls and this script bails at the verification step. Either turn off
- * Attack protection -> bot sign-up protection in the Clerk dashboard, or add
- * `@clerk/testing` and call `setupClerkTestingToken({ page })` before the
- * first navigation, which fetches a bypass token using CLERK_SECRET_KEY.
+ * Cloudflare Turnstile is enabled on Clerk development instances and refuses
+ * headless browsers, so without help the sign-up form silently stalls at the
+ * verification step. `setupClerkTestingToken` fetches a bypass token using
+ * CLERK_SECRET_KEY and attaches it to Clerk's requests, which is why the env
+ * file has to be loaded -- a plain node script does not read .env the way
+ * Next does.
  *
- * Usage:  node scripts/auth-shots.mjs
+ * Usage:  node --env-file=.env scripts/auth-shots.mjs
  *         BASE_URL=... OUT_DIR=... TEST_EMAIL=... node scripts/auth-shots.mjs
  *
  * Note that this creates a user in the Clerk development instance, and the
@@ -25,6 +24,7 @@
 import { mkdirSync } from "node:fs";
 
 import { chromium } from "@playwright/test";
+import { clerkSetup, setupClerkTestingToken } from "@clerk/testing/playwright";
 
 const BASE = process.env.BASE_URL ?? "http://localhost:3000";
 const OUT = process.env.OUT_DIR ?? "test-results/auth-shots";
@@ -39,8 +39,24 @@ const PAGES = [
 
 mkdirSync(OUT, { recursive: true });
 
+if (!process.env.CLERK_SECRET_KEY) {
+  console.error("CLERK_SECRET_KEY is not set. Run with: node --env-file=.env scripts/auth-shots.mjs");
+  process.exit(1);
+}
+
+// Resolves the Frontend API URL and fetches a testing token from
+// CLERK_SECRET_KEY. setupClerkTestingToken needs both and will throw without
+// this having run first.
+await clerkSetup({
+  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+});
+
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+
+// Must happen before the first navigation: it installs the route handler that
+// adds the testing token to Clerk's requests.
+await setupClerkTestingToken({ page });
 
 async function bail(label, err) {
   console.error(`\n--- stuck at: ${label} ---`);
