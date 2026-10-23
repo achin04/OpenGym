@@ -52,10 +52,12 @@ export default function RootLayout({
                 <BrandMark />
               </Link>
 
-              {/* 30px: the Figma export's 18px, widened by two thirds. The
-                  buttons' 4px offset shadow eats into it, leaving 26px of
-                  visible air. Narrow screens stay tighter on purpose. */}
-              <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-[30px]">
+              {/* 15px: half the 30px this used to be. That 30px dated from
+                  when the buttons cast a 4px diagonal shadow which ate into
+                  the gap; the shadow is straight down now, so the full value
+                  reads as air and the pair looked adrift from each other.
+                  Narrow screens stay tighter on purpose. */}
+              <nav className="flex shrink-0 items-center gap-2 text-sm sm:gap-[15px]">
                 <HeaderLink href="/runs">Runs</HeaderLink>
 
                 {/* The slot reserves height only, not width. Clerk resolves the
