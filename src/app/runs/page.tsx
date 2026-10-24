@@ -14,7 +14,6 @@ import {
   AgeGroup,
   RunSourceType,
   SkillLevel,
-  SourceRunStatus,
 } from "@/generated/prisma/enums";
 import {
   availabilityOptions,
@@ -22,6 +21,8 @@ import {
   type AvailabilityFilter,
 } from "@/lib/runs/availability";
 import { RunsPagination } from "@/app/runs/_components/runs-pagination";
+import { VenueFilterChip } from "@/app/runs/_components/venue-filter-chip";
+import { publicRunFilter } from "@/lib/runs/public-runs";
 import {
   buildRunsPagination,
   parsePageParam,
@@ -35,6 +36,7 @@ type RunsPageProps = {
     skillLevel?: string | string[];
     ageGroup?: string | string[];
     sourceType?: string | string[];
+    venueId?: string | string[];
     page?: string | string[];
   }>;
 };
@@ -123,6 +125,18 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
   const ageGroup = parseEnumValue(AgeGroup, params.ageGroup);
   const sourceType = parseEnumValue(RunSourceType, params.sourceType);
   const availabilityRange = getAvailabilityRange(availability, now);
+  const venueIdParam = cleanParam(params.venueId);
+
+  // Resolved to a real row rather than trusted, for two reasons: the chip needs
+  // the venue's name, and an id that no longer exists must not silently filter
+  // the listing down to nothing. An unknown id is dropped, so a stale map link
+  // degrades to the full listing instead of an empty page with no explanation.
+  const venue = venueIdParam
+    ? await prisma.venue.findUnique({
+        where: { id: venueIdParam },
+        select: { id: true, name: true },
+      })
+    : null;
 
   const locationFilter: Prisma.RunWhereInput | undefined = location
     ? {
@@ -176,10 +190,12 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
     : undefined;
 
   const where: Prisma.RunWhereInput = {
-    sourceStatus: SourceRunStatus.ACTIVE,
-    // Always bounded: getAvailabilityRange floors every option at the present,
-    // so a past run can never appear in the listing.
-    startTime: availabilityRange,
+    // sourceStatus + the time bound now come from publicRunFilter, which the
+    // home map queries through as well so the two views cannot disagree about
+    // which runs are public. Always bounded: getAvailabilityRange floors every
+    // option at the present, so a past run can never appear in the listing.
+    ...publicRunFilter(availabilityRange),
+    ...(venue ? { venueId: venue.id } : {}),
     ...(locationFilter ? locationFilter : {}),
     ...(skillLevel
       ? {
@@ -224,6 +240,9 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
     skillLevel,
     ageGroup,
     sourceType,
+    // Carried here so page links keep the venue filter. The matching hidden
+    // input in the form below does the same job for filter submissions.
+    ...(venue ? { venueId: venue.id } : {}),
   };
 
   return (
@@ -232,7 +251,11 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
           <div className="space-y-3">
             <h1 className="max-w-3xl text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
-              {location ? `Runs near ${location}` : "Find a run that fits your week"}
+              {venue
+                ? `Runs at ${venue.name}`
+                : location
+                  ? `Runs near ${location}`
+                  : "Find a run that fits your week"}
             </h1>
             <p className="max-w-2xl text-foreground/70">
               Search by city, neighborhood, venue, or postal code. Results are
@@ -255,6 +278,16 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           action="/runs"
           className="grid gap-4 rounded-[20px] border-2 border-foreground bg-surface p-4 shadow-[0_6px_0_0_var(--foreground)] lg:grid-cols-[minmax(12rem,1.5fr)_repeat(2,minmax(9rem,1fr))_auto]"
         >
+          {/*
+            A form submits only its own fields, so without this the venue
+            filter would silently disappear the moment the visitor changed
+            availability or source -- they would be thrown back to every run in
+            the city with nothing explaining why.
+          */}
+          {venue ? (
+            <input type="hidden" name="venueId" value={venue.id} />
+          ) : null}
+
           <div className="grid gap-1">
             <label
               htmlFor="location"
@@ -316,6 +349,10 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
           </div>
 
         </form>
+
+        {venue ? (
+          <VenueFilterChip venueName={venue.name} params={filterParams} />
+        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-foreground pb-4">
           <p className="text-sm font-medium text-foreground/70">
