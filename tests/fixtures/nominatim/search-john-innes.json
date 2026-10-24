@@ -1,0 +1,18 @@
+[
+  {
+    "place_id": 309512345,
+    "licence": "Data © OpenStreetMap contributors, ODbL 1.0. http://osm.org/copyright",
+    "osm_type": "way",
+    "osm_id": 123456789,
+    "lat": "43.6555127",
+    "lon": "-79.3700321",
+    "category": "leisure",
+    "type": "sports_centre",
+    "place_rank": 30,
+    "importance": 0.19,
+    "addresstype": "leisure",
+    "name": "John Innes Community Recreation Centre",
+    "display_name": "John Innes Community Recreation Centre, 150, Sherbourne Street, Moss Park, Old Toronto, Toronto, Ontario, M5A 2R6, Canada",
+    "boundingbox": ["43.6551", "43.6559", "-79.3705", "-79.3695"]
+  }
+]
