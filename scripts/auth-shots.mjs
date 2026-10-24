@@ -80,9 +80,9 @@ async function bail(label, err) {
 
 /** Clerk renders the code as six single-character boxes and autofocuses the
  *  first, so typing is more reliable than filling any one of them. */
-async function enterCode() {
+async function enterCode(timeout = 25000) {
   const box = page.locator('input[autocomplete="one-time-code"], input[name^="codeInput"]').first();
-  await box.waitFor({ state: "attached", timeout: 25000 });
+  await box.waitFor({ state: "attached", timeout });
   await box.focus().catch(() => {});
   await page.keyboard.type(CODE, { delay: 80 });
 }
@@ -111,6 +111,11 @@ async function signIn() {
   if (await password.isVisible({ timeout: 6000 }).catch(() => false)) {
     await password.fill(PASSWORD);
     await password.press("Enter");
+    // Clerk treats each fresh browser as a new device and adds an email-code
+    // second factor, which the test identity answers with the same fixed
+    // code. A recognised device skips the step, so a miss here is not a
+    // failure -- hence the short timeout rather than the full one.
+    await enterCode(8000).catch(() => {});
   } else {
     await enterCode();
   }
