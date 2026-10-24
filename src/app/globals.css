@@ -159,3 +159,123 @@ textarea {
 .cl-userButtonTrigger {
   border-radius: 999px !important;
 }
+
+/*
+ * Leaflet skin.
+ *
+ * Leaflet builds its markers, clusters and popups as plain DOM outside React,
+ * so Tailwind utilities on our own JSX cannot reach them -- these elements are
+ * created by the library at runtime from the icon HTML the map component hands
+ * it. Hence real CSS, here next to the tokens it consumes.
+ *
+ * The pin and the cluster bubble are drawn rather than loaded as images, which
+ * also sidesteps Leaflet's default marker icon: its stylesheet points at image
+ * files by relative path, and those paths break under a bundler, producing the
+ * classic map with working popups and invisible markers.
+ */
+.og-pin {
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 999px 999px 999px 2px;
+  box-shadow: 0 2px 0 0 var(--foreground);
+  height: 20px;
+  transform: rotate(-45deg);
+  width: 20px;
+}
+
+.og-cluster {
+  align-items: center;
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 0 var(--foreground);
+  color: var(--foreground);
+  display: flex;
+  font-weight: 800;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Three steps so a dense downtown bubble does not swamp a sparse suburban one. */
+.og-cluster--sm {
+  font-size: 13px;
+}
+
+.og-cluster--md {
+  font-size: 15px;
+}
+
+.og-cluster--lg {
+  font-size: 17px;
+}
+
+.leaflet-container {
+  background: var(--background);
+  font: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--surface);
+  border: 2px solid var(--foreground);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 0 var(--foreground);
+  color: var(--foreground);
+}
+
+.leaflet-popup-content {
+  margin: 14px 16px;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface);
+  border: 2px solid var(--foreground);
+}
+
+.og-popup-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  max-width: 15rem;
+}
+
+.og-popup-link {
+  align-items: center;
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 10px;
+  box-shadow: 0 3px 0 0 var(--foreground);
+  color: var(--foreground);
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 14px;
+  text-decoration: none;
+}
+
+.og-popup-link:hover {
+  box-shadow: 0 1px 0 0 var(--foreground);
+  transform: translateY(2px);
+}
+
+/*
+ * Leaflet's own controls, brought into the house style rather than left as
+ * the library's grey-on-white defaults.
+ */
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--surface);
+  border-bottom-color: var(--line);
+  color: var(--foreground);
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--foreground);
+  font-size: 11px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--link-hover);
+}

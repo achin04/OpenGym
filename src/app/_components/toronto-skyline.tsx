@@ -22,15 +22,28 @@
  * the centre; everything outward of it is generic filler at the same weight,
  * there so the band reaches both edges of the viewport at any width.
  *
- * Geometry: a 1440x260 canvas with the ground line at y=252. Width is 100% and
+ * Geometry: a 1920x260 canvas with the ground line at y=252. Width is 100% and
  * height is left unset, so the browser derives it from the viewBox ratio and
- * the whole band scales uniformly -- about 260px tall at a 1440px viewport.
+ * the whole band scales uniformly -- about 195px tall at a 1440px viewport.
+ *
+ * The canvas was widened from 1440 to 1920 to make the band shorter relative to
+ * its width (13.5vw rather than 18vw) without redrawing anything. That matters
+ * because the band sits behind the hero's search bar: the CN Tower's mast tops
+ * out 11.5% down the canvas and the moon 19.2% down, so those two have to fit
+ * in the gap between the headline and the bar or the bar hides them. A shorter
+ * band needs less of that gap. Squashing the drawing with
+ * preserveAspectRatio="none" would have been the other way to shorten it, and
+ * was rejected: it turns the moon into an ellipse and the uniform stroke weight
+ * into two different weights.
+ *
+ * The original composition is translated 240px right and untouched; the extra
+ * 480px is filler at both ends, so the recognisable group stays centred.
  */
 export function TorontoSkyline({ className }: { className?: string }) {
   return (
     <div className={className} aria-hidden="true">
       <svg
-        viewBox="0 0 1440 260"
+        viewBox="0 0 1920 260"
         width="100%"
         preserveAspectRatio="xMidYMax meet"
         fill="none"
@@ -41,7 +54,27 @@ export function TorontoSkyline({ className }: { className?: string }) {
         className="block w-full text-skyline"
       >
         {/* Ground */}
-        <path d="M0 252H1440" />
+        <path d="M0 252H1920" />
+
+        {/* --- Outer left filler: new, fills 0-228 on the widened canvas --- */}
+        <rect x="-10" y="196" width="96" height="56" />
+        <rect x="100" y="164" width="60" height="88" />
+        <path d="M130 164v-20" />
+        <rect x="172" y="208" width="56" height="44" />
+
+        {/* --- Outer right filler: new, fills 1692-1930 --- */}
+        <rect x="1692" y="170" width="70" height="82" />
+        <path d="M1706 196h18M1734 196h14M1706 222h18M1734 222h14" />
+        <rect x="1778" y="200" width="60" height="52" />
+        <rect x="1852" y="152" width="78" height="100" />
+
+        {/*
+          The original 1440-wide composition, shifted right by half the added
+          width so it stays centred. Wrapped in a transform rather than having
+          every coordinate rewritten: the drawing is unchanged, and that is
+          easier to verify than 40 edited numbers.
+        */}
+        <g transform="translate(240 0)">
 
         {/* --- Left filler --- */}
         <rect x="-12" y="182" width="112" height="70" />
@@ -87,6 +120,7 @@ export function TorontoSkyline({ className }: { className?: string }) {
         <rect x="1256" y="138" width="70" height="114" />
         <rect x="1342" y="176" width="64" height="76" />
         <rect x="1406" y="146" width="34" height="106" />
+        </g>
       </svg>
     </div>
   );

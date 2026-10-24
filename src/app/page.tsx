@@ -1,5 +1,7 @@
 import { availabilityOptions } from "@/lib/runs/availability";
+import { findMapVenues } from "@/server/venues/map-venues";
 import { TorontoSkyline } from "./_components/toronto-skyline";
+import { VenueMap } from "./_components/venue-map";
 
 const filterFeatures = [
   {
@@ -19,10 +21,61 @@ const filterFeatures = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  // Every pin ships in this payload. See findMapVenues for why there is no
+  // bounding-box endpoint behind it.
+  const mapVenues = await findMapVenues(new Date());
+
   return (
-    <main className="pb-10 pt-14 text-foreground">
-      <section className="mx-auto w-full max-w-7xl px-6">
+    <main className="pb-10 pt-6 text-foreground sm:pt-16">
+      {/*
+        The hero and the skyline share a stacking context so the drawing can sit
+        behind the headline and the search bar. The wrapper is full-bleed while
+        the content inside stays in the 7xl column, which is what lets the band
+        reach both edges of the viewport as it did when it was in flow.
+
+        min-h is a mobile-only clamp that holds the hero to the viewport minus a
+        strip, so the top of the map is always on screen when the page opens.
+
+        The 290px is measured, not derived: it has to cover everything between
+        the top of the viewport and the top of the map that is not the hero
+        itself -- the 88px fixed header above this main, this main's top
+        padding, the gap below the hero -- and then leave about 120px of map
+        showing. Changing the header height or those paddings changes this
+        number, which is why it is checked against a real viewport rather than
+        reasoned about.
+
+        On md and up the clamp is off entirely: the hero's natural height
+        already leaves a generous slice of map in view at desktop sizes, and a
+        viewport-relative hero on a large monitor would only add empty space.
+      */}
+      <div className="relative">
+        {/*
+          The skyline is anchored to the bottom of the hero, and the hero's
+          bottom padding is what decides how far down the drawing sits.
+
+          That padding has to be proportional, not fixed. The SVG is width:100%
+          on a 1440x260 viewBox, so its rendered height is always about 18vw --
+          260px at a 1440px viewport, 347px at 1920. A fixed padding would clear
+          the headline at one width and let the CN Tower punch back up through
+          it at another.
+
+          13.54vw is that height for the widened 1920x260 canvas, and padding by
+          the full band height plus 1rem puts the top of the drawing just below
+          the search bar: the whole city is visible, including the mast and the
+          moon, and the bar sits above the skyline rather than cutting through
+          it.
+
+          Straddling was tried first and rejected on sight. There are only about
+          80px between the headline and the bar, and the band is 195px at this
+          width, so no arrangement fits the city into that gap -- the bar ends up
+          bisecting it, leaving roof lines above and a sliver of bases below.
+          Clearing the bar entirely is the only placement where the drawing
+          still reads as a skyline.
+        */}
+        <TorontoSkyline className="pointer-events-none absolute inset-x-0 bottom-0 w-full" />
+
+        <section className="relative mx-auto min-h-[calc(100svh-290px)] w-full max-w-7xl px-6 pb-[calc(13.54vw+1rem)] md:min-h-0">
         {/*
           clamp() rather than breakpoints: the headline is the one element that
           should track viewport width continuously. 8.6vw is tuned so that
@@ -30,7 +83,7 @@ export default function Home() {
           falls to a second line on its own, which is the composition the
           design calls for -- no manual <br /> needed.
         */}
-        <h1 className="mb-10 mt-6 text-[clamp(52px,8.6vw,124px)] font-bold leading-[0.98] tracking-[-0.035em] text-foreground">
+        <h1 className="mb-6 mt-2 text-[clamp(52px,8.6vw,124px)] font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:mb-12 sm:mt-6">
           Find basketball runs <span className="text-court">near you.</span>
         </h1>
 
@@ -43,7 +96,23 @@ export default function Home() {
             to wrap. No media query can express "wrap when you run out of
             room" as directly as this.
           */}
-          <div className="flex min-w-0 flex-[999_1_640px] flex-wrap overflow-hidden rounded-[20px] border-2 border-foreground bg-white shadow-[0_6px_0_0_var(--foreground)] focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-court">
+          {/*
+            No focus ring on this container, deliberately.
+
+            It carried an orange focus-within ring, which read as a glow every
+            time the bar was clicked. :focus-visible was tried as a way to keep
+            a ring for keyboard users only, and does not work here: the spec has
+            browsers always match :focus-visible on text inputs, however focus
+            arrived, on the reasoning that anything typeable deserves a visible
+            ring. So there is no CSS that shows a ring on Tab but not on click
+            for this control.
+
+            Removing it was chosen knowingly over keeping a ring on click. The
+            cost is real -- the inner input also sets outline-none, so a
+            keyboard user gets no indicator on this control -- and if that
+            becomes a problem the fix is a ring here, not a different variant.
+          */}
+          <div className="flex min-w-0 flex-[999_1_640px] flex-wrap overflow-hidden rounded-[20px] border-2 border-foreground bg-white shadow-[0_6px_0_0_var(--foreground)]">
             <label htmlFor="home-location" className="sr-only">
               City or neighbourhood
             </label>
@@ -93,9 +162,48 @@ export default function Home() {
             <ChevronRightIcon className="h-[18px] w-[18px]" />
           </button>
         </form>
-      </section>
+        </section>
+      </div>
 
-      <TorontoSkyline className="mt-10 w-full" />
+      {/*
+        The map's own section, deliberately with no visible heading: a house
+        heading is ~56px plus margins, which is most of the peek budget, and a
+        visitor arriving at the fold would see a heading rather than a map. The
+        sr-only h2 keeps the document outline intact for assistive technology
+        and search engines at no vertical cost -- the same trick the run detail
+        page uses for its title.
+      */}
+      <section className="mx-auto mt-6 w-full max-w-7xl px-6 sm:mt-8">
+        <h2 className="sr-only">Map of basketball venues</h2>
+
+        {/*
+          isolate is load-bearing. Leaflet positions its panes at z-index
+          400-700 and its controls at 800-1000, and this card creates no
+          stacking context of its own, so those values were competing directly
+          with the sticky header's z-30 -- and winning, which is why the map
+          scrolled over the nav. isolation: isolate scopes them to this card, so
+          the whole map participates in the page at one level and the header
+          sits above it.
+        */}
+        <div className="isolate overflow-hidden rounded-[20px] border-2 border-foreground bg-surface shadow-[0_6px_0_0_var(--foreground)]">
+          {/*
+            A fixed height rather than an aspect ratio, so the box the server
+            renders is exactly the box Leaflet fills and nothing on the page
+            shifts when the map's JavaScript arrives.
+          */}
+          <VenueMap
+            venues={mapVenues}
+            className="h-[420px] w-full sm:h-[520px]"
+          />
+        </div>
+
+        {mapVenues.length === 0 ? (
+          <p className="mt-4 text-sm font-medium text-foreground/70">
+            No venues are on the map yet. Venues appear here once they have
+            coordinates and at least one upcoming run.
+          </p>
+        ) : null}
+      </section>
 
       <section className="mx-auto mt-16 w-full max-w-7xl px-6 lg:mt-20">
         <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-foreground">
