@@ -96,7 +96,7 @@ export default async function AdminScheduleSourcesPage() {
 
           <button
             type="submit"
-            className={`w-fit ${raisedButtonClass({ variant: "success" })}`}
+            className={`w-fit ${raisedButtonClass({ variant: "solid" })}`}
           >
             Create schedule source
           </button>

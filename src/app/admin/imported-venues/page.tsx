@@ -38,10 +38,10 @@ export default async function AdminImportedVenuesPage() {
   return (
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-8">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Link
             href="/admin"
-            className="text-sm font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
+            className="inline-block text-sm font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
           >
             Back to admin
           </Link>

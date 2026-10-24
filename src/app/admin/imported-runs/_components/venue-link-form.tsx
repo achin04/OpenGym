@@ -70,7 +70,7 @@ export function VenueLinkForm({
       <button
         type="submit"
         disabled={pending || venues.length === 0}
-        className={`w-fit ${raisedButtonClass({ variant: "success" })} disabled:cursor-not-allowed disabled:opacity-50`}
+        className={`w-fit ${raisedButtonClass({ variant: "solid" })} disabled:cursor-not-allowed disabled:opacity-50`}
       >
         {pending ? "Linking..." : "Link Venue"}
       </button>

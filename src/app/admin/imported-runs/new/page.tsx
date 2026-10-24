@@ -143,7 +143,7 @@ export default async function NewImportedRunPage() {
 
           <button
             type="submit"
-            className={`w-fit ${raisedButtonClass({ variant: "success" })}`}
+            className={`w-fit ${raisedButtonClass({ variant: "solid" })}`}
           >
             Create imported run
           </button>

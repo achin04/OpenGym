@@ -2,6 +2,7 @@
 
 import { type ReactNode, useActionState } from "react";
 import { useFormStatus } from "react-dom";
+import { FIELD } from "@/app/_components/field";
 import {
   type AdminActionState,
   initialAdminActionState,
@@ -37,16 +38,20 @@ function SubmitButton({
   tone?: "default" | "danger";
 }) {
   const { pending } = useFormStatus();
+  // Danger is carried by the border and label rather than a fill. This button
+  // repeats on every row, and a few hundred solid red tiles stop reading as a
+  // warning -- the colour has to be scarce to mean anything. The filled
+  // danger variant stays for one-off destructive actions.
   const toneClass =
     tone === "danger"
-      ? "border-foreground bg-danger text-foreground"
-      : "border-foreground bg-success text-foreground";
+      ? "border-danger bg-white text-danger"
+      : "border-foreground bg-court text-foreground";
 
   return (
     <button
       type="submit"
       disabled={pending}
-      className={`rounded-[8px] border-2 px-3 py-1.5 text-xs font-semibold shadow-[0_3px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[1px] hover:shadow-[0_2px_0_0_var(--foreground)] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 ${toneClass}`}
+      className={`rounded-[8px] border-2 px-3 py-1.5 text-xs font-semibold shadow-[0_3px_0_0_currentColor] transition-[transform,box-shadow] duration-150 ease-out motion-reduce:transition-none hover:translate-y-[1px] hover:shadow-[0_2px_0_0_currentColor] active:translate-y-[3px] active:shadow-none disabled:cursor-not-allowed disabled:opacity-60 ${toneClass}`}
     >
       {pending ? pendingLabel : children}
     </button>
@@ -97,7 +102,7 @@ function TextField({
         type={type}
         name={name}
         defaultValue={defaultValue}
-        className="min-h-11 w-full min-w-0 rounded-[10px] border-2 border-foreground bg-white px-3 text-sm text-foreground outline-none transition placeholder:text-placeholder focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-court"
+        className={FIELD}
       />
       {error ? <span className="font-semibold text-danger">{error}</span> : null}
     </label>
