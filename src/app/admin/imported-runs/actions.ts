@@ -22,6 +22,10 @@ import {
   removeImportedVenueCreationVenue,
   updateImportedVenueCreationVenue,
 } from "@/server/admin/imported-runs/venue-resolution";
+import {
+  describeGeocodeResult,
+  geocodeVenueById,
+} from "@/server/geocoding/venue-coordinates";
 
 function formString(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -188,12 +192,18 @@ export async function createVenueFromExternalRefAction(
   }
 
   try {
-    await createVenueFromExternalVenueRef(result.data);
+    const { venueId } = await createVenueFromExternalVenueRef(result.data);
+
+    // Geocoding runs here, after the creating transaction has committed, and
+    // never inside it: an HTTP call cannot be rolled back and must not be able
+    // to hold a pooled connection open or fail a venue creation.
+    const geocodeResult = await geocodeVenueById(venueId);
+
     revalidateImportedRunAdminPaths(result.data.batchId);
 
     return {
       status: "success",
-      message: "Venue created and linked to the source location.",
+      message: `Venue created and linked to the source location. ${describeGeocodeResult(geocodeResult)}`,
     };
   } catch (error) {
     return safeErrorState(error);

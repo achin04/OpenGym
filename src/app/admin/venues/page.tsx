@@ -2,6 +2,7 @@ import { prisma } from "@/server/db";
 import { requireAdmin } from "@/server/admin";
 import { createVenue } from "./actions";
 import { raisedButtonClass } from "@/app/_components/raised-button";
+import { VenueCoordinatesControls } from "./_components/venue-coordinates-controls";
 
 export default async function AdminVenuesPage() {
   await requireAdmin();
@@ -9,6 +10,10 @@ export default async function AdminVenuesPage() {
   const venues = await prisma.venue.findMany({
     orderBy: [{ city: "asc" }, { name: "asc" }],
   });
+
+  const missingCoordinatesCount = venues.filter(
+    (venue) => venue.latitude === null || venue.longitude === null,
+  ).length;
 
   return (
     <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
@@ -22,6 +27,17 @@ export default async function AdminVenuesPage() {
 
           <p className="max-w-2xl text-foreground/70">
             Add indoor basketball locations that runs can be attached to.
+          </p>
+
+          {/*
+            Stated up front rather than left to be discovered card by card: a
+            venue without coordinates is invisible on the home map and nothing
+            else in the product reports that.
+          */}
+          <p className="max-w-2xl text-sm font-semibold text-foreground/75">
+            {missingCoordinatesCount === 0
+              ? `All ${venues.length} venues have coordinates and can appear on the map.`
+              : `${missingCoordinatesCount} of ${venues.length} venues have no coordinates and will not appear on the map.`}
           </p>
         </div>
 
@@ -98,7 +114,7 @@ export default async function AdminVenuesPage() {
 
           <button
             type="submit"
-            className={`w-fit ${raisedButtonClass({ variant: "success" })}`}
+            className={`w-fit ${raisedButtonClass({ variant: "solid" })}`}
           >
             Create venue
           </button>
@@ -114,6 +130,16 @@ export default async function AdminVenuesPage() {
               <p className="mt-2 text-foreground/70">
                 {venue.addressLine1}, {venue.city}
               </p>
+
+              <VenueCoordinatesControls
+                venue={{
+                  id: venue.id,
+                  latitude: venue.latitude,
+                  longitude: venue.longitude,
+                  geocodedAt: venue.geocodedAt,
+                  geocodeSource: venue.geocodeSource,
+                }}
+              />
             </article>
           ))}
         </div>
