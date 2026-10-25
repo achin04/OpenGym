@@ -166,15 +166,35 @@ export default async function Home() {
       </div>
 
       {/*
-        The map's own section, deliberately with no visible heading: a house
-        heading is ~56px plus margins, which is most of the peek budget, and a
-        visitor arriving at the fold would see a heading rather than a map. The
-        sr-only h2 keeps the document outline intact for assistive technology
-        and search engines at no vertical cost -- the same trick the run detail
-        page uses for its title.
+        The map band, full-bleed dark against the cream page.
+
+        It carries a real heading now. The earlier version used an sr-only one
+        to protect the peek -- a house heading plus a line of body copy is about
+        120px, most of the budget -- but a dark band with a title is a stronger
+        "there is more below" signal than a sliver of map was, so the peek is
+        spent on saying what the thing is rather than showing an inch of it.
+
+        Full-bleed means the band escapes the 7xl column while its contents stay
+        inside it, hence the wrapper.
+
+        The negative top margin makes the band begin exactly on the skyline's
+        ground line, so the city stands on the dark rather than floating above
+        it. Two things had to close for that: the old margin, and the 8 units of
+        empty canvas below the ground line -- the drawing's baseline is at y=252
+        of a 260-tall viewBox, so 3.08% of the rendered band is nothing at all.
+        0.417vw is that 3.08% of the band's own 13.54vw height, so the seam
+        holds at every width the way the band's height does.
       */}
-      <section className="mx-auto mt-6 w-full max-w-7xl px-6 sm:mt-8">
-        <h2 className="sr-only">Map of basketball venues</h2>
+      <section className="mt-[-0.417vw] w-full bg-foreground py-12 sm:py-16">
+        <div className="mx-auto w-full max-w-7xl px-6">
+          <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-background">
+            See where the <span className="text-court">runs are.</span>
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-base leading-7 text-background/70">
+            Tap a cluster to zoom in, or pick a pin to see that venue&rsquo;s
+            upcoming runs.
+          </p>
 
         {/*
           isolate is load-bearing. Leaflet positions its panes at z-index
@@ -185,24 +205,35 @@ export default async function Home() {
           the whole map participates in the page at one level and the header
           sits above it.
         */}
-        <div className="isolate overflow-hidden rounded-[20px] border-2 border-foreground bg-surface shadow-[0_6px_0_0_var(--foreground)]">
           {/*
-            A fixed height rather than an aspect ratio, so the box the server
-            renders is exactly the box Leaflet fills and nothing on the page
-            shifts when the map's JavaScript arrives.
+            The card's edge and shadow switch to court orange on this band. The
+            house ink border would disappear into a near-black background, and
+            the shadow with it, so the card would lose the raised read that
+            every other surface on the site has.
           */}
-          <VenueMap
-            venues={mapVenues}
-            className="h-[420px] w-full sm:h-[520px]"
-          />
-        </div>
+          <div className="isolate mt-8 overflow-hidden rounded-[20px] border-2 border-court bg-surface shadow-[0_6px_0_0_var(--court)]">
+            {/*
+              A fixed height rather than an aspect ratio, so the box the server
+              renders is exactly the box Leaflet fills and nothing on the page
+              shifts when the map's JavaScript arrives.
 
-        {mapVenues.length === 0 ? (
-          <p className="mt-4 text-sm font-medium text-foreground/70">
-            No venues are on the map yet. Venues appear here once they have
-            coordinates and at least one upcoming run.
-          </p>
-        ) : null}
+              Taller than it needs to be to show the pins, on purpose: at the
+              old height the map read as an illustration of Toronto. Enough
+              height to pan around in is what says it can be panned around in.
+            */}
+            <VenueMap
+              venues={mapVenues}
+              className="h-[480px] w-full sm:h-[640px]"
+            />
+          </div>
+
+          {mapVenues.length === 0 ? (
+            <p className="mt-4 text-sm font-medium text-background/70">
+              No venues are on the map yet. Venues appear here once they have
+              coordinates and at least one upcoming run.
+            </p>
+          ) : null}
+        </div>
       </section>
 
       <section className="mx-auto mt-16 w-full max-w-7xl px-6 lg:mt-20">
