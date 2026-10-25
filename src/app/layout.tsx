@@ -43,11 +43,28 @@ export default function RootLayout({
       <html lang="en" className={`${inter.variable} h-full antialiased`}>
         <body className="flex min-h-full flex-col text-foreground">
           <header className="sticky top-0 z-30 border-b border-line bg-surface/92 shadow-[0_1px_22px_rgba(20,20,20,0.06)] backdrop-blur-xl">
-            <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-3 sm:px-6">
+            {/*
+              py-[6px], not py-3. The brand is the tallest thing in this bar by
+              some margin -- 80px against the nav's 50 -- so the mark's height
+              and the vertical padding are the only two terms in the header's
+              height, and they trade directly against each other. Halving the
+              padding is what buys the mark its full size inside a bar a sixth
+              shorter than it used to be. The nav still has 15px of air each
+              side of its 50px controls, so nothing else feels the squeeze.
+            */}
+            <div className="relative mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-5 py-[6px] sm:px-6">
               <Link
                 href="/"
                 aria-label="OpenGym home"
-                className="rounded-md transition duration-200 hover:opacity-90 focus:outline-none focus-visible:outline-none"
+                /*
+                  flex, not the default block: the mark is wrapped in an
+                  inline-flex span, which sat in an inline formatting context
+                  and picked up ~6px of descender space under it. That made the
+                  link 86px tall around an 80px image, and since the brand is
+                  the tallest thing in the header, those 6px were setting the
+                  header's height for nothing.
+                */
+                className="flex rounded-md transition duration-200 hover:opacity-90 focus:outline-none focus-visible:outline-none"
               >
                 <BrandMark />
               </Link>
