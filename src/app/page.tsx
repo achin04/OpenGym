@@ -123,7 +123,7 @@ export default async function Home() {
               name="location"
               type="search"
               autoComplete="address-level2"
-              placeholder="North York, Scarborough, Etobicoke…"
+              placeholder="Toronto, East York, or M9V 4L9"
               className="min-h-[72px] min-w-0 flex-[1_1_240px] bg-transparent px-[22px] text-[18px] text-foreground outline-none placeholder:text-placeholder"
             />
 

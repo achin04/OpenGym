@@ -301,7 +301,7 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
               type="search"
               defaultValue={location}
               autoComplete="address-level2"
-              placeholder="Toronto, gym, postal code"
+              placeholder="Toronto, East York, or M9V 4L9"
               className={FIELD}
             />
           </div>
