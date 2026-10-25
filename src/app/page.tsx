@@ -1,23 +1,25 @@
+import Link from "next/link";
+import { raisedButtonClass } from "@/app/_components/raised-button";
 import { availabilityOptions } from "@/lib/runs/availability";
 import { findMapVenues } from "@/server/venues/map-venues";
 import { TorontoSkyline } from "./_components/toronto-skyline";
 import { VenueMap } from "./_components/venue-map";
 
-const filterFeatures = [
+const howItWorksSteps = [
   {
-    icon: AreaIcon,
-    label: "Area search",
-    description: "Find runs within your travel range",
+    icon: SearchIcon,
+    title: "Search your area",
+    body: "Enter a city, neighbourhood, gym or postal code, then pick when you can play \u2014 tonight, this weekend or any day you choose.",
   },
   {
-    icon: CalendarIcon,
-    label: "Availability",
-    description: "Today, tonight, or this week",
+    icon: CalendarCheckIcon,
+    title: "Pick your run",
+    body: "Compare the time, venue, age group and who's hosting. City of Toronto programs are marked official so you know what you're getting.",
   },
   {
-    icon: ClipboardIcon,
-    label: "Run details",
-    description: "See level, schedule, and capacity",
+    icon: BasketballIcon,
+    title: "Show up and hoop",
+    body: "Open the run for the full details, grab directions and head to the court. No group chats, no guessing.",
   },
 ];
 
@@ -236,37 +238,87 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="mx-auto mt-16 w-full max-w-7xl px-6 lg:mt-20">
+      {/*
+        scroll-mt clears the sticky header, which is 88px tall and would
+        otherwise sit over this heading when the nav's "How it works" link
+        jumps here.
+      */}
+      <section
+        id="how-it-works"
+        className="mx-auto mt-16 w-full max-w-7xl scroll-mt-28 px-6 lg:mt-20"
+      >
         <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-foreground">
-          What you can filter
+          How it <span className="text-court-700">works.</span>
         </h2>
 
+        <p className="mt-3 text-base leading-7 text-foreground/70">
+          From couch to court in three steps.
+        </p>
+
         {/*
-          Three cards in the house style: ink border, hard shadow straight
-          down, surface lighter than the page so they read as raised. The
-          dividers this section used to rely on were vertical hairlines
-          between columns, which only worked against the dark photo; on
-          cream the card edge does that job.
+          White rather than the usual bg-surface. These three sit directly on
+          the cream page with nothing else competing, and the extra step away
+          from the background is what makes them read as the subject of the
+          section rather than part of it.
         */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-3">
-          {filterFeatures.map((feature) => {
-            const Icon = feature.icon;
+        <ol className="mt-10 grid gap-6 md:grid-cols-3">
+          {howItWorksSteps.map((step, index) => {
+            const Icon = step.icon;
 
             return (
-              <div
-                key={feature.label}
-                className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] sm:p-7"
+              <li
+                key={step.title}
+                className="rounded-[20px] border-2 border-foreground bg-white p-6 shadow-[0_6px_0_0_var(--foreground)] sm:p-7"
               >
-                <Icon className="h-9 w-9 text-court" />
+                <div className="flex items-start justify-between gap-4">
+                  {/*
+                    aria-hidden because the <ol> already conveys the order to a
+                    screen reader; read out, the numeral would be said twice.
+                  */}
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-court text-lg font-bold text-foreground"
+                  >
+                    {index + 1}
+                  </span>
+
+                  <Icon className="mt-1 h-6 w-6 text-foreground" />
+                </div>
+
                 <h3 className="mt-6 text-xl font-semibold text-foreground">
-                  {feature.label}
+                  {step.title}
                 </h3>
+
                 <p className="mt-3 text-base leading-7 text-foreground/70">
-                  {feature.description}
+                  {step.body}
                 </p>
-              </div>
+              </li>
             );
           })}
+        </ol>
+
+        {/*
+          Dashed rather than the solid card border used everywhere else: this
+          strip is an invitation to add something, not another thing to read,
+          and the dashed edge says "empty slot" the way a card outline cannot.
+        */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[20px] border-2 border-dashed border-foreground/55 p-6 sm:p-7">
+          <div>
+            <h3 className="text-xl font-semibold text-foreground">
+              Running a game?
+            </h3>
+            <p className="mt-2 text-base leading-7 text-foreground/70">
+              Add your run to OpenGym so players nearby can find it.
+            </p>
+          </div>
+
+          <Link
+            href="/runs/new"
+            className={`${raisedButtonClass()} gap-2`}
+          >
+            <PlusIcon className="h-4 w-4" />
+            Add a run
+          </Link>
         </div>
       </section>
     </main>
@@ -303,7 +355,26 @@ function ChevronRightIcon({ className, strokeWidth = 2.6 }: IconProps) {
   );
 }
 
-function AreaIcon({ className }: IconProps) {
+function SearchIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path
+        d="m16 16 4.5 4.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+function CalendarCheckIcon({ className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -312,13 +383,64 @@ function AreaIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
     >
       <path
-        d="M12 3v3m0 12v3M3 12h3m12 0h3"
+        d="M7 3v3m10-3v3M5 9h14M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1.8"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
       />
-      <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="m9 14.5 2 2 4-4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+/* Seams drawn as the real ball has them: one vertical, one horizontal, and two
+   curved side seams -- at 24px the usual four-arc rosette turns to mush. */
+function BasketballIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path
+        d="M12 3v18M3 12h18"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d="M5.6 5.6a12 12 0 0 1 0 12.8M18.4 5.6a12 12 0 0 0 0 12.8"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+function PlusIcon({ className, strokeWidth = 2.2 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="M12 5v14M5 12h14"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
     </svg>
   );
 }
@@ -343,25 +465,6 @@ function CalendarIcon({ className, strokeWidth = 1.8 }: IconProps) {
         stroke="currentColor"
         strokeLinejoin="round"
         strokeWidth={strokeWidth}
-      />
-    </svg>
-  );
-}
-
-function ClipboardIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M9 5h6m-5 5h6m-6 4h4M8 4h8l1 3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l1-3Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
       />
     </svg>
   );

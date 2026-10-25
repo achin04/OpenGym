@@ -26,7 +26,12 @@
   --line: #e4e0da;
   --placeholder: #6b6b6b;
   --skyline: #d9d2c8;
-  --link-hover: #b4541c;
+  /* The dark end of the court orange. It was introduced as the link hover
+     colour and is now also the accent on section headings, so it gets a name
+     describing the colour rather than one of its uses -- --link-hover stays as
+     an alias so nothing has to be migrated today. */
+  --court-700: #b4541c;
+  --link-hover: var(--court-700);
   /*
    * Admin only. Approving and rejecting imported data are destructive and
    * hard to undo, so those controls keep a colour signal the rest of the site
@@ -49,6 +54,7 @@
   --color-line: var(--line);
   --color-placeholder: var(--placeholder);
   --color-skyline: var(--skyline);
+  --color-court-700: var(--court-700);
   --color-link-hover: var(--link-hover);
   --color-success: var(--success);
   --color-danger: var(--danger);

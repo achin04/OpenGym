@@ -75,6 +75,24 @@ export default function RootLayout({
                   reads as air and the pair looked adrift from each other.
                   Narrow screens stay tighter on purpose. */}
               <nav className="flex shrink-0 items-center gap-2 text-sm sm:gap-[15px]">
+                {/*
+                  A plain link rather than a HeaderLink: that component renders
+                  the bordered nav button, and two buttons side by side would
+                  give equal weight to an explainer and to the listing people
+                  actually came for.
+
+                  The href is absolute so it works from every page -- from /runs
+                  it navigates home and then scrolls, which a bare "#how-it-works"
+                  would not do. Hidden below sm, where the header has only room
+                  for the controls.
+                */}
+                <Link
+                  href="/#how-it-works"
+                  className="hidden rounded-md px-1 text-[15px] font-medium leading-[18px] text-foreground transition hover:text-link-hover focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground sm:inline-flex"
+                >
+                  How it works
+                </Link>
+
                 <HeaderLink href="/runs">Runs</HeaderLink>
 
                 {/* The slot reserves height only, not width. Clerk resolves the
