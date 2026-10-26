@@ -36,20 +36,27 @@ export default async function Home() {
         the content inside stays in the 7xl column, which is what lets the band
         reach both edges of the viewport as it did when it was in flow.
 
-        min-h is a mobile-only clamp that holds the hero to the viewport minus a
-        strip, so the top of the map is always on screen when the page opens.
+        The hero is sized from the viewport at every width, not just on phones.
 
-        The 290px is measured, not derived: it has to cover everything between
-        the top of the viewport and the top of the map that is not the hero
-        itself -- the 88px fixed header above this main, this main's top
-        padding, the gap below the hero -- and then leave about 120px of map
-        showing. Changing the header height or those paddings changes this
-        number, which is why it is checked against a real viewport rather than
+        What has to hold is a narrow one: the dark band below should show as a
+        strip at the fold, but its heading must stay off screen. The heading
+        sits one band-padding down from the band's top edge -- 48px on mobile,
+        64px from sm up -- so the strip has to be smaller than that padding. A
+        fixed hero height cannot do it: the same height that leaves a 36px
+        strip on a 900px laptop leaves 384px on a 1200px monitor, heading and
+        all.
+
+        So the hero is the viewport minus everything above and below it: the
+        93px header, this main's top padding (24px, 64px from sm), and the
+        ~40px strip. That is the 157 and 197. Those constants track the header
+        height and the main's padding, so changing either means re-measuring
+        this -- which is why it is checked against real viewports rather than
         reasoned about.
 
-        On md and up the clamp is off entirely: the hero's natural height
-        already leaves a generous slice of map in view at desktop sizes, and a
-        viewport-relative hero on a large monitor would only add empty space.
+        justify-center rather than content at the top: on a tall monitor the
+        leftover height would otherwise pile up in one lump between the search
+        bar and the skyline. Centred, it splits above and below and the hero
+        reads as composed at any height.
       */}
       <div className="relative">
         {/*
@@ -63,8 +70,11 @@ export default async function Home() {
           it at another.
 
           13.54vw is that height for the widened 1920x260 canvas, and padding by
-          the full band height plus 1rem puts the top of the drawing just below
-          the search bar: the whole city is visible, including the mast and the
+          the full band height puts the top of the drawing exactly at the bottom
+          of the search bar; the extra 1rem from sm up is breathing room. Phones
+          do without it: there the headline wraps to five or six lines and the
+          form stacks, so the hero is already taller than the viewport allows,
+          and those 16px come straight off the strip of dark band at the fold: the whole city is visible, including the mast and the
           moon, and the bar sits above the skyline rather than cutting through
           it.
 
@@ -77,7 +87,7 @@ export default async function Home() {
         */}
         <TorontoSkyline className="pointer-events-none absolute inset-x-0 bottom-0 w-full" />
 
-        <section className="relative mx-auto min-h-[calc(100svh-290px)] w-full max-w-7xl px-6 pb-[calc(13.54vw+1rem)] md:min-h-0">
+        <section className="relative mx-auto flex min-h-[calc(100svh-157px)] w-full max-w-7xl flex-col justify-center px-6 pb-[13.54vw] sm:min-h-[calc(100svh-197px)] sm:pb-[calc(13.54vw+1rem)]">
         {/*
           clamp() rather than breakpoints: the headline is the one element that
           should track viewport width continuously. 8.6vw is tuned so that
