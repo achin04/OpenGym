@@ -6,6 +6,7 @@ import johnInnesFixture from "../../../tests/fixtures/nominatim/search-john-inne
 import emptyFixture from "../../../tests/fixtures/nominatim/search-empty.json";
 import {
   clearVenueCoordinates,
+  geocodeMissingVenues,
   geocodeVenueById,
   setVenueCoordinatesManually,
 } from "./venue-coordinates";
@@ -19,11 +20,19 @@ function jsonResponse(body: unknown): Response {
   });
 }
 
-/** Every geocode call in this file goes through a stub: no network, ever. */
+/**
+ * Every geocode call in this file goes through a stub: no network, ever.
+ *
+ * mockImplementation rather than mockResolvedValue, because the latter hands
+ * back the same Response object on every call and a response body can only be
+ * read once -- the second read throws and the call looks like a geocoder
+ * failure. It never showed while each test geocoded a single venue; a batch
+ * geocoding several is the first thing to call the stub twice.
+ */
 function stubGeocode(body: unknown) {
   return {
     geocode: {
-      fetcher: vi.fn().mockResolvedValue(jsonResponse(body)),
+      fetcher: vi.fn().mockImplementation(() => Promise.resolve(jsonResponse(body))),
       minRequestIntervalMs: 0,
     },
   } as const;
@@ -271,5 +280,64 @@ describe("findMapVenues", () => {
     });
 
     await expect(findMapVenues(now)).resolves.toEqual([]);
+  });
+});
+
+describe("geocodeMissingVenues", () => {
+  it("fills a bounded batch and reports what is left", async () => {
+    for (const name of ["A venue", "B venue", "C venue", "D venue"]) {
+      await createVenue(name);
+    }
+
+    const options = stubGeocode(johnInnesFixture);
+    const result = await geocodeMissingVenues({ ...options, limit: 2 });
+
+    expect(result.attempted).toBe(2);
+    expect(result.ok).toBe(2);
+    // The ceiling is a function timeout, so the batch must stop at the limit
+    // rather than working through everything it finds.
+    expect(result.remaining).toBe(2);
+    expect(options.geocode.fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("picks up where the previous batch stopped", async () => {
+    for (const name of ["A venue", "B venue", "C venue"]) {
+      await createVenue(name);
+    }
+
+    await geocodeMissingVenues({ ...stubGeocode(johnInnesFixture), limit: 2 });
+    const second = await geocodeMissingVenues({
+      ...stubGeocode(johnInnesFixture),
+      limit: 2,
+    });
+
+    expect(second.attempted).toBe(1);
+    expect(second.remaining).toBe(0);
+  });
+
+  it("does nothing when every venue already has coordinates", async () => {
+    const venue = await createVenue();
+    await geocodeVenueById(venue.id, stubGeocode(johnInnesFixture));
+
+    const options = stubGeocode(johnInnesFixture);
+    const result = await geocodeMissingVenues(options);
+
+    expect(result.attempted).toBe(0);
+    expect(result.remaining).toBe(0);
+    expect(options.geocode.fetcher).not.toHaveBeenCalled();
+  });
+
+  // A venue the geocoder cannot place must not block the batch behind it, or
+  // one bad address stops every later venue from ever being geocoded.
+  it("counts a no-match and carries on", async () => {
+    await createVenue("A venue");
+    await createVenue("B venue");
+
+    const result = await geocodeMissingVenues(stubGeocode(emptyFixture));
+
+    expect(result.attempted).toBe(2);
+    expect(result.ok).toBe(0);
+    expect(result.noMatch).toBe(2);
+    expect(result.remaining).toBe(2);
   });
 });

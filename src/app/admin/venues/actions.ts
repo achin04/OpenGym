@@ -12,7 +12,9 @@ import {
 } from "@/lib/validations/admin";
 import {
     clearVenueCoordinates,
+    describeGeocodeMissingResult,
     describeGeocodeResult,
+    geocodeMissingVenues,
     geocodeVenueById,
     setVenueCoordinatesManually,
 } from "@/server/geocoding/venue-coordinates";
@@ -154,5 +156,27 @@ export async function clearVenueCoordinatesAction(
         status: "success",
         message:
             "Coordinates cleared. This venue is off the map until it is geocoded again.",
+    };
+}
+
+/**
+ * Works through one batch of venues that have no coordinates.
+ *
+ * Deliberately one batch per click rather than a loop to completion: the
+ * function has a wall-clock limit, Nominatim is capped at one request per
+ * second, and a run that times out half way would report nothing at all. A
+ * batch always returns a result, and the message says how many are left.
+ */
+export async function geocodeMissingVenuesAction(
+    _previousState: VenueCoordinatesActionState,
+): Promise<VenueCoordinatesActionState> {
+    await requireAdmin();
+
+    const result = await geocodeMissingVenues();
+    venueCoordinatesPaths();
+
+    return {
+        status: result.errored > 0 ? "error" : "success",
+        message: describeGeocodeMissingResult(result),
     };
 }

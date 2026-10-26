@@ -2,7 +2,15 @@ import { prisma } from "@/server/db";
 import { requireAdmin } from "@/server/admin";
 import { createVenue } from "./actions";
 import { raisedButtonClass } from "@/app/_components/raised-button";
+import { GeocodeMissingButton } from "./_components/geocode-missing-button";
 import { VenueCoordinatesControls } from "./_components/venue-coordinates-controls";
+
+/*
+ * Geocoding a batch is paced by Nominatim at one request per second, so the
+ * action needs more than the platform's default few seconds. 60s is the
+ * ceiling on Vercel's lower plans and comfortably covers a 15-venue batch.
+ */
+export const maxDuration = 60;
 
 export default async function AdminVenuesPage() {
   await requireAdmin();
@@ -39,6 +47,8 @@ export default async function AdminVenuesPage() {
               ? `All ${venues.length} venues have coordinates and can appear on the map.`
               : `${missingCoordinatesCount} of ${venues.length} venues have no coordinates and will not appear on the map.`}
           </p>
+
+          <GeocodeMissingButton missingCount={missingCoordinatesCount} />
         </div>
 
         <form

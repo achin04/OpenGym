@@ -192,3 +192,101 @@ export function describeGeocodeResult(result: GeocodeVenueResult): string {
       return `Geocoding failed (${result.reason}). The venue was still created; retry from Admin -> Venues.`;
   }
 }
+
+/**
+ * How many venues one "Geocode all missing" click works through.
+ *
+ * The ceiling is the serverless function timeout, not the database. Nominatim's
+ * policy forces one request per second, so the work is ~1.1s per venue however
+ * fast everything else is: 15 venues is roughly 17 seconds, which clears a 60s
+ * limit with room for a slow response or two. The admin clicks again for the
+ * next batch, and because the query only ever selects venues with no
+ * coordinates, clicking again never redoes finished work.
+ */
+export const GEOCODE_BATCH_SIZE = 15;
+
+export type GeocodeMissingResult = {
+  attempted: number;
+  ok: number;
+  noMatch: number;
+  errored: number;
+  /** Still without coordinates once this batch finished. */
+  remaining: number;
+};
+
+/**
+ * Geocodes a bounded batch of venues that have no coordinates.
+ *
+ * This exists because production has no other route to a backfill. The
+ * backfill script runs against whatever DATABASE_URL is on the machine, and
+ * the production URL is deliberately not available on a developer machine, so
+ * without this the only way to put existing venues on the map would be the
+ * per-venue button, once each.
+ *
+ * Sequential on purpose. The one-request-per-second policy is enforced inside
+ * the geocoding client, so a Promise.all here would not go faster -- it would
+ * just queue every request at once and hold the function open the same length
+ * of time with less to show for it if the batch is cut short.
+ */
+export async function geocodeMissingVenues(
+  options: GeocodeVenueOptions & { limit?: number } = {},
+): Promise<GeocodeMissingResult> {
+  const db = options.db ?? defaultPrisma;
+  const limit = options.limit ?? GEOCODE_BATCH_SIZE;
+
+  const venues = await db.venue.findMany({
+    where: { latitude: null },
+    orderBy: [{ city: "asc" }, { name: "asc" }],
+    select: { id: true },
+    take: limit,
+  });
+
+  const counts = { attempted: 0, ok: 0, noMatch: 0, errored: 0 };
+
+  for (const venue of venues) {
+    const result = await geocodeVenueById(venue.id, {
+      db,
+      mode: "fillMissing",
+      geocode: options.geocode,
+    });
+
+    counts.attempted += 1;
+
+    if (result.status === "ok") {
+      counts.ok += 1;
+    } else if (result.status === "no_match") {
+      counts.noMatch += 1;
+    } else if (result.status === "error") {
+      counts.errored += 1;
+    }
+  }
+
+  const remaining = await db.venue.count({ where: { latitude: null } });
+
+  return { ...counts, remaining };
+}
+
+/** One sentence for the admin, describing what a batch did and what is left. */
+export function describeGeocodeMissingResult(
+  result: GeocodeMissingResult,
+): string {
+  if (result.attempted === 0) {
+    return "Every venue already has coordinates.";
+  }
+
+  const parts = [`Geocoded ${result.ok} of ${result.attempted}`];
+
+  if (result.noMatch > 0) {
+    parts.push(`${result.noMatch} had no match`);
+  }
+
+  if (result.errored > 0) {
+    parts.push(`${result.errored} errored`);
+  }
+
+  const summary = parts.join(", ") + ".";
+
+  return result.remaining > 0
+    ? `${summary} ${result.remaining} still without coordinates -- run it again for the next batch.`
+    : `${summary} Every venue now has coordinates.`;
+}
