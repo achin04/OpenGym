@@ -1,27 +1,48 @@
 import Image from "next/image";
 
-export function BrandMark() {
+/**
+ * `inverse` is a separate asset, not a CSS filter.
+ *
+ * The lockup is black ink plus an orange ball. `filter: invert(1)` would flip
+ * the black to white but take the orange to blue, and `brightness(0)
+ * invert(1)` flattens the whole mark to solid white and loses the ball. The
+ * inverse file flips only the achromatic pixels, so the orange survives.
+ */
+type BrandVariant = "default" | "inverse";
+
+const SRC: Record<BrandVariant, string> = {
+  default: "/opengymlogo.png",
+  inverse: "/opengymlogo-inverse.png",
+};
+
+type BrandMarkProps = {
+  /** Height utility for the mark. Defaults to the header's 80px lockup. */
+  className?: string;
+  /**
+   * The header's mark is above the fold and worth preloading; the footer's is
+   * not, and marking both `priority` would ask the browser to rush an image
+   * nobody sees until they scroll.
+   */
+  priority?: boolean;
+  /** `inverse` for dark backgrounds. */
+  variant?: BrandVariant;
+};
+
+export function BrandMark({
+  className = "h-20",
+  priority = true,
+  variant = "default",
+}: BrandMarkProps) {
   return (
     <span className="inline-flex shrink-0 items-center">
       <Image
-        src="/opengymlogo.png"
+        src={SRC[variant]}
         alt="OpenGym"
         width={148}
         height={113}
-        priority
-        className="h-20 w-auto object-contain"
+        priority={priority}
+        className={`w-auto object-contain ${className}`}
       />
-    </span>
-  );
-}
-
-export function BrandLockup() {
-  return (
-    <span className="flex min-w-0 items-center gap-3">
-      <BrandMark />
-      <span className="hidden text-sm font-semibold uppercase tracking-[0.13em] text-court sm:inline">
-        Drop-in runs
-      </span>
     </span>
   );
 }

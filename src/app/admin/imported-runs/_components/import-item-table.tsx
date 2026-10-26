@@ -62,18 +62,18 @@ export function ImportItemTable({
       <div>
         <h2 className="text-2xl font-semibold">{title}</h2>
         {description ? (
-          <p className="mt-2 max-w-3xl text-sm text-zinc-500">{description}</p>
+          <p className="mt-2 max-w-3xl text-sm text-foreground/60">{description}</p>
         ) : null}
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-sm text-zinc-500">
+        <div className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] text-sm text-foreground/60">
           No items in this group.
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-foreground/10">
+        <div className="overflow-x-auto rounded-[16px] border-2 border-foreground bg-surface">
           <table className="w-full min-w-[960px] border-collapse text-left text-sm">
-            <thead className="bg-foreground/5 text-xs uppercase tracking-wide text-zinc-500">
+            <thead className="bg-foreground/[0.07] text-xs uppercase tracking-[0.14em] text-foreground/60">
               <tr>
                 <th className="px-4 py-3 font-semibold">Title</th>
                 <th className="px-4 py-3 font-semibold">Date and time</th>
@@ -85,57 +85,57 @@ export function ImportItemTable({
                 <th className="px-4 py-3 font-semibold">Diffs</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y-2 divide-line">
               {items.map((item) => (
                 <tr key={item.id} className="bg-foreground/[0.03] align-top">
-                  <td className="px-4 py-4 text-zinc-900">
+                  <td className="px-4 py-4 text-foreground">
                     {displayValue(item.payload?.title ?? item.run?.title)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     {itemTimeLabel(item)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     <div>{displayValue(itemLocationLabel(item))}</div>
                     {item.payload?.sourceLocationId ? (
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         ID {item.payload.sourceLocationId}
                       </div>
                     ) : null}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     {formatLabel(item.action)}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     {formatLabel(item.reviewStatus)}
                   </td>
                   <td className="px-4 py-4">
                     {item.runId ? (
                       <Link
                         href={`/runs/${item.runId}`}
-                        className="font-semibold text-emerald-600 hover:text-emerald-700"
+                        className="font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
                       >
                         View run
                       </Link>
                     ) : (
-                      <span className="text-zinc-500">None</span>
+                      <span className="text-foreground/60">None</span>
                     )}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     {item.errorMessage ??
                       item.payload?.venueMatchReason ??
                       "None"}
                   </td>
-                  <td className="px-4 py-4 text-zinc-600">
+                  <td className="px-4 py-4 text-foreground/70">
                     {item.fieldDiffs.length === 0 ? (
-                      <span className="text-zinc-500">None</span>
+                      <span className="text-foreground/60">None</span>
                     ) : (
                       <ul className="space-y-2">
                         {item.fieldDiffs.map((diff) => (
                           <li key={diff.field}>
-                            <div className="font-medium text-zinc-900">
+                            <div className="font-semibold text-foreground">
                               {diff.field}
                             </div>
-                            <div className="text-xs text-zinc-500">
+                            <div className="text-xs text-foreground/60">
                               {displayValue(diff.current)} to{" "}
                               {displayValue(diff.proposed)}
                             </div>

@@ -1,134 +1,343 @@
-import Image from "next/image";
+import Link from "next/link";
+import { raisedButtonClass } from "@/app/_components/raised-button";
+import { availabilityOptions } from "@/lib/runs/availability";
+import { findMapVenues } from "@/server/venues/map-venues";
+import { TorontoSkyline } from "./_components/toronto-skyline";
+import { VenueMap } from "./_components/venue-map";
 
-const filterFeatures = [
+const howItWorksSteps = [
   {
-    icon: AreaIcon,
-    label: "Area search",
-    description: "Find runs within your travel range",
+    icon: SearchIcon,
+    title: "Search your area",
+    body: "Enter a city, neighbourhood, gym or postal code, then pick when you can play \u2014 tonight, this weekend or any day you choose.",
   },
   {
-    icon: CalendarIcon,
-    label: "Availability",
-    description: "Today, tonight, or this week",
+    icon: CalendarCheckIcon,
+    title: "Pick your run",
+    body: "Compare the time, venue, age group and who's hosting. City of Toronto programs are marked official so you know what you're getting.",
   },
   {
-    icon: ClipboardIcon,
-    label: "Run details",
-    description: "See level, schedule, and capacity",
+    icon: BasketballIcon,
+    title: "Show up and hoop",
+    body: "Open the run for the full details, grab directions and head to the court. No group chats, no guessing.",
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  // Every pin ships in this payload. See findMapVenues for why there is no
+  // bounding-box endpoint behind it.
+  const mapVenues = await findMapVenues(new Date());
+
   return (
-    <main className="px-5 pb-16 pt-14 text-foreground sm:px-6 sm:pb-20 sm:pt-16 lg:pt-20">
-      <section className="mx-auto w-full max-w-7xl">
-        <div className="max-w-4xl">
-          <div className="space-y-5">
-            <h1 className="max-w-4xl text-4xl font-semibold tracking-normal text-foreground sm:text-5xl">
-              Find basketball runs{" "}
-              <span className="text-[#f47b2a]">near you.</span>
-            </h1>
-            <p className="max-w-[34rem] text-lg leading-8 text-foreground/68">
-              Enter a city or neighborhood, set when you can play, and OpenGym
-              shows available drop-in runs.
-            </p>
-          </div>
+    <main className="pb-10 pt-6 text-foreground sm:pt-16">
+      {/*
+        The hero and the skyline share a stacking context so the drawing can sit
+        behind the headline and the search bar. The wrapper is full-bleed while
+        the content inside stays in the 7xl column, which is what lets the band
+        reach both edges of the viewport as it did when it was in flow.
 
-          <form
-            action="/runs"
-            className="mt-9 grid gap-2 rounded-xl border border-[#e0e0dd] bg-[#f7f6f4]/95 p-2 shadow-2xl shadow-black/10 transition duration-200 focus-within:border-court/80 focus-within:shadow-court/10 sm:grid-cols-[minmax(0,1fr)_13rem_4.5rem] sm:items-center"
-          >
-            <div className="flex min-h-14 items-center gap-3 rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
-              <LocationIcon className="h-5 w-5 shrink-0 text-court" />
-              <label
-                htmlFor="home-location"
-                className="sr-only"
-              >
-                City or area
-              </label>
-              <input
-                id="home-location"
-                name="location"
-                type="search"
-                autoComplete="address-level2"
-                placeholder="Toronto, North York, Scarborough"
-                className="h-full min-w-0 flex-1 bg-transparent text-base text-[#1a1a1a] outline-none placeholder:text-[#8e8e8e]"
+        The hero is sized from the viewport at every width, not just on phones.
+
+        What has to hold is a narrow one: the dark band below should show as a
+        strip at the fold, but its heading must stay off screen. The heading
+        sits one band-padding down from the band's top edge -- 48px on mobile,
+        64px from sm up -- so the strip has to be smaller than that padding. A
+        fixed hero height cannot do it: the same height that leaves a 36px
+        strip on a 900px laptop leaves 384px on a 1200px monitor, heading and
+        all.
+
+        So the hero is the viewport minus everything above and below it: the
+        93px header, this main's top padding (24px, 64px from sm), and the
+        ~40px strip. That is the 157 and 197. Those constants track the header
+        height and the main's padding, so changing either means re-measuring
+        this -- which is why it is checked against real viewports rather than
+        reasoned about.
+
+        justify-center rather than content at the top: on a tall monitor the
+        leftover height would otherwise pile up in one lump between the search
+        bar and the skyline. Centred, it splits above and below and the hero
+        reads as composed at any height.
+      */}
+      <div className="relative">
+        {/*
+          The skyline is anchored to the bottom of the hero, and the hero's
+          bottom padding is what decides how far down the drawing sits.
+
+          That padding has to be proportional, not fixed. The SVG is width:100%
+          on a 1440x260 viewBox, so its rendered height is always about 18vw --
+          260px at a 1440px viewport, 347px at 1920. A fixed padding would clear
+          the headline at one width and let the CN Tower punch back up through
+          it at another.
+
+          13.54vw is that height for the widened 1920x260 canvas, and padding by
+          the full band height puts the top of the drawing exactly at the bottom
+          of the search bar; the extra 1rem from sm up is breathing room. Phones
+          do without it: there the headline wraps to five or six lines and the
+          form stacks, so the hero is already taller than the viewport allows,
+          and those 16px come straight off the strip of dark band at the fold: the whole city is visible, including the mast and the
+          moon, and the bar sits above the skyline rather than cutting through
+          it.
+
+          Straddling was tried first and rejected on sight. There are only about
+          80px between the headline and the bar, and the band is 195px at this
+          width, so no arrangement fits the city into that gap -- the bar ends up
+          bisecting it, leaving roof lines above and a sliver of bases below.
+          Clearing the bar entirely is the only placement where the drawing
+          still reads as a skyline.
+        */}
+        <TorontoSkyline className="pointer-events-none absolute inset-x-0 bottom-0 w-full" />
+
+        <section className="relative mx-auto flex min-h-[calc(100svh-157px)] w-full max-w-7xl flex-col justify-center px-6 pb-[13.54vw] sm:min-h-[calc(100svh-197px)] sm:pb-[calc(13.54vw+1rem)]">
+        {/*
+          clamp() rather than breakpoints: the headline is the one element that
+          should track viewport width continuously.
+
+          8.6vw is tuned so that "Find basketball runs" fills the container and
+          "near you." falls to a second line on its own -- the composition the
+          design calls for, with no manual <br />.
+
+          The weight and tracking are the runs page's h1 (800, -0.04em) so the
+          two pages speak in the same voice, but the scale is this page's own.
+          The runs heading caps at 80px because it sits above a dense listing;
+          the home page has one headline and a search bar, and at 80px the
+          sentence collapsed onto one line and stopped being the thing the page
+          is built around. Shared type system, different display size.
+        */}
+        <h1 className="mb-6 mt-2 text-[clamp(52px,8.6vw,124px)] font-extrabold leading-[0.98] tracking-[-0.04em] text-foreground sm:mb-12 sm:mt-6">
+          Find basketball runs <span className="text-court">near you.</span>
+        </h1>
+
+        <form action="/runs" className="flex flex-wrap items-stretch gap-4">
+          {/*
+            flex-[999_1_640px] is the trick that keeps the button beside the
+            bar until the bar is genuinely squeezed. The huge grow factor means
+            every spare pixel in the row goes to the bar rather than the
+            button; the 640px basis is what the bar needs before it is allowed
+            to wrap. No media query can express "wrap when you run out of
+            room" as directly as this.
+          */}
+          {/*
+            No focus ring on this container, deliberately.
+
+            It carried an orange focus-within ring, which read as a glow every
+            time the bar was clicked. :focus-visible was tried as a way to keep
+            a ring for keyboard users only, and does not work here: the spec has
+            browsers always match :focus-visible on text inputs, however focus
+            arrived, on the reasoning that anything typeable deserves a visible
+            ring. So there is no CSS that shows a ring on Tab but not on click
+            for this control.
+
+            Removing it was chosen knowingly over keeping a ring on click. The
+            cost is real -- the inner input also sets outline-none, so a
+            keyboard user gets no indicator on this control -- and if that
+            becomes a problem the fix is a ring here, not a different variant.
+          */}
+          <div className="flex min-w-0 flex-[999_1_640px] flex-wrap overflow-hidden rounded-[20px] border-2 border-foreground bg-white shadow-[0_6px_0_0_var(--foreground)]">
+            <label htmlFor="home-location" className="sr-only">
+              City or neighbourhood
+            </label>
+            <input
+              id="home-location"
+              name="location"
+              type="search"
+              autoComplete="address-level2"
+              placeholder="Toronto, East York, or M9V 4L9"
+              className="min-h-[72px] min-w-0 flex-[1_1_240px] bg-transparent px-[22px] text-[18px] text-foreground outline-none placeholder:text-placeholder"
+            />
+
+            <div className="flex min-h-[72px] min-w-0 items-center gap-2 border-l border-line px-[18px]">
+              <CalendarIcon
+                className="h-[18px] w-[18px] shrink-0"
+                strokeWidth={2}
               />
-            </div>
-
-            <div className="flex min-h-14 items-center rounded-lg border border-[#e2e2df] bg-[#f4f4f2] px-4 transition focus-within:border-court/70 focus-within:ring-2 focus-within:ring-court/20">
-              <label
-                htmlFor="home-availability"
-                className="sr-only"
-              >
-                Availability
+              <label htmlFor="home-availability" className="sr-only">
+                When
               </label>
+              {/*
+                A native <select>: it brings keyboard support, the platform
+                picker on mobile and form submission for free, and the only
+                part of it that cannot be styled is the open menu, which the
+                design does not specify.
+              */}
               <select
                 id="home-availability"
                 name="availability"
                 defaultValue="upcoming"
-                className="h-full w-full bg-transparent text-base text-[#1a1a1a] outline-none"
+                className="select-field min-w-0 bg-transparent pl-1 py-2 text-[18px] font-medium text-foreground outline-none"
               >
-                <option value="upcoming">Upcoming</option>
-                <option value="today">Today</option>
-                <option value="tonight">Tonight</option>
-                <option value="week">Next 7 days</option>
-                <option value="weekend">Weekend</option>
+                {availabilityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <button
-              type="submit"
-              aria-label="Find runs"
-              className="inline-flex min-h-14 items-center justify-center rounded-lg bg-[#f47b2a] text-foreground shadow-lg shadow-[#f47b2a]/20 transition duration-200 hover:bg-[#ffc68f] hover:shadow-[#f47b2a]/30 focus:outline-none focus:ring-2 focus:ring-[#f47b2a]/50"
-            >
-              <SearchIcon className="h-6 w-6" />
-            </button>
-          </form>
-        </div>
-
-        <section className="relative mt-16 min-h-[32rem] overflow-hidden rounded-xl border border-[#e6ded2] bg-[#f7f5f0] p-6 shadow-2xl shadow-black/10 transition duration-200 hover:border-court/30 sm:p-8 lg:mt-20 lg:p-12">
-          <Image
-            src="/torontoSkyline.avif"
-            alt=""
-            fill
-            sizes="(min-width: 1280px) 80rem, 100vw"
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-[#050505]/55" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,#101010_0%,rgba(16,16,16,0.88)_32%,rgba(16,16,16,0.56)_68%,rgba(16,16,16,0.34)_100%)]" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(16,16,16,0.1)_0%,rgba(16,16,16,0.08)_52%,#101010_100%)]" />
-
-          <div className="relative z-10 flex min-h-[24rem] flex-col justify-center py-3 sm:py-5 lg:py-6">
-            <h2 className="max-w-4xl text-4xl font-semibold tracking-normal text-[#F4F4F4] sm:text-5xl lg:text-6xl">
-              What you can filter
-            </h2>
-
-            <div className="mt-10 grid gap-8 sm:mt-12 sm:grid-cols-3 sm:gap-0">
-              {filterFeatures.map((feature, index) => {
-                const Icon = feature.icon;
-
-                return (
-                  <div
-                    key={feature.label}
-                    className={`sm:px-7 lg:px-9 ${index === 0 ? "sm:pl-0" : ""} ${
-                      index > 0 ? "sm:border-l sm:border-foreground/14" : ""
-                    }`}
-                  >
-                    <Icon className="h-9 w-9 text-court" />
-                    <h3 className="mt-6 text-xl font-semibold text-[#F4F4F4]">
-                      {feature.label}
-                    </h3>
-                    <p className="mt-3 max-w-64 text-base leading-7 text-[#d2c8bf]">
-                      {feature.description}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
           </div>
-        </section>
 
+          <button
+            type="submit"
+            className="inline-flex min-h-[76px] flex-[1_1_200px] items-center justify-center gap-[10px] rounded-[20px] border-2 border-foreground bg-court text-[17px] font-extrabold tracking-[0.6px] text-foreground shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)] active:translate-y-[6px] active:shadow-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground motion-reduce:transition-none"
+          >
+            FIND RUNS
+            <ChevronRightIcon className="h-[18px] w-[18px]" />
+          </button>
+        </form>
+        </section>
+      </div>
+
+      {/*
+        The map band, full-bleed dark against the cream page.
+
+        It carries a real heading now. The earlier version used an sr-only one
+        to protect the peek -- a house heading plus a line of body copy is about
+        120px, most of the budget -- but a dark band with a title is a stronger
+        "there is more below" signal than a sliver of map was, so the peek is
+        spent on saying what the thing is rather than showing an inch of it.
+
+        Full-bleed means the band escapes the 7xl column while its contents stay
+        inside it, hence the wrapper.
+
+        The negative top margin makes the band begin exactly on the skyline's
+        ground line, so the city stands on the dark rather than floating above
+        it. Two things had to close for that: the old margin, and the 8 units of
+        empty canvas below the ground line -- the drawing's baseline is at y=252
+        of a 260-tall viewBox, so 3.08% of the rendered band is nothing at all.
+        0.417vw is that 3.08% of the band's own 13.54vw height, so the seam
+        holds at every width the way the band's height does.
+      */}
+      <section className="mt-[-0.417vw] w-full bg-foreground py-12 sm:py-16">
+        <div className="mx-auto w-full max-w-7xl px-6">
+          <h2 className="text-[clamp(32px,4vw,56px)] font-extrabold leading-[1.04] tracking-[-0.03em] text-background">
+            See where the <span className="text-court">runs are.</span>
+          </h2>
+
+          <p className="mt-3 max-w-2xl text-[17px] leading-7 text-background/70">
+            Tap a cluster to zoom in, or pick a pin to see that venue&rsquo;s
+            upcoming runs.
+          </p>
+
+        {/*
+          isolate is load-bearing. Leaflet positions its panes at z-index
+          400-700 and its controls at 800-1000, and this card creates no
+          stacking context of its own, so those values were competing directly
+          with the sticky header's z-30 -- and winning, which is why the map
+          scrolled over the nav. isolation: isolate scopes them to this card, so
+          the whole map participates in the page at one level and the header
+          sits above it.
+        */}
+          {/*
+            The card's edge and shadow switch to court orange on this band. The
+            house ink border would disappear into a near-black background, and
+            the shadow with it, so the card would lose the raised read that
+            every other surface on the site has.
+          */}
+          <div className="isolate mt-8 overflow-hidden rounded-[20px] border-2 border-court bg-surface shadow-[0_6px_0_0_var(--court)]">
+            {/*
+              A fixed height rather than an aspect ratio, so the box the server
+              renders is exactly the box Leaflet fills and nothing on the page
+              shifts when the map's JavaScript arrives.
+
+              Taller than it needs to be to show the pins, on purpose: at the
+              old height the map read as an illustration of Toronto. Enough
+              height to pan around in is what says it can be panned around in.
+            */}
+            <VenueMap
+              venues={mapVenues}
+              className="h-[480px] w-full sm:h-[640px]"
+            />
+          </div>
+
+          {mapVenues.length === 0 ? (
+            <p className="mt-4 text-[15px] font-medium text-background/70">
+              No venues are on the map yet. Venues appear here once they have
+              coordinates and at least one upcoming run.
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {/*
+        scroll-mt clears the sticky header, which is 88px tall and would
+        otherwise sit over this heading when the nav's "How it works" link
+        jumps here.
+      */}
+      <section
+        id="how-it-works"
+        className="mx-auto mt-16 w-full max-w-7xl scroll-mt-28 px-6 lg:mt-20"
+      >
+        <h2 className="text-[clamp(32px,4vw,56px)] font-extrabold leading-[1.04] tracking-[-0.03em] text-foreground">
+          How it <span className="text-court-700">works.</span>
+        </h2>
+
+        <p className="mt-3 text-[17px] leading-7 text-[#4A4540]">
+          From couch to court in three steps.
+        </p>
+
+        {/*
+          White rather than the usual bg-surface. These three sit directly on
+          the cream page with nothing else competing, and the extra step away
+          from the background is what makes them read as the subject of the
+          section rather than part of it.
+        */}
+        <ol className="mt-10 grid gap-6 md:grid-cols-3">
+          {howItWorksSteps.map((step, index) => {
+            const Icon = step.icon;
+
+            return (
+              <li
+                key={step.title}
+                className="rounded-[20px] border-2 border-foreground bg-white p-6 shadow-[0_6px_0_0_var(--foreground)] sm:p-7"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  {/*
+                    aria-hidden because the <ol> already conveys the order to a
+                    screen reader; read out, the numeral would be said twice.
+                  */}
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-court text-lg font-extrabold text-foreground"
+                  >
+                    {index + 1}
+                  </span>
+
+                  <Icon className="mt-1 h-6 w-6 text-foreground" />
+                </div>
+
+                <h3 className="mt-6 text-xl font-bold tracking-[-0.02em] text-foreground">
+                  {step.title}
+                </h3>
+
+                <p className="mt-3 text-base leading-7 text-[#5B5B5B]">
+                  {step.body}
+                </p>
+              </li>
+            );
+          })}
+        </ol>
+
+        {/*
+          Dashed rather than the solid card border used everywhere else: this
+          strip is an invitation to add something, not another thing to read,
+          and the dashed edge says "empty slot" the way a card outline cannot.
+        */}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[20px] border-2 border-dashed border-foreground/55 p-6 sm:p-7">
+          <div>
+            <h3 className="text-xl font-bold tracking-[-0.02em] text-foreground">
+              Running a game?
+            </h3>
+            <p className="mt-2 text-base leading-7 text-[#5B5B5B]">
+              Add your run to OpenGym so players nearby can find it.
+            </p>
+          </div>
+
+          <Link
+            href="/runs/new"
+            className={`${raisedButtonClass()} gap-2`}
+          >
+            <PlusIcon className="h-4 w-4" />
+            Add a run
+          </Link>
+        </div>
       </section>
     </main>
   );
@@ -136,9 +345,16 @@ export default function Home() {
 
 type IconProps = {
   className?: string;
+  /**
+   * The icons are drawn on a 24px grid but used at two very different sizes.
+   * A stroke that reads correctly on the 36px feature icons looks thin at the
+   * 18px size the search bar uses, so the weight is a prop rather than baked
+   * into each path.
+   */
+  strokeWidth?: number;
 };
 
-function LocationIcon({ className }: IconProps) {
+function ChevronRightIcon({ className, strokeWidth = 2.6 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -147,22 +363,36 @@ function LocationIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
     >
       <path
-        d="M12 21s7-5.3 7-11a7 7 0 1 0-14 0c0 5.7 7 11 7 11Z"
+        d="m9 5 7 7-7 7"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-      <path
-        d="M12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
-        stroke="currentColor"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
     </svg>
   );
 }
 
-function SearchIcon({ className }: IconProps) {
+function SearchIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path
+        d="m16 16 4.5 4.5"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+function CalendarCheckIcon({ className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -171,17 +401,51 @@ function SearchIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
     >
       <path
-        d="m20 20-4.5-4.5m2-5A7.5 7.5 0 1 1 2.5 10.5a7.5 7.5 0 0 1 15 0Z"
+        d="M7 3v3m10-3v3M5 9h14M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="2"
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d="m9 14.5 2 2 4-4"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={strokeWidth}
       />
     </svg>
   );
 }
 
-function AreaIcon({ className }: IconProps) {
+/* Seams drawn as the real ball has them: one vertical, one horizontal, and two
+   curved side seams -- at 24px the usual four-arc rosette turns to mush. */
+function BasketballIcon({ className, strokeWidth = 1.8 }: IconProps) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path
+        d="M12 3v18M3 12h18"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+      <path
+        d="M5.6 5.6a12 12 0 0 1 0 12.8M18.4 5.6a12 12 0 0 0 0 12.8"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth={strokeWidth}
+      />
+    </svg>
+  );
+}
+
+function PlusIcon({ className, strokeWidth = 2.2 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -190,18 +454,16 @@ function AreaIcon({ className }: IconProps) {
       viewBox="0 0 24 24"
     >
       <path
-        d="M12 3v3m0 12v3M3 12h3m12 0h3"
+        d="M12 5v14M5 12h14"
         stroke="currentColor"
         strokeLinecap="round"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
-      <circle cx="12" cy="12" r="6" stroke="currentColor" strokeWidth="1.8" />
-      <circle cx="12" cy="12" r="2" stroke="currentColor" strokeWidth="1.8" />
     </svg>
   );
 }
 
-function CalendarIcon({ className }: IconProps) {
+function CalendarIcon({ className, strokeWidth = 1.8 }: IconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -214,32 +476,13 @@ function CalendarIcon({ className }: IconProps) {
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
       <path
         d="M9 13h3v3H9z"
         stroke="currentColor"
         strokeLinejoin="round"
-        strokeWidth="1.8"
-      />
-    </svg>
-  );
-}
-
-function ClipboardIcon({ className }: IconProps) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="M9 5h6m-5 5h6m-6 4h4M8 4h8l1 3h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1l1-3Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.8"
+        strokeWidth={strokeWidth}
       />
     </svg>
   );

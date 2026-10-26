@@ -38,7 +38,7 @@ export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
     <section className="space-y-4">
       <div>
         <h2 className="text-2xl font-semibold">Unresolved venue exceptions</h2>
-        <p className="mt-2 max-w-3xl text-sm text-zinc-500">
+        <p className="mt-2 max-w-3xl text-sm text-foreground/60">
           Most Toronto source locations are matched or created automatically.
           These skipped candidates still need manual investigation before they
           can be imported.
@@ -46,7 +46,7 @@ export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-sm text-zinc-500">
+        <div className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] text-sm text-foreground/60">
           No unresolved Toronto venues in this batch.
         </div>
       ) : (
@@ -54,17 +54,17 @@ export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
           {groups.map((group) => (
             <article
               key={group.externalVenueRef.id}
-              className="grid gap-6 overflow-hidden rounded-lg border border-foreground/10 bg-foreground/5 p-6"
+              className="grid gap-6 overflow-hidden rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)]"
             >
               <div className="min-w-0 space-y-5">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-court">
                     Toronto source location
                   </p>
-                  <h3 className="mt-2 text-xl font-semibold text-zinc-900">
+                  <h3 className="mt-2 text-xl font-semibold text-foreground">
                     {group.externalVenueRef.sourceName}
                   </h3>
-                  <p className="mt-2 text-zinc-600">
+                  <p className="mt-2 text-foreground/70">
                     {displayValue(group.externalVenueRef.sourceAddressLine1)}
                     {group.externalVenueRef.sourcePostalCode
                       ? `, ${group.externalVenueRef.sourcePostalCode}`
@@ -74,34 +74,34 @@ export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
 
                 <dl className="grid gap-4 text-sm sm:grid-cols-2">
                   <div>
-                    <dt className="text-zinc-500">Toronto Location ID</dt>
-                    <dd className="mt-1 text-zinc-900">
+                    <dt className="text-foreground/60">Toronto Location ID</dt>
+                    <dd className="mt-1 text-foreground">
                       {group.externalVenueRef.externalId}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Match status</dt>
-                    <dd className="mt-1 text-zinc-900">
+                    <dt className="text-foreground/60">Match status</dt>
+                    <dd className="mt-1 text-foreground">
                       {group.externalVenueRef.matchStatus}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Skipped candidates</dt>
-                    <dd className="mt-1 text-zinc-900">{group.itemCount}</dd>
+                    <dt className="text-foreground/60">Skipped candidates</dt>
+                    <dd className="mt-1 text-foreground">{group.itemCount}</dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Review reason</dt>
-                    <dd className="mt-1 text-zinc-900">
+                    <dt className="text-foreground/60">Review reason</dt>
+                    <dd className="mt-1 text-foreground">
                       {venueReasonLabel(group)}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-zinc-500">Source URL</dt>
-                    <dd className="mt-1 break-words text-zinc-900">
+                    <dt className="text-foreground/60">Source URL</dt>
+                    <dd className="mt-1 break-words text-foreground">
                       {group.externalVenueRef.sourceUrl ? (
                         <a
                           href={group.externalVenueRef.sourceUrl}
-                          className="text-emerald-600 hover:text-emerald-700"
+                          className="text-foreground underline underline-offset-2 hover:text-link-hover"
                         >
                           View Toronto source
                         </a>
@@ -113,16 +113,16 @@ export function PendingVenueSection({ groups }: PendingVenueSectionProps) {
                 </dl>
 
                 <div>
-                  <h4 className="text-sm font-semibold text-zinc-900">
+                  <h4 className="text-sm font-semibold text-foreground">
                     Example skipped candidates
                   </h4>
-                  <ul className="mt-3 space-y-2 text-sm text-zinc-600">
+                  <ul className="mt-3 space-y-2 text-sm text-foreground/70">
                     {group.examples.map((item) => (
                       <li key={item.id}>
-                        <span className="text-zinc-900">
+                        <span className="text-foreground">
                           {displayValue(item.payload?.title)}
                         </span>
-                        <span className="text-zinc-500">
+                        <span className="text-foreground/60">
                           {" "}
                           · {exampleTimeLabel(item.payload?.startTime)}
                         </span>

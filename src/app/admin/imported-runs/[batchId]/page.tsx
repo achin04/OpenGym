@@ -38,24 +38,24 @@ export default async function AdminImportBatchDetailPage({
       detail.batch.status === ImportBatchStatus.PARTIAL);
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-10">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Link
             href="/admin/imported-runs"
-            className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+            className="inline-block text-sm font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
           >
             Back to import batches
           </Link>
 
           <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
               Admin import preview
             </p>
-            <h1 className="text-4xl font-semibold tracking-normal">
+            <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
               Import batch detail
             </h1>
-            <p className="max-w-3xl text-zinc-600">
+            <p className="max-w-3xl text-foreground/70">
               Review this dry-run batch before applying imported runs. Source
               venues are matched or created automatically when safe; unresolved
               venue exceptions remain skipped for manual follow-up.

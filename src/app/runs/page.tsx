@@ -1,25 +1,27 @@
 import Link from "next/link";
-import {
-  formatDateTime,
-  formatLabel,
-  formatPrice,
-  formatTimeRange,
-} from "@/lib/formatters";
 import type { Prisma } from "@/generated/prisma/client";
-import { ResetRunsFiltersButton } from "@/app/runs/_components/reset-runs-filters-button";
-import { SourceFilterWithAdvanced } from "@/app/runs/_components/source-filter-with-advanced";
-import {
-  AgeGroup,
-  RunSourceType,
-  SkillLevel,
-  SourceRunStatus,
-} from "@/generated/prisma/enums";
+import { raisedButtonClass } from "@/app/_components/raised-button";
+import { LoadMoreRuns } from "@/app/runs/_components/load-more-runs";
+import { MoreFilters } from "@/app/runs/_components/more-filters";
+import { RunCard } from "@/app/runs/_components/run-card";
+import { RunSourceChips } from "@/app/runs/_components/run-source-chips";
+import { RunsSortSelect } from "@/app/runs/_components/runs-sort";
+import { VenueFilterChip } from "@/app/runs/_components/venue-filter-chip";
+import { AgeGroup, RunSourceType, SkillLevel } from "@/generated/prisma/enums";
+import { formatLabel } from "@/lib/formatters";
 import {
   availabilityOptions,
   getAvailabilityRange,
   type AvailabilityFilter,
 } from "@/lib/runs/availability";
+import { groupByDay } from "@/lib/runs/day-groups";
+import { buildRunsLoadMore, parseShowParam } from "@/lib/runs/load-more";
+import { publicRunFilter } from "@/lib/runs/public-runs";
+import { parseRunsSort } from "@/lib/runs/sort";
 import { prisma } from "@/server/db";
+
+/** The id tying the More filters popover's selects to the search form. */
+const SEARCH_FORM_ID = "runs-search";
 
 type RunsPageProps = {
   searchParams: Promise<{
@@ -28,6 +30,9 @@ type RunsPageProps = {
     skillLevel?: string | string[];
     ageGroup?: string | string[];
     sourceType?: string | string[];
+    venueId?: string | string[];
+    sort?: string | string[];
+    show?: string | string[];
   }>;
 };
 
@@ -47,12 +52,6 @@ const ageOptions = [
   })),
 ];
 
-const sourceOptions = [
-  { value: "", label: "All runs" },
-  { value: RunSourceType.USER, label: "User created" },
-  { value: RunSourceType.CITY, label: "City of Toronto" },
-];
-
 function singleParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -61,7 +60,9 @@ function cleanParam(value: string | string[] | undefined) {
   return singleParam(value)?.trim() ?? "";
 }
 
-function parseAvailability(value: string | string[] | undefined): AvailabilityFilter {
+function parseAvailability(
+  value: string | string[] | undefined,
+): AvailabilityFilter {
   const candidate = cleanParam(value);
   return availabilityOptions.some((option) => option.value === candidate)
     ? (candidate as AvailabilityFilter)
@@ -78,26 +79,23 @@ function parseEnumValue<T extends Record<string, string>>(
     : "";
 }
 
-function getResultsLabel(count: number, location: string) {
-  const noun = count === 1 ? "run" : "runs";
-
-  if (location) {
-    return `${count} ${noun} found near ${location}`;
-  }
-
-  return `${count} ${noun} found`;
-}
-
-function isImportedRun(sourceType: RunSourceType) {
-  return sourceType !== RunSourceType.USER;
-}
-
-function runSourceLabel(sourceType: RunSourceType) {
-  if (sourceType === RunSourceType.CITY) {
-    return "City of Toronto";
-  }
-
-  return formatLabel(sourceType);
+function SearchChevronIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-[18px] w-[18px]"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="m9 5 7 7-7 7"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.6"
+      />
+    </svg>
+  );
 }
 
 export default async function RunsPage({ searchParams }: RunsPageProps) {
@@ -108,51 +106,34 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
   const skillLevel = parseEnumValue(SkillLevel, params.skillLevel);
   const ageGroup = parseEnumValue(AgeGroup, params.ageGroup);
   const sourceType = parseEnumValue(RunSourceType, params.sourceType);
+  const sort = parseRunsSort(params.sort);
   const availabilityRange = getAvailabilityRange(availability, now);
+  const venueIdParam = cleanParam(params.venueId);
+
+  // Resolved to a real row rather than trusted: the chip needs the venue's
+  // name, and an id that no longer exists must not silently filter the listing
+  // down to nothing. An unknown id is dropped, so a stale map link degrades to
+  // the full listing instead of an empty page with no explanation.
+  const venue = venueIdParam
+    ? await prisma.venue.findUnique({
+        where: { id: venueIdParam },
+        select: { id: true, name: true },
+      })
+    : null;
 
   const locationFilter: Prisma.RunWhereInput | undefined = location
     ? {
         OR: [
-          {
-            title: {
-              contains: location,
-              mode: "insensitive",
-            },
-          },
-          {
-            description: {
-              contains: location,
-              mode: "insensitive",
-            },
-          },
+          { title: { contains: location, mode: "insensitive" } },
+          { description: { contains: location, mode: "insensitive" } },
           {
             venue: {
               is: {
                 OR: [
-                  {
-                    city: {
-                      contains: location,
-                      mode: "insensitive",
-                    },
-                  },
-                  {
-                    name: {
-                      contains: location,
-                      mode: "insensitive",
-                    },
-                  },
-                  {
-                    addressLine1: {
-                      contains: location,
-                      mode: "insensitive",
-                    },
-                  },
-                  {
-                    postalCode: {
-                      contains: location,
-                      mode: "insensitive",
-                    },
-                  },
+                  { city: { contains: location, mode: "insensitive" } },
+                  { name: { contains: location, mode: "insensitive" } },
+                  { addressLine1: { contains: location, mode: "insensitive" } },
+                  { postalCode: { contains: location, mode: "insensitive" } },
                 ],
               },
             },
@@ -162,313 +143,286 @@ export default async function RunsPage({ searchParams }: RunsPageProps) {
     : undefined;
 
   const where: Prisma.RunWhereInput = {
-    sourceStatus: SourceRunStatus.ACTIVE,
-    // Always bounded: getAvailabilityRange floors every option at the present,
-    // so a past run can never appear in the listing.
-    startTime: availabilityRange,
+    // sourceStatus + the time bound come from publicRunFilter, which the home
+    // map queries through as well so the two views cannot disagree about which
+    // runs are public. Always bounded: getAvailabilityRange floors every option
+    // at the present, so a past run can never appear in the listing.
+    ...publicRunFilter(availabilityRange),
+    ...(venue ? { venueId: venue.id } : {}),
     ...(locationFilter ? locationFilter : {}),
-    ...(skillLevel
-      ? {
-          skillLevel,
-        }
-      : {}),
-    ...(ageGroup
-      ? {
-          ageGroup,
-        }
-      : {}),
-    ...(sourceType
-      ? {
-          sourceType,
-        }
-      : {}),
+    ...(skillLevel ? { skillLevel } : {}),
+    ...(ageGroup ? { ageGroup } : {}),
+    ...(sourceType ? { sourceType } : {}),
   };
+
+  const totalCount = await prisma.run.count({ where });
+  const loadMore = buildRunsLoadMore(parseShowParam(params.show), totalCount);
 
   const runs = await prisma.run.findMany({
     where,
     include: {
       venue: true,
+      // The community host's name. Nullable twice over: a run may have no
+      // creator, and a creator may have no name.
+      createdByUser: { select: { name: true } },
     },
-    orderBy: {
-      startTime: "asc",
-    },
-    take: 48,
+    orderBy: { startTime: sort === "latest" ? "desc" : "asc" },
+    take: loadMore.take,
   });
 
+  const dayGroups = groupByDay(runs, (run) => run.startTime, now);
+
+  // Rebuilt from the parsed values rather than passed through, so junk in the
+  // query string cannot leak into the links this page generates.
+  const filterParams = {
+    location,
+    availability,
+    skillLevel,
+    ageGroup,
+    sourceType,
+    sort: sort === "soonest" ? "" : sort,
+    ...(venue ? { venueId: venue.id } : {}),
+  };
+
+  const hasFilters =
+    location !== "" ||
+    availability !== "upcoming" ||
+    skillLevel !== "" ||
+    ageGroup !== "" ||
+    sourceType !== "" ||
+    venue !== null;
+
   return (
-    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
-      <section className="mx-auto w-full max-w-6xl space-y-8">
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-end">
-          <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-              Basketball Runs
-            </p>
-            <h1 className="max-w-3xl text-4xl font-semibold tracking-normal sm:text-5xl">
-              {location ? `Runs near ${location}` : "Find a run that fits your week"}
-            </h1>
-            <p className="max-w-2xl text-foreground/62">
-              Search by city, neighborhood, venue, or postal code. Results are
-              shown by start time.
-            </p>
-          </div>
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-7xl">
+        {/*
+          No max-width: at the spec's 80px cap the headline needs the whole
+          column to stay on one line, and clamping it to 4xl broke it across
+          two where the design has one.
+        */}
+        <h1 className="text-[clamp(44px,6vw,80px)] font-extrabold leading-none tracking-[-0.04em]">
+          {venue ? (
+            <>Runs at {venue.name}</>
+          ) : location ? (
+            <>
+              Runs near <span className="text-court">{location}</span>
+            </>
+          ) : (
+            <>
+              Find a run that fits your{" "}
+              <span className="text-court">week.</span>
+            </>
+          )}
+        </h1>
 
-          <div className="rounded-lg border border-line bg-ink-900/72 p-4">
-            <p className="text-sm font-medium text-foreground/52">Runs found</p>
-            <p className="mt-2 text-2xl font-semibold text-court">
-              {runs.length}
-            </p>
-            <p className="mt-1 text-xs text-foreground/45">
-              Filtered by your current search.
-            </p>
-          </div>
-        </div>
+        <p className="mt-3 text-base text-foreground/70">
+          Search by city, neighbourhood, venue or postal code.
+        </p>
 
+        {/*
+          One bar holding Where and When, with Search outside it. The two
+          fields are one decision -- where and when you can play -- so they
+          share an enclosure, while the button is the action and stays
+          separate.
+        */}
+        {/*
+          The key remounts the form whenever the filters in the URL change.
+
+          Where and When are uncontrolled, and defaultValue only applies when a
+          field mounts -- on a client-side navigation React keeps the existing
+          DOM node and a <select> holds its old selection. Without this,
+          clearing the filters left When reading "Next 7 days" over a listing
+          showing everything upcoming: the controls and the results disagreeing
+          about what was being filtered.
+
+          The old Reset button worked around this by assigning each control's
+          value by hand. A key is the same fix stated once, and it covers every
+          route to a new filter state rather than the one button.
+        */}
         <form
+          key={`${location}|${availability}|${sort}`}
+          id={SEARCH_FORM_ID}
           action="/runs"
-          className="grid gap-3 rounded-lg border border-line bg-ink-900/78 p-3 shadow-2xl shadow-black/20 lg:grid-cols-[minmax(12rem,1.5fr)_repeat(2,minmax(9rem,1fr))_auto]"
+          className="mt-6 flex flex-wrap items-stretch gap-4"
         >
-          <div className="grid gap-1">
-            <label
-              htmlFor="location"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
-            >
-              City or area
-            </label>
-            <input
-              id="location"
-              name="location"
-              type="search"
-              defaultValue={location}
-              autoComplete="address-level2"
-              placeholder="Toronto, gym, postal code"
-              className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition placeholder:text-foreground/30 focus:border-court focus:ring-2 focus:ring-court/20"
-            />
+          {venue ? (
+            <input type="hidden" name="venueId" value={venue.id} />
+          ) : null}
+          {/*
+            Sort is set by its own control, which posts nothing. Without this
+            the order would silently reset every time someone pressed Search.
+          */}
+          {sort !== "soonest" ? (
+            <input type="hidden" name="sort" value={sort} />
+          ) : null}
+
+          {/*
+            The bar is one white container and the controls inside it are
+            bare: no border, no fill, no focus ring of their own. The shared
+            FIELD classes are deliberately not used here -- they draw a bordered
+            box per control, which inside an already-bordered bar read as two
+            rectangles nested in a third.
+          */}
+          <div className="flex min-w-0 flex-[999_1_32rem] flex-wrap overflow-hidden rounded-[20px] border-2 border-foreground bg-white shadow-[0_6px_0_0_var(--foreground)]">
+            <div className="flex min-h-[76px] min-w-0 flex-[3_1_280px] flex-col justify-center gap-1 px-[22px] py-3">
+              <label
+                htmlFor="location"
+                className="text-xs font-bold uppercase tracking-[0.8px] text-[#5B5B5B]"
+              >
+                Where
+              </label>
+              <input
+                id="location"
+                name="location"
+                type="search"
+                defaultValue={location}
+                autoComplete="address-level2"
+                placeholder="Toronto, East York, or M9V 4L9"
+                className="w-full min-w-0 border-0 bg-transparent p-0 text-[18px] text-foreground outline-none placeholder:text-placeholder focus:outline-none"
+              />
+            </div>
+
+            <div className="flex min-h-[76px] min-w-0 flex-[1_1_200px] flex-col justify-center gap-1 border-l border-line px-[22px] py-3">
+              <label
+                htmlFor="availability"
+                className="text-xs font-bold uppercase tracking-[0.8px] text-[#5B5B5B]"
+              >
+                When
+              </label>
+              {/*
+                select-field without FIELD: it supplies our own chevron and
+                removes the native one, which is the only part of the shared
+                select styling this bar still wants.
+              */}
+              <select
+                id="availability"
+                name="availability"
+                defaultValue={availability}
+                className="select-field -ml-0 w-full min-w-0 border-0 bg-transparent py-0 pl-0 text-[18px] font-medium text-foreground outline-none focus:outline-none"
+              >
+                {availabilityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
-          <div className="grid gap-1">
-            <label
-              htmlFor="availability"
-              className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/45"
-            >
-              Availability
-            </label>
-            <select
-              id="availability"
-              name="availability"
-              defaultValue={availability}
-              className="min-h-11 rounded-md border border-foreground/10 bg-background px-3 text-sm text-foreground outline-none transition focus:border-court focus:ring-2 focus:ring-court/20"
-            >
-              {availabilityOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <button
+            type="submit"
+            className="inline-flex min-h-[80px] flex-[1_1_180px] items-center justify-center gap-[10px] rounded-[20px] border-2 border-foreground bg-court text-[17px] font-extrabold uppercase tracking-[0.6px] text-foreground shadow-[0_6px_0_0_var(--foreground)] transition-[transform,box-shadow] duration-150 ease-out hover:translate-y-[3px] hover:shadow-[0_3px_0_0_var(--foreground)] active:translate-y-[6px] active:shadow-none motion-reduce:transition-none focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+          >
+            Search
+            <SearchChevronIcon />
+          </button>
+        </form>
 
-          <SourceFilterWithAdvanced
-            key={`${sourceType}:${skillLevel}:${ageGroup}`}
-            sourceType={sourceType}
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <RunSourceChips activeSourceType={sourceType} params={filterParams} />
+
+          <span aria-hidden="true" className="hidden h-6 w-px bg-line sm:block" />
+
+          <MoreFilters
+            formId={SEARCH_FORM_ID}
             skillLevel={skillLevel}
             ageGroup={ageGroup}
-            sourceOptions={sourceOptions}
             skillOptions={skillOptions}
             ageOptions={ageOptions}
           />
 
-          <div className="flex items-end gap-2">
-            <button
-              type="submit"
-              className="min-h-11 rounded-md bg-court px-4 text-sm font-semibold text-foreground transition hover:bg-court-200 focus:outline-none focus:ring-2 focus:ring-court/50"
+          {/*
+            A link to the bare listing, which is what "no filters" actually is.
+            It used to be a button that reset each control by hand; the URL
+            already describes the whole filter state, so navigating to the one
+            without any is both simpler and impossible to get out of sync.
+          */}
+          {hasFilters ? (
+            <Link
+              href="/runs"
+              className="ml-1 text-[15px] font-semibold text-foreground underline underline-offset-[3px] hover:text-link-hover"
             >
-              Search
-            </button>
+              Clear all
+            </Link>
+          ) : null}
+        </div>
 
-            <ResetRunsFiltersButton />
+        {venue ? (
+          <div className="mt-5">
+            <VenueFilterChip venueName={venue.name} params={filterParams} />
           </div>
+        ) : null}
 
-        </form>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line pb-4">
-          <p className="text-sm font-medium text-foreground/62">
-            {getResultsLabel(runs.length, location)}
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-b-2 border-foreground pb-4">
+          <p className="text-[17px] text-[#4A4540]">
+            <span className="text-[22px] font-extrabold text-foreground">
+              {totalCount.toLocaleString("en-CA")}
+            </span>{" "}
+            {totalCount === 1 ? "run" : "runs"} ·{" "}
+            {sort === "latest" ? "latest first" : "soonest first"}
           </p>
-          <Link
-            href="/runs/new"
-            className="rounded-md border border-court/45 px-3 py-2 text-sm font-semibold text-court transition hover:bg-court/10"
-          >
-            Add a run
-          </Link>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <RunsSortSelect sort={sort} params={filterParams} />
+
+            <Link href="/runs/new" className={`${raisedButtonClass()} gap-2`}>
+              <span aria-hidden="true" className="text-base leading-none">
+                +
+              </span>
+              Add a run
+            </Link>
+          </div>
         </div>
 
         {runs.length === 0 ? (
-          <div className="rounded-lg border border-line bg-ink-900/72 p-8 text-foreground/68">
-            <p className="text-lg font-semibold text-foreground">
-              No runs found for those filters yet.
-            </p>
-            <p className="mt-2 max-w-2xl">
-              Try a broader area, switch availability to any time, or check back
-              after the next import. The board is ready for fresh runs as soon
-              as they land.
+          <div className="mt-8 rounded-[20px] border-2 border-dashed border-foreground/55 p-8 text-center">
+            <h2 className="text-xl font-semibold text-foreground">
+              No runs match this search
+            </h2>
+            <p className="mx-auto mt-2 max-w-md text-base leading-7 text-foreground/70">
+              Try a broader area, switch When to any time, or clear the filters
+              to see everything that is coming up.
             </p>
             <Link
-              href="/runs?availability=any"
-              className="mt-5 inline-flex rounded-md bg-court px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-court-200"
+              href="/runs"
+              className={`mt-5 ${raisedButtonClass({ variant: "solid" })}`}
             >
-              Browse all runs
+              Clear all filters
             </Link>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {runs.map((run) => {
-              const importedRun = isImportedRun(run.sourceType);
+          <div className="mt-8 space-y-8">
+            {dayGroups.map((group) => (
+              <section key={group.key} className="space-y-4">
+                {/*
+                  A day heading rather than a date on every card. In a list
+                  ordered by time the date repeats for every run in a day, and
+                  reading it once per group is both less ink and a clearer
+                  answer to "what is on tonight".
+                */}
+                <h2 className="text-base">
+                  <span className="font-bold text-foreground">
+                    {group.label}
+                  </span>
+                  <span className="text-foreground/60">
+                    {" "}
+                    · {group.dateLabel}
+                  </span>
+                </h2>
 
-              return (
-              <article
-                key={run.id}
-                className={
-                  importedRun
-                    ? "group border-l-4 border-l-sky-400/70 border-y border-r border-y-line border-r-line bg-[#eef3f6]/86 p-5 transition hover:border-l-sky-300 hover:bg-[#e4ecf0]"
-                    : "group rounded-lg border border-court/35 bg-ink-900/74 p-5 shadow-lg shadow-court/5 transition hover:border-court/60 hover:bg-ink-900/95"
-                }
-              >
-                <div className="grid gap-5 md:grid-cols-[7.25rem_minmax(0,1fr)_auto] md:items-start">
-                  <div
-                    className={
-                      importedRun
-                        ? "border border-sky-400/25 bg-sky-400/8 p-4 text-center"
-                        : "rounded-md border border-court/30 bg-court/8 p-4 text-center"
-                    }
-                  >
-                    <p
-                      className={
-                        importedRun
-                          ? "text-xs font-semibold uppercase tracking-[0.14em] text-sky-700"
-                          : "text-xs font-semibold uppercase tracking-[0.14em] text-court"
-                      }
-                    >
-                      {new Intl.DateTimeFormat("en-CA", {
-                        weekday: "short",
-                        timeZone: "America/Toronto",
-                      }).format(run.startTime)}
-                    </p>
-                    <p className="mt-1 text-3xl font-semibold text-foreground">
-                      {new Intl.DateTimeFormat("en-CA", {
-                        day: "2-digit",
-                        timeZone: "America/Toronto",
-                      }).format(run.startTime)}
-                    </p>
-                    <p className="mt-1 text-xs text-foreground/50">
-                      {new Intl.DateTimeFormat("en-CA", {
-                        month: "short",
-                        timeZone: "America/Toronto",
-                      }).format(run.startTime)}
-                    </p>
-                  </div>
-
-                  <div className="min-w-0 space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={
-                            importedRun
-                              ? "rounded-full border border-sky-400/30 px-2.5 py-1 text-xs font-medium text-sky-700"
-                              : "rounded-full bg-court px-2.5 py-1 text-xs font-semibold text-foreground"
-                          }
-                        >
-                          {importedRun ? runSourceLabel(run.sourceType) : "User run"}
-                        </span>
-                      </div>
-
-                      {importedRun ? null : (
-                        <>
-                          <h2 className="text-2xl font-semibold text-foreground">
-                            <Link
-                              href={`/runs/${run.id}`}
-                              className="transition group-hover:text-court"
-                            >
-                              {run.title}
-                            </Link>
-                          </h2>
-                          <p className="text-sm text-foreground/62">
-                            {run.venue.name} · {run.venue.city} ·{" "}
-                            {run.venue.addressLine1}
-                          </p>
-                        </>
-                      )}
-                    </div>
-
-                    <dl
-                      className={
-                        importedRun
-                          ? "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4"
-                          : "grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-6"
-                      }
-                    >
-                      <div>
-                        <dt className="text-foreground/38">Time</dt>
-                        <dd className="mt-1 font-medium text-foreground">
-                          {formatTimeRange(run.startTime, run.endTime)}
-                        </dd>
-                      </div>
-
-                      <div>
-                        <dt className="text-foreground/38">Address</dt>
-                        <dd className="mt-1 font-medium text-foreground">
-                          {run.venue.addressLine1}
-                        </dd>
-                      </div>
-
-                      <div>
-                        <dt className="text-foreground/38">City</dt>
-                        <dd className="mt-1 font-medium text-foreground">
-                          {run.venue.city}
-                        </dd>
-                      </div>
-
-                      <div>
-                        <dt className="text-foreground/38">Age</dt>
-                        <dd className="mt-1 font-medium text-foreground">
-                          {formatLabel(run.ageGroup)}
-                        </dd>
-                      </div>
-
-                      {importedRun ? null : (
-                        <>
-                          <div>
-                            <dt className="text-foreground/38">Level</dt>
-                            <dd className="mt-1 font-medium text-foreground">
-                              {formatLabel(run.skillLevel)}
-                            </dd>
-                          </div>
-
-                          <div>
-                            <dt className="text-foreground/38">Price</dt>
-                            <dd className="mt-1 font-medium text-foreground">
-                              {formatPrice(run.price)}
-                            </dd>
-                          </div>
-
-                        </>
-                      )}
-                    </dl>
-                  </div>
-
-                  <div className="flex flex-col gap-3 md:items-end">
-                    <span className="text-sm text-foreground/48">
-                      {formatDateTime(run.startTime)}
-                    </span>
-                    <Link
-                      href={`/runs/${run.id}`}
-                      className="rounded-md bg-cream px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-court-200"
-                    >
-                      View run
-                    </Link>
-                  </div>
+                <div className="space-y-7">
+                  {group.items.map((run) => (
+                    <RunCard
+                      key={run.id}
+                      run={run}
+                      isToday={group.label === "Today"}
+                    />
+                  ))}
                 </div>
-              </article>
-            );
-            })}
+              </section>
+            ))}
+
+            <LoadMoreRuns loadMore={loadMore} params={filterParams} />
           </div>
         )}
       </section>

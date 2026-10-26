@@ -30,26 +30,23 @@ export default async function AccountPage() {
   });
 
   return (
-    <main className="min-h-screen px-5 py-8 text-foreground sm:px-6 sm:py-12">
-      <section className="mx-auto w-full max-w-6xl space-y-6">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-7xl space-y-6">
         <div className="space-y-3">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
-            Account
-          </p>
-          <h1 className="text-4xl font-semibold tracking-normal sm:text-5xl">
+          <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
             Your OpenGym account
           </h1>
         </div>
 
-        <div className="rounded-lg border border-line bg-ink-900/72 p-6">
+        <div className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] sm:p-8">
           <dl className="grid gap-4 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-foreground/38">Email</dt>
+              <dt className="text-foreground/55">Email</dt>
               <dd className="mt-1 text-foreground">{email}</dd>
             </div>
 
             <div>
-              <dt className="text-foreground/38">Name</dt>
+              <dt className="text-foreground/55">Name</dt>
               <dd className="mt-1 text-foreground">
                 {clerkUser?.fullName ?? "No name found"}
               </dd>

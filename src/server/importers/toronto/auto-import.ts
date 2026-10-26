@@ -1,7 +1,9 @@
 import "server-only";
 
+import { ImportBatchMode } from "@/generated/prisma/enums";
 import {
   applyImportBatch,
+  applyTriggerForBatch,
   type ApplyImportBatchResult,
 } from "@/server/admin/imported-runs/apply-import-batch";
 import {
@@ -34,6 +36,11 @@ import { detectTorontoRefresh, type TorontoRefreshDetection } from "./refresh";
 const IMPORT_LEASE_MS = 15 * 60 * 1000;
 
 export type TorontoAutoImportStatus =
+  // A batch built by an earlier run was applied. Without this the pipeline
+  // cannot recover from a failed apply: the dry run records the source
+  // timestamps it read, so the next run's refresh detection reports UNCHANGED
+  // and skips, leaving a gate-approved batch waiting forever.
+  | "APPLIED_PENDING_BATCH"
   // Another import is already in flight, so this one did nothing. Vercel fires
   // this cron once a day and a run cannot exceed 300s, so scheduled runs can
   // never collide with each other; what this guards is a manual trigger landing
@@ -50,6 +57,9 @@ export type TorontoAutoImportStatus =
 
 export type TorontoAutoImportResult = {
   status: TorontoAutoImportStatus;
+  // True when the applied batch was built by an earlier invocation rather than
+  // by this one.
+  recoveredPendingBatch?: boolean;
   scheduleSourceId: string;
   // Null when the lease could not be claimed, because detection never ran.
   refresh: TorontoRefreshDetection | null;
@@ -66,6 +76,48 @@ export type RunTorontoAutoImportOptions = {
   limits?: Partial<AutoApplyLimits>;
 };
 
+// The newest completed dry run that was never applied. Only the newest is
+// considered: an older one has necessarily been superseded, and the gate's age
+// limit would reject it anyway because the date window it judged absences
+// against has since moved.
+async function findLatestUnappliedDryRun(
+  db: TorontoDryRunPrisma,
+  scheduleSourceId: string,
+): Promise<string | null> {
+  const latest = await db.importBatch.findFirst({
+    where: {
+      scheduleSourceId,
+      mode: ImportBatchMode.DRY_RUN,
+      completedAt: {
+        not: null,
+      },
+    },
+    select: {
+      id: true,
+    },
+    orderBy: {
+      startedAt: "desc",
+    },
+  });
+
+  if (!latest) {
+    return null;
+  }
+
+  const applied = await db.importBatch.findFirst({
+    where: {
+      scheduleSourceId,
+      mode: ImportBatchMode.APPLY,
+      trigger: applyTriggerForBatch(latest.id),
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  return applied ? null : latest.id;
+}
+
 // Claimed with a single conditional UPDATE, which is what makes it atomic: two
 // callers racing here both lock the row, and only one sees a matching WHERE.
 //
@@ -78,6 +130,24 @@ export type RunTorontoAutoImportOptions = {
 // not the connection, and is visible in the database when something goes wrong.
 //
 // Returns the expiry it wrote, which doubles as a fencing token for release.
+// Marks the last time imported data actually reached the site, which is a
+// narrower claim than "the last time cron ran without error" - a skip is a
+// healthy outcome but publishes nothing.
+async function recordSuccessfulImport(
+  db: TorontoDryRunPrisma,
+  scheduleSourceId: string,
+  now: Date,
+): Promise<void> {
+  await db.scheduleSource.update({
+    where: {
+      id: scheduleSourceId,
+    },
+    data: {
+      lastSuccessfulImportAt: new Date(now),
+    },
+  });
+}
+
 async function claimImportLease(
   db: TorontoDryRunPrisma,
   scheduleSourceId: string,
@@ -142,6 +212,46 @@ export async function runTorontoAutoImport({
   }
 
   try {
+    // Checked before refresh detection, not after, because detection is exactly
+    // what hides this case: a pending batch recorded the source state it read,
+    // so the source now looks unchanged and the run would skip.
+    //
+    // The gate decides whether the pending batch may be applied, so nothing new
+    // is being judged here. A batch holding errors is refused for the same
+    // reason it was refused the first time, and one older than the age limit is
+    // refused because its observed window has moved on; both then fall through
+    // and keep waiting in the admin UI, which is where a person is meant to
+    // deal with them.
+    const pendingBatchId = await findLatestUnappliedDryRun(
+      db,
+      scheduleSource.id,
+    );
+
+    if (pendingBatchId) {
+      const pendingGate = await evaluateAutoApplyForBatch(db, pendingBatchId, {
+        now,
+        limits,
+      });
+
+      if (pendingGate?.canAutoApply) {
+        const apply = await applyImportBatch(pendingBatchId, db);
+        await recordSuccessfulImport(db, scheduleSource.id, now);
+
+        // Returns rather than continuing to detection: one unit of heavy work
+        // per invocation keeps this well inside the function time limit, and a
+        // source that has also refreshed is picked up by the next run.
+        return {
+          status: "APPLIED_PENDING_BATCH",
+          recoveredPendingBatch: true,
+          scheduleSourceId: scheduleSource.id,
+          refresh: null,
+          dryRun: null,
+          gate: pendingGate,
+          apply,
+        };
+      }
+    }
+
     const refresh = await detectTorontoRefresh({
       db,
       scheduleSourceId: scheduleSource.id,
@@ -186,17 +296,7 @@ export async function runTorontoAutoImport({
 
     const apply = await applyImportBatch(dryRun.batchId, db);
 
-    // Marks the last time imported data actually reached the site, which is a
-    // narrower claim than "the last time cron ran without error" - a skip is a
-    // healthy outcome but publishes nothing.
-    await db.scheduleSource.update({
-      where: {
-        id: scheduleSource.id,
-      },
-      data: {
-        lastSuccessfulImportAt: new Date(now),
-      },
-    });
+    await recordSuccessfulImport(db, scheduleSource.id, now);
 
     return {
       status: "IMPORTED_AND_APPLIED",

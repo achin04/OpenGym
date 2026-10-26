@@ -1,26 +1,22 @@
 import Link from "next/link";
+import { raisedButtonClass } from "@/app/_components/raised-button";
 
 export default function RunNotFound() {
-    return (
-        <main className="min-h-screen bg-white px-6 py-12 text-foreground">
-          <section className="mx-auto w-full max-w-5xl space-y-4">
-            <p className="text-sm font-semibold uppercase tracking-wide text-red-600">
-              Run Not Found
-            </p>
+  return (
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
+      <section className="mx-auto w-full max-w-7xl space-y-4">
+        <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
+          No run exists with this ID.
+        </h1>
 
-            <h1 className="text-4xl font-semibold tracking-normal">
-              No run exists with this ID.
-            </h1>
+        <p className="max-w-2xl text-foreground/70">
+          Please check the URL and try again.
+        </p>
 
-            <p className="text-zinc-600">Please check the URL and try again.</p>
-
-            <Link
-              href="/runs"
-              className="inline-block rounded bg-emerald-500 px-4 py-2 text-sm font-medium text-foreground hover:bg-emerald-600"
-            >
-              Back to Runs
-            </Link>
-          </section>
-        </main>
-      );
-    }
+        <Link href="/runs" className={`mt-2 ${raisedButtonClass()}`}>
+          Back to runs
+        </Link>
+      </section>
+    </main>
+  );
+}

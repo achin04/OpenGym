@@ -5,6 +5,7 @@ import { useActionState } from "react";
 import { formatLabel } from "@/lib/formatters";
 import { initialAdminActionState } from "@/lib/admin/imported-runs/action-validation";
 import { applyImportBatchAction } from "@/app/admin/imported-runs/actions";
+import { raisedButtonClass } from "@/app/_components/raised-button";
 
 type ApplyBatchFormProps = {
   batchId: string;
@@ -27,7 +28,7 @@ function SubmitButton({ canApply }: { canApply: boolean }) {
     <button
       type="submit"
       disabled={!canApply}
-      className="w-fit rounded-md bg-emerald-400 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
+      className={`w-fit ${raisedButtonClass({ variant: "success" })} disabled:cursor-not-allowed disabled:opacity-50`}
     >
       Apply batch
     </button>
@@ -49,13 +50,13 @@ export function ApplyBatchForm({
 
   if (appliedBatch) {
     return (
-      <section className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-6">
+      <section className="rounded-[20px] border-2 border-foreground bg-success/15 p-6 shadow-[0_6px_0_0_var(--foreground)]">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-emerald-800">
+            <h2 className="text-2xl font-semibold text-foreground">
               Batch already applied
             </h2>
-            <p className="mt-2 max-w-3xl text-sm text-emerald-800">
+            <p className="mt-2 max-w-3xl text-sm text-foreground/75">
               Apply batch {appliedBatch.id} finished with{" "}
               {formatLabel(appliedBatch.status)}:{" "}
               {appliedBatch.createdCount} created, {appliedBatch.updatedCount}{" "}
@@ -67,7 +68,7 @@ export function ApplyBatchForm({
 
           <Link
             href={`/admin/imported-runs/${appliedBatch.id}`}
-            className="w-fit rounded-md border border-emerald-200/40 px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-200/10"
+            className={`w-fit ${raisedButtonClass()}`}
           >
             View apply audit
           </Link>
@@ -77,11 +78,11 @@ export function ApplyBatchForm({
   }
 
   return (
-    <section className="rounded-lg border border-foreground/10 bg-foreground/5 p-6">
+    <section className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)]">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Apply dry-run batch</h2>
-          <p className="mt-2 max-w-3xl text-sm text-zinc-500">
+          <p className="mt-2 max-w-3xl text-sm text-foreground/60">
             {applyCount} eligible items: {eligibleCreateCount} create,{" "}
             {eligibleUpdateCount} update.
           </p>
@@ -97,8 +98,8 @@ export function ApplyBatchForm({
         <p
           className={
             state.status === "success"
-              ? "mt-4 text-sm text-emerald-700"
-              : "mt-4 text-sm text-rose-700"
+              ? "mt-4 text-sm font-semibold text-success"
+              : "mt-4 text-sm font-semibold text-danger"
           }
         >
           {state.message}
@@ -106,7 +107,7 @@ export function ApplyBatchForm({
       ) : null}
 
       {!canApply ? (
-        <p className="mt-4 text-sm text-zinc-500">
+        <p className="mt-4 text-sm text-foreground/60">
           This batch cannot be applied from its current state.
         </p>
       ) : null}

@@ -194,3 +194,124 @@ For Next.js behavior, prefer the locally installed documentation under:
 
 ```text
 node_modules/next/dist/docs/
+```
+
+---
+
+# 5. Databases and Migrations
+
+## Where each database lives
+
+| Environment | Database | Configured by |
+| --- | --- | --- |
+| Local development | `opengym_dev` on local PostgreSQL 18 (Postgres.app; binaries in `/Applications/Postgres.app/Contents/Versions/18/bin/`) | `DATABASE_URL` in `.env` |
+| Local integration tests | `opengym_test` on the same local server | `DATABASE_URL` in `.env.test`, loaded by `vitest.integration.config.ts` |
+| CI | a throwaway `opengym_test` in a `postgres:18` service container | `DATABASE_URL` in `.github/workflows/ci.yml` |
+| **Production** | **Neon serverless PostgreSQL, AWS `us-east-1` (N. Virginia)**, reached from Vercel functions in `iad1` | `DATABASE_URL` and `DATABASE_URL_UNPOOLED`, set as Vercel project environment variables |
+| **Preview** (every push to a branch other than `main`) | **the same production Neon database** — there is only one | the same Vercel environment variables |
+
+The production connection string is a Vercel secret. It is deliberately not in
+any local file and cannot be read back from the Vercel dashboard. Do not ask
+for it, do not copy it into `.env`, and do not write it into any file.
+
+## Production migrations run themselves — never run one by hand
+
+`package.json` defines:
+
+```json
+"vercel-build": "if [ \"$VERCEL_ENV\" = \"production\" ]; then npx prisma migrate deploy; fi && next build"
+```
+
+Vercel runs `vercel-build` in preference to `build`, so **merging to `main`
+deploys and applies pending migrations in the same step**. Nothing else is
+required to migrate production.
+
+Never run `npx prisma migrate deploy` against production from a developer
+machine. The URL is not available locally by design, the deploy owns that step
+and an out-of-band run can race it, and this project has no automated
+production backup to fall back on.
+
+## Preview deployments read and write production
+
+There is one Neon database. Vercel builds a preview for every push to a branch
+other than `main`, and those previews are wired to the same `DATABASE_URL` as
+production. A preview is not a sandbox.
+
+Two consequences, both of which have caught people out:
+
+**Anything a preview writes, production keeps.** Approving an import batch,
+creating or geocoding a venue, or editing a run from a preview's `/admin` pages
+changes live data. Treat an action on a preview exactly as seriously as the
+same action on the production URL.
+
+**A branch with a pending migration has a broken preview, and that is
+expected.** `vercel-build` only migrates when `VERCEL_ENV` is `production`, so a
+preview runs new code against the un-migrated production schema. The symptom is
+a runtime Prisma error naming a column that does not exist yet — for example
+`Invalid \`db.venue.findMany()\` invocation` after `latitude` was added to the
+schema but not yet to the database. This is not a code bug and must not be
+"fixed" in the code. The schema catches up when the branch merges to `main`.
+
+Do not work around it by migrating production by hand; see the section above
+for why. If a preview of a schema change genuinely has to work before release,
+that is a conversation with the developer about merging to `main` sooner, not a
+local `migrate deploy`.
+
+Migrations in this project are additive and nullable, which is what makes that
+ordering safe in the other direction: applying one to production does not break
+the older code still running on `main`, because that code simply never selects
+the new columns.
+
+## Why `DATABASE_URL_UNPOOLED` exists
+
+`prisma.config.ts` resolves the migration URL as:
+
+```ts
+url: process.env["DATABASE_URL_UNPOOLED"] ?? process.env["DATABASE_URL"],
+```
+
+Prisma's migration engine takes a PostgreSQL advisory lock so two deploys
+cannot migrate at once. A PgBouncer-style pooler in transaction mode does not
+keep session state between statements, so that lock can be silently lost.
+Migrations therefore need the direct (unpooled) connection, while the app's
+runtime queries are free to use the pooled one.
+
+Note that `prisma.config.ts` is read by the Prisma CLI only. It is not loaded
+at runtime, so it has no effect on the running application.
+
+## Adding a migration
+
+1. Edit `prisma/schema.prisma`.
+2. `npx prisma migrate dev --name <snake_case_name>` — applies to `opengym_dev`
+   and writes `prisma/migrations/<timestamp>_<name>/migration.sql`.
+3. `npx prisma generate` — run it explicitly. `migrate dev` does not reliably
+   regenerate the client, and `npm run typecheck` then fails on the new fields.
+4. Apply it to the test database, or every integration test breaks on the
+   missing columns:
+   `set -a; . ./.env.test; set +a; npx prisma migrate deploy`
+5. `npm run typecheck && npm run lint && npm run test && npm run test:integration`
+6. Commit the schema change and the generated migration folder together. A
+   schema change without its migration will pass CI and then fail in production.
+7. Merge `dev` into `main`. `main` has branch protection that expects a pull
+   request.
+8. Read the Vercel build log for the deployment and confirm the line
+   `Applying migration <timestamp>_<name>`.
+
+## Migration safety
+
+- Additive nullable columns are safe and are what this project has used so far.
+- A destructive change — dropping a column or table, adding `NOT NULL` to an
+  existing column, changing a type — must be raised with the developer and
+  explicitly approved before it is written. `prisma migrate deploy` has no
+  rollback and there is no automated production backup.
+- Never edit a migration that has already been merged to `main`. It has been
+  applied to production and Prisma records its checksum; changing it makes
+  every later deploy fail.
+- Never run `prisma migrate reset` against anything other than `opengym_dev` or
+  `opengym_test`. It drops the database.
+
+## Reading production data
+
+There is no local access to the production database. To inspect production
+state, use the admin pages on the deployed site (`/admin`), the Vercel function
+logs, or the Neon console — not a local Prisma client.

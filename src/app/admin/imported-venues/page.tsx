@@ -36,26 +36,26 @@ export default async function AdminImportedVenuesPage() {
   const venueCreations = await getAdminImportedVenueCreations();
 
   return (
-    <main className="min-h-screen bg-white px-6 py-12 text-foreground">
+    <main className="flex-1 px-5 py-8 text-foreground sm:px-6 sm:py-12">
       <section className="mx-auto w-full max-w-7xl space-y-8">
-        <div className="space-y-4">
+        <div className="space-y-6">
           <Link
             href="/admin"
-            className="text-sm font-semibold text-emerald-600 hover:text-emerald-700"
+            className="inline-block text-sm font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
           >
             Back to admin
           </Link>
 
           <div className="space-y-3">
-            <p className="text-sm font-semibold uppercase tracking-wide text-emerald-600">
+            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-court">
               Admin
             </p>
 
-            <h1 className="text-4xl font-semibold tracking-normal">
+            <h1 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em]">
               Imported Venues
             </h1>
 
-            <p className="max-w-3xl text-zinc-600">
+            <p className="max-w-3xl text-foreground/70">
               Review venues that were automatically created from source
               locations during dry-run imports.
             </p>
@@ -63,13 +63,13 @@ export default async function AdminImportedVenuesPage() {
         </div>
 
         {venueCreations.length === 0 ? (
-          <div className="rounded-lg border border-foreground/10 bg-foreground/5 p-6 text-zinc-600">
+          <div className="rounded-[20px] border-2 border-foreground bg-surface p-6 shadow-[0_6px_0_0_var(--foreground)] text-foreground/70">
             No imported venues have been created yet.
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-foreground/10">
+          <div className="overflow-x-auto rounded-[16px] border-2 border-foreground bg-surface">
             <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
-              <thead className="bg-foreground/5 text-xs uppercase tracking-wide text-zinc-500">
+              <thead className="bg-foreground/[0.07] text-xs uppercase tracking-[0.14em] text-foreground/60">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Created</th>
                   <th className="px-4 py-3 font-semibold">Batch</th>
@@ -80,33 +80,33 @@ export default async function AdminImportedVenuesPage() {
                   <th className="px-4 py-3 font-semibold">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/10">
+              <tbody className="divide-y-2 divide-line">
                 {venueCreations.map((row) => (
                   <tr key={row.id} className="bg-foreground/[0.03] align-top">
-                    <td className="px-4 py-4 text-zinc-600">
+                    <td className="px-4 py-4 text-foreground/70">
                       {formatDateTime(row.createdAt)}
                     </td>
                     <td className="px-4 py-4">
                       <Link
                         href={`/admin/imported-runs/${row.batch.id}`}
-                        className="font-semibold text-emerald-600 hover:text-emerald-700"
+                        className="font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
                       >
                         View batch
                       </Link>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         {formatLabel(row.batch.status)} ·{" "}
                         {row.batch.trigger ?? "Unknown trigger"}
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         {row.batch.scheduleSource.name}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-zinc-600">
-                      <div className="font-medium text-zinc-900">
+                    <td className="px-4 py-4 text-foreground/70">
+                      <div className="font-semibold text-foreground">
                         {row.sourceUrl ? (
                           <a
                             href={row.sourceUrl}
-                            className="text-emerald-600 hover:text-emerald-700"
+                            className="text-foreground underline underline-offset-2 hover:text-link-hover"
                           >
                             {row.sourceName}
                           </a>
@@ -114,29 +114,29 @@ export default async function AdminImportedVenuesPage() {
                           row.sourceName
                         )}
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         {sourceAddress(row)}
                       </div>
                     </td>
-                    <td className="px-4 py-4 text-zinc-600">
-                      <div className="font-medium text-zinc-900">
+                    <td className="px-4 py-4 text-foreground/70">
+                      <div className="font-semibold text-foreground">
                         {row.venue ? row.venue.name : "Removed venue"}
                       </div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         {venueAddress(row)}
                       </div>
                       {row.venue?.websiteUrl ? (
                         <a
                           href={row.venue.websiteUrl}
-                          className="mt-2 inline-block text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                          className="mt-2 inline-block text-xs font-semibold text-foreground underline underline-offset-2 hover:text-link-hover"
                         >
                           Venue website
                         </a>
                       ) : null}
                     </td>
-                    <td className="px-4 py-4 text-zinc-600">
+                    <td className="px-4 py-4 text-foreground/70">
                       <div>ID {row.externalVenueRef.externalId}</div>
-                      <div className="mt-1 text-xs text-zinc-500">
+                      <div className="mt-1 text-xs text-foreground/60">
                         {row.externalVenueRef.id}
                       </div>
                     </td>
@@ -144,8 +144,8 @@ export default async function AdminImportedVenuesPage() {
                       <span
                         className={
                           row.removedAt
-                            ? "rounded-full border border-zinc-500/40 px-3 py-1 text-xs font-semibold text-zinc-500"
-                            : "rounded-full border border-emerald-400/30 px-3 py-1 text-xs font-semibold text-emerald-700"
+                            ? "rounded-full border-2 border-foreground/35 px-3 py-1 text-xs font-semibold text-foreground/55"
+                            : "rounded-full border-2 border-foreground bg-white px-3 py-1 text-xs font-semibold text-foreground"
                         }
                       >
                         {row.removedAt

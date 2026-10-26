@@ -44,6 +44,7 @@ function isAuthorized(request: Request, secret: string): boolean {
 function summarize(result: TorontoAutoImportResult) {
   return {
     status: result.status,
+    recoveredPendingBatch: result.recoveredPendingBatch ?? false,
     refresh: result.refresh
       ? {
           hasRefreshed: result.refresh.hasRefreshed,

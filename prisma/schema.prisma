@@ -79,6 +79,14 @@ enum VenueMatchStatus {
   IGNORED
 }
 
+/// Where a venue's coordinates came from. MANUAL means a human corrected them,
+/// which a bulk re-geocode must never overwrite; NOMINATIM means the geocoder
+/// produced them and they are safe to refresh.
+enum GeocodeSource {
+  NOMINATIM
+  MANUAL
+}
+
 model User {
   id          String   @id @default(cuid())
   clerkUserId String   @unique
@@ -101,6 +109,14 @@ model Venue {
   postalCode      String?
   websiteUrl      String?
   phone           String?
+  // Nullable on purpose: a venue is fully usable without coordinates, and only
+  // the map needs them. Geocoding is enrichment that runs outside the import
+  // transaction and is allowed to fail, so a venue can exist -- and appear in
+  // listings, runs and admin -- long before it has a pin.
+  latitude        Float?
+  longitude       Float?
+  geocodedAt      DateTime?
+  geocodeSource   GeocodeSource?
   runs            Run[]
   externalRefs    ExternalVenueRef[]
   importCreations ImportedVenueCreation[]

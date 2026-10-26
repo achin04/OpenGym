@@ -1,14 +1,58 @@
 @import "tailwindcss";
 
+/*
+ * Palette from the homepage design spec.
+ *
+ * The "chunky" interactive style the whole site now uses needs exactly two
+ * colours: --foreground is the ink of every border and every hard shadow, and
+ * --court is the one accent. Earlier there were three near-identical inks and
+ * three near-identical oranges (--btn-ink, --btn-accent and friends), which is
+ * how the header and the hero ended up a few hex points apart. One name per
+ * colour is the rule here.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #0f1013;
-  --court: #f47b2a;
+  --background: #f6f4f1;
+  --foreground: #141414;
+  --court: #ee7b3a;
   --court-200: #ffc68f;
   --cream: #f8efe0;
-  --ink-800: #ece7dd;
-  --ink-900: #f5f2ec;
-  --line: rgba(15, 16, 19, 0.12);
+  /* Raised surfaces: lighter than the page, so a card reads as sitting above
+     the cream rather than cut out of it. */
+  --surface: #fbfaf8;
+  /* Old name for the same surface. Six files still say `bg-ink-900`; they get
+     migrated to `bg-surface` when those pages are restyled. Keeping the alias
+     means this change does not have to touch them today. */
+  --ink-900: var(--surface);
+  --line: #e4e0da;
+  --placeholder: #6b6b6b;
+  --skyline: #d9d2c8;
+  /* The dark end of the court orange. It was introduced as the link hover
+     colour and is now also the accent on section headings, so it gets a name
+     describing the colour rather than one of its uses -- --link-hover stays as
+     an alias so nothing has to be migrated today. */
+  --court-700: #b4541c;
+  --link-hover: var(--court-700);
+  /*
+   * A third colour, used only to mark a run as an official municipal program.
+   *
+   * The palette rule here is one accent, and this bends it deliberately:
+   * "official city program" against "someone's pickup game" is a trust
+   * signal, and ink-versus-orange cannot carry it -- orange already means
+   * "this is the action". Blue is the City of Toronto's own, so it reads as
+   * provenance rather than as decoration. It appears on the host strip of a
+   * city-sourced card and nowhere else.
+   */
+  --city: #1b4a77;
+  --city-tint: #e7f0f7;
+  /*
+   * Admin only. Approving and rejecting imported data are destructive and
+   * hard to undo, so those controls keep a colour signal the rest of the site
+   * does not need -- orange alone would make a reject button look like a
+   * save button. Both fills take ink labels: against #141414 they clear WCAG
+   * AA comfortably, which white on either would not.
+   */
+  --success: #3aa76d;
+  --danger: #e5574e;
 }
 
 @theme inline {
@@ -17,11 +61,18 @@
   --color-court: var(--court);
   --color-court-200: var(--court-200);
   --color-cream: var(--cream);
-  --color-ink-800: var(--ink-800);
+  --color-surface: var(--surface);
   --color-ink-900: var(--ink-900);
   --color-line: var(--line);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-placeholder: var(--placeholder);
+  --color-skyline: var(--skyline);
+  --color-court-700: var(--court-700);
+  --color-city: var(--city);
+  --color-city-tint: var(--city-tint);
+  --color-link-hover: var(--link-hover);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-inter);
 }
 
 html {
@@ -29,20 +80,20 @@ html {
   scroll-padding-top: 6rem;
 }
 
+/*
+ * The three orange gradient layers that used to sit here -- a centre hairline,
+ * a radial arc and a top wash -- are gone. The design is a flat cream field
+ * edge to edge, and a fixed-attachment gradient would have shown through the
+ * skyline band.
+ */
 body {
   background: var(--background);
-  background-image:
-    linear-gradient(90deg, transparent 0 calc(50% - 1px), rgba(244, 123, 42, 0.08) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)),
-    radial-gradient(circle at 50% -14rem, transparent 0 23rem, rgba(244, 123, 42, 0.12) 23.05rem 23.18rem, transparent 23.25rem),
-    linear-gradient(180deg, rgba(244, 123, 42, 0.08), transparent 28rem);
-  background-attachment: fixed;
-  background-repeat: no-repeat;
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
 }
 
 ::selection {
-  background: rgba(244, 123, 42, 0.35);
+  background: rgba(238, 123, 58, 0.35);
   color: var(--foreground);
 }
 
@@ -50,6 +101,36 @@ input,
 select,
 textarea {
   color-scheme: light;
+}
+
+/*
+ * Form controls do not inherit the document font: user-agent stylesheets set
+ * them to a system UI face, so the search bar and the selects were rendering
+ * in something other than Inter while everything around them was Inter. The
+ * shorthand `font: inherit` would also clobber the size and weight these
+ * controls set for themselves, so only the family is inherited.
+ */
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/*
+ * Native select arrows sit hard against the right edge of the control. With a
+ * 2px border and a 10px corner radius that puts the arrow inside the corner
+ * curve, where it reads as clipped. Supplying our own chevron lets us place it
+ * properly, and makes the control identical across browsers instead of
+ * inheriting three different native arrows.
+ */
+.select-field {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23141414' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.875rem center;
+  padding-right: 2.25rem;
 }
 
 .court-grid {
@@ -89,3 +170,188 @@ textarea {
   transform: translateX(-50%);
   width: 7rem;
 }
+
+/*
+ * Clerk's <UserButton /> is rendered by Clerk's own bundle, loaded from their
+ * CDN at runtime, so its avatar cannot be sized from our markup. Clerk's
+ * documented customisation surface is these `cl-` class names.
+ *
+ * The default trigger avatar is 28px, which read as misaligned next to the
+ * 46px nav buttons -- it was in fact vertically centred, just small enough
+ * that the eye took the size difference for a baseline problem. Matching the
+ * nav button height puts the circle and the buttons on one visual row.
+ *
+ * !important is deliberate: Clerk injects its stylesheet at runtime, so source
+ * order here cannot be relied on to win.
+ */
+.cl-userButtonAvatarBox,
+.cl-userButtonTrigger .cl-avatarBox {
+  width: 46px !important;
+  height: 46px !important;
+}
+
+.cl-userButtonTrigger {
+  border-radius: 999px !important;
+}
+
+/*
+ * Leaflet skin.
+ *
+ * Leaflet builds its markers, clusters and popups as plain DOM outside React,
+ * so Tailwind utilities on our own JSX cannot reach them -- these elements are
+ * created by the library at runtime from the icon HTML the map component hands
+ * it. Hence real CSS, here next to the tokens it consumes.
+ *
+ * The pin and the cluster bubble are drawn rather than loaded as images, which
+ * also sidesteps Leaflet's default marker icon: its stylesheet points at image
+ * files by relative path, and those paths break under a bundler, producing the
+ * classic map with working popups and invisible markers.
+ */
+.og-pin {
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 999px 999px 999px 2px;
+  box-shadow: 0 2px 0 0 var(--foreground);
+  height: 20px;
+  transform: rotate(-45deg);
+  width: 20px;
+}
+
+.og-cluster {
+  align-items: center;
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 999px;
+  box-shadow: 0 3px 0 0 var(--foreground);
+  color: var(--foreground);
+  display: flex;
+  font-weight: 800;
+  height: 100%;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Three steps so a dense downtown bubble does not swamp a sparse suburban one. */
+.og-cluster--sm {
+  font-size: 13px;
+}
+
+.og-cluster--md {
+  font-size: 15px;
+}
+
+.og-cluster--lg {
+  font-size: 17px;
+}
+
+.leaflet-container {
+  background: var(--background);
+  font: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--surface);
+  border: 2px solid var(--foreground);
+  border-radius: 14px;
+  box-shadow: 0 4px 0 0 var(--foreground);
+  color: var(--foreground);
+}
+
+.leaflet-popup-content {
+  margin: 14px 16px;
+}
+
+.leaflet-popup-tip {
+  background: var(--surface);
+  border: 2px solid var(--foreground);
+}
+
+.og-popup-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  max-width: 15rem;
+}
+
+.og-popup-link {
+  align-items: center;
+  background: var(--court);
+  border: 2px solid var(--foreground);
+  border-radius: 10px;
+  box-shadow: 0 3px 0 0 var(--foreground);
+  color: var(--foreground);
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 14px;
+  text-decoration: none;
+}
+
+.og-popup-link:hover {
+  box-shadow: 0 1px 0 0 var(--foreground);
+  transform: translateY(2px);
+}
+
+/*
+ * Leaflet's own controls, brought into the house style rather than left as
+ * the library's grey-on-white defaults.
+ */
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--surface);
+  border-bottom-color: var(--line);
+  color: var(--foreground);
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--foreground);
+  font-size: 11px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--link-hover);
+}
+
+/*
+ * The skyline marquee.
+ *
+ * The track holds the band twice and is twice the container's width, so
+ * translating it -50% moves it by exactly one copy. At that point copy two
+ * occupies the pixels copy one started in, which is what makes the loop point
+ * invisible -- and why the drawing's left and right edges have to be the same
+ * building, which is what the x=1910 rect in toronto-skyline.tsx is for.
+ *
+ * 90s for a full pass. The brief was a conveyor belt, not a parade: slow
+ * enough that it reads as drift behind the hero rather than something
+ * competing with the search bar for attention.
+ */
+@keyframes skyline-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.skyline-track {
+  animation: skyline-scroll 90s linear infinite;
+  /* Promotes the track to its own layer so each frame is a compositor
+     transform rather than a repaint of a few hundred SVG strokes. */
+  will-change: transform;
+}
+
+/*
+ * Motion that never stops is exactly what this setting exists for, and the
+ * band is decorative -- stopping it costs nothing.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .skyline-track {
+    animation: none;
+    will-change: auto;
+  }
+}
+
+
