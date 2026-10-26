@@ -83,15 +83,6 @@ async function main() {
         },
     });
 
-    const universityGym = await prisma.venue.create({
-        data: {
-            name: "University Athletic Centre",
-            addressLine1: "55 College Street",
-            city: "Toronto",
-            postalCode: "M5G 2B3",
-        },
-    });
-
     await prisma.run.create({
         data: {
             title: "Friday Night Open Run",
@@ -109,22 +100,6 @@ async function main() {
         },
     });
 
-    await prisma.run.create({
-        data: {
-        title: "Sunday University Pickup",
-        description: "Indoor pickup basketball at the university gym.",
-        sourceType: RunSourceType.UNIVERSITY,
-        startTime: new Date("2026-06-07T15:00:00.000Z"),
-        endTime: new Date("2026-06-07T17:00:00.000Z"),
-        price: 5,
-        skillLevel: SkillLevel.BEGINNER,
-        ageGroup: AgeGroup.ADULT,
-        maxPlayers: 16,
-        verified: true,
-        sourceUrl: "https://example.com/sunday-pickup",
-        venueId: universityGym.id,
-        },
-    });       
 }
 
 main()
