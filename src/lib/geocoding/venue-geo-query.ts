@@ -23,3 +23,17 @@ export function buildVenueGeoQuery(parts: VenueGeoQueryParts): string {
     .filter(Boolean)
     .join(", ");
 }
+
+/**
+ * A Google Maps link for a venue.
+ *
+ * Built from the same string the geocoder is given, so the pin on the map and
+ * the directions link beside it can never point at different places. This is a
+ * plain link-out and needs no key or billing account, which is why it survived
+ * the move to Leaflet tiles untouched.
+ */
+export function googleDirectionsUrl(parts: VenueGeoQueryParts): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+    buildVenueGeoQuery(parts),
+  )}`;
+}

@@ -23,6 +23,25 @@ export function formatTimeRange(start: Date, end: Date) {
   return `${formatter.format(start)} - ${formatter.format(end)}`;
 }
 
+/**
+ * The length of a run, as "45 min", "1 hr" or "1 hr 30 min".
+ *
+ * Computed from the two timestamps rather than stored, and deliberately coarse:
+ * the listing shows it beside the time range as a glance-level "is this worth
+ * crossing town for", not as a precise figure.
+ */
+export function formatDuration(start: Date, end: Date) {
+  const minutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+
+  if (hours === 0) {
+    return `${rest} min`;
+  }
+
+  return rest === 0 ? `${hours} hr` : `${hours} hr ${rest} min`;
+}
+
 export function formatPrice(price: { toString: () => string } | null) {
   if (price === null) {
     return "Free";

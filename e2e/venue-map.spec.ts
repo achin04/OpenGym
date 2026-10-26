@@ -115,7 +115,7 @@ test("the venue filter survives changing another filter", async ({ page }) => {
 
   // The hidden input's whole purpose. Without it this submission drops the
   // venue and silently returns every run in the city.
-  await page.getByLabel("Availability").selectOption("any");
+  await page.getByLabel("When").selectOption("any");
   await page.getByRole("button", { name: "Search" }).click();
 
   await expect(page).toHaveURL(new RegExp(`venueId=${venueId}`));

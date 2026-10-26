@@ -33,6 +33,18 @@
   --court-700: #b4541c;
   --link-hover: var(--court-700);
   /*
+   * A third colour, used only to mark a run as an official municipal program.
+   *
+   * The palette rule here is one accent, and this bends it deliberately:
+   * "official city program" against "someone's pickup game" is a trust
+   * signal, and ink-versus-orange cannot carry it -- orange already means
+   * "this is the action". Blue is the City of Toronto's own, so it reads as
+   * provenance rather than as decoration. It appears on the host strip of a
+   * city-sourced card and nowhere else.
+   */
+  --city: #1b4a77;
+  --city-tint: #e7f0f7;
+  /*
    * Admin only. Approving and rejecting imported data are destructive and
    * hard to undo, so those controls keep a colour signal the rest of the site
    * does not need -- orange alone would make a reject button look like a
@@ -55,6 +67,8 @@
   --color-placeholder: var(--placeholder);
   --color-skyline: var(--skyline);
   --color-court-700: var(--court-700);
+  --color-city: var(--city);
+  --color-city-tint: var(--city-tint);
   --color-link-hover: var(--link-hover);
   --color-success: var(--success);
   --color-danger: var(--danger);
@@ -339,3 +353,5 @@ button {
     will-change: auto;
   }
 }
+
+
