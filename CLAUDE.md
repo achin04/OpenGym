@@ -208,6 +208,7 @@ node_modules/next/dist/docs/
 | Local integration tests | `opengym_test` on the same local server | `DATABASE_URL` in `.env.test`, loaded by `vitest.integration.config.ts` |
 | CI | a throwaway `opengym_test` in a `postgres:18` service container | `DATABASE_URL` in `.github/workflows/ci.yml` |
 | **Production** | **Neon serverless PostgreSQL, AWS `us-east-1` (N. Virginia)**, reached from Vercel functions in `iad1` | `DATABASE_URL` and `DATABASE_URL_UNPOOLED`, set as Vercel project environment variables |
+| **Preview** (every push to a branch other than `main`) | **the same production Neon database** — there is only one | the same Vercel environment variables |
 
 The production connection string is a Vercel secret. It is deliberately not in
 any local file and cannot be read back from the Vercel dashboard. Do not ask
@@ -229,6 +230,37 @@ Never run `npx prisma migrate deploy` against production from a developer
 machine. The URL is not available locally by design, the deploy owns that step
 and an out-of-band run can race it, and this project has no automated
 production backup to fall back on.
+
+## Preview deployments read and write production
+
+There is one Neon database. Vercel builds a preview for every push to a branch
+other than `main`, and those previews are wired to the same `DATABASE_URL` as
+production. A preview is not a sandbox.
+
+Two consequences, both of which have caught people out:
+
+**Anything a preview writes, production keeps.** Approving an import batch,
+creating or geocoding a venue, or editing a run from a preview's `/admin` pages
+changes live data. Treat an action on a preview exactly as seriously as the
+same action on the production URL.
+
+**A branch with a pending migration has a broken preview, and that is
+expected.** `vercel-build` only migrates when `VERCEL_ENV` is `production`, so a
+preview runs new code against the un-migrated production schema. The symptom is
+a runtime Prisma error naming a column that does not exist yet — for example
+`Invalid \`db.venue.findMany()\` invocation` after `latitude` was added to the
+schema but not yet to the database. This is not a code bug and must not be
+"fixed" in the code. The schema catches up when the branch merges to `main`.
+
+Do not work around it by migrating production by hand; see the section above
+for why. If a preview of a schema change genuinely has to work before release,
+that is a conversation with the developer about merging to `main` sooner, not a
+local `migrate deploy`.
+
+Migrations in this project are additive and nullable, which is what makes that
+ordering safe in the other direction: applying one to production does not break
+the older code still running on `main`, because that code simply never selects
+the new columns.
 
 ## Why `DATABASE_URL_UNPOOLED` exists
 
