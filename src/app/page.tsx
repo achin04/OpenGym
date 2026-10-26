@@ -90,12 +90,20 @@ export default async function Home() {
         <section className="relative mx-auto flex min-h-[calc(100svh-157px)] w-full max-w-7xl flex-col justify-center px-6 pb-[13.54vw] sm:min-h-[calc(100svh-197px)] sm:pb-[calc(13.54vw+1rem)]">
         {/*
           clamp() rather than breakpoints: the headline is the one element that
-          should track viewport width continuously. 8.6vw is tuned so that
-          "Find basketball runs" fills the 1280px container and "near you."
-          falls to a second line on its own, which is the composition the
-          design calls for -- no manual <br /> needed.
+          should track viewport width continuously.
+
+          8.6vw is tuned so that "Find basketball runs" fills the container and
+          "near you." falls to a second line on its own -- the composition the
+          design calls for, with no manual <br />.
+
+          The weight and tracking are the runs page's h1 (800, -0.04em) so the
+          two pages speak in the same voice, but the scale is this page's own.
+          The runs heading caps at 80px because it sits above a dense listing;
+          the home page has one headline and a search bar, and at 80px the
+          sentence collapsed onto one line and stopped being the thing the page
+          is built around. Shared type system, different display size.
         */}
-        <h1 className="mb-6 mt-2 text-[clamp(52px,8.6vw,124px)] font-bold leading-[0.98] tracking-[-0.035em] text-foreground sm:mb-12 sm:mt-6">
+        <h1 className="mb-6 mt-2 text-[clamp(52px,8.6vw,124px)] font-extrabold leading-[0.98] tracking-[-0.04em] text-foreground sm:mb-12 sm:mt-6">
           Find basketball runs <span className="text-court">near you.</span>
         </h1>
 
@@ -155,7 +163,7 @@ export default async function Home() {
                 id="home-availability"
                 name="availability"
                 defaultValue="upcoming"
-                className="select-field min-w-0 bg-transparent pl-1 py-2 text-[17px] font-medium text-foreground outline-none"
+                className="select-field min-w-0 bg-transparent pl-1 py-2 text-[18px] font-medium text-foreground outline-none"
               >
                 {availabilityOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -199,11 +207,11 @@ export default async function Home() {
       */}
       <section className="mt-[-0.417vw] w-full bg-foreground py-12 sm:py-16">
         <div className="mx-auto w-full max-w-7xl px-6">
-          <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-background">
+          <h2 className="text-[clamp(32px,4vw,56px)] font-extrabold leading-[1.04] tracking-[-0.03em] text-background">
             See where the <span className="text-court">runs are.</span>
           </h2>
 
-          <p className="mt-3 max-w-2xl text-base leading-7 text-background/70">
+          <p className="mt-3 max-w-2xl text-[17px] leading-7 text-background/70">
             Tap a cluster to zoom in, or pick a pin to see that venue&rsquo;s
             upcoming runs.
           </p>
@@ -240,7 +248,7 @@ export default async function Home() {
           </div>
 
           {mapVenues.length === 0 ? (
-            <p className="mt-4 text-sm font-medium text-background/70">
+            <p className="mt-4 text-[15px] font-medium text-background/70">
               No venues are on the map yet. Venues appear here once they have
               coordinates and at least one upcoming run.
             </p>
@@ -257,11 +265,11 @@ export default async function Home() {
         id="how-it-works"
         className="mx-auto mt-16 w-full max-w-7xl scroll-mt-28 px-6 lg:mt-20"
       >
-        <h2 className="text-[clamp(32px,4vw,56px)] font-bold leading-[1.04] tracking-[-0.03em] text-foreground">
+        <h2 className="text-[clamp(32px,4vw,56px)] font-extrabold leading-[1.04] tracking-[-0.03em] text-foreground">
           How it <span className="text-court-700">works.</span>
         </h2>
 
-        <p className="mt-3 text-base leading-7 text-foreground/70">
+        <p className="mt-3 text-[17px] leading-7 text-[#4A4540]">
           From couch to court in three steps.
         </p>
 
@@ -287,7 +295,7 @@ export default async function Home() {
                   */}
                   <span
                     aria-hidden="true"
-                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-court text-lg font-bold text-foreground"
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-foreground bg-court text-lg font-extrabold text-foreground"
                   >
                     {index + 1}
                   </span>
@@ -295,11 +303,11 @@ export default async function Home() {
                   <Icon className="mt-1 h-6 w-6 text-foreground" />
                 </div>
 
-                <h3 className="mt-6 text-xl font-semibold text-foreground">
+                <h3 className="mt-6 text-xl font-bold tracking-[-0.02em] text-foreground">
                   {step.title}
                 </h3>
 
-                <p className="mt-3 text-base leading-7 text-foreground/70">
+                <p className="mt-3 text-base leading-7 text-[#5B5B5B]">
                   {step.body}
                 </p>
               </li>
@@ -314,10 +322,10 @@ export default async function Home() {
         */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-5 rounded-[20px] border-2 border-dashed border-foreground/55 p-6 sm:p-7">
           <div>
-            <h3 className="text-xl font-semibold text-foreground">
+            <h3 className="text-xl font-bold tracking-[-0.02em] text-foreground">
               Running a game?
             </h3>
-            <p className="mt-2 text-base leading-7 text-foreground/70">
+            <p className="mt-2 text-base leading-7 text-[#5B5B5B]">
               Add your run to OpenGym so players nearby can find it.
             </p>
           </div>
