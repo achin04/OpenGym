@@ -6,6 +6,13 @@ const { runTorontoAutoImport } = vi.hoisted(() => ({
   runTorontoAutoImport: vi.fn(),
 }));
 
+// Mocked for the same reason the importer is: this file tests the route's
+// auth, shape and error handling, and a real call would want a database and
+// the network.
+vi.mock("@/server/geocoding/venue-coordinates", () => ({
+  geocodeMissingVenues: vi.fn(),
+}));
+
 vi.mock("@/server/importers/toronto/auto-import", () => ({
   runTorontoAutoImport,
 }));

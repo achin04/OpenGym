@@ -3,6 +3,10 @@ import {
   runTorontoAutoImport,
   type TorontoAutoImportResult,
 } from "@/server/importers/toronto/auto-import";
+import {
+  geocodeMissingVenues,
+  type GeocodeMissingResult,
+} from "@/server/geocoding/venue-coordinates";
 
 // Vercel Hobby allows up to 300s per function invocation, and that is also the
 // default. Stated explicitly because this route is the one place in the app
@@ -15,6 +19,51 @@ export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 
 const LOG_PREFIX = "[toronto-cron]";
+
+/**
+ * Wall-clock left for geocoding, and the slice of it kept back.
+ *
+ * The import runs first and takes an unpredictable length of time, so the
+ * backfill gets whatever remains of maxDuration rather than a fixed count.
+ * RESERVE is held back for the response, the logging and the usual overhead --
+ * a function killed mid-write is worse than one that geocodes a few venues
+ * fewer.
+ */
+const MAX_DURATION_MS = maxDuration * 1_000;
+const RESERVE_MS = 20_000;
+
+/**
+ * Coordinates for venues that still have none.
+ *
+ * Here rather than only behind the admin button because the backlog should
+ * drain on its own. A venue with no coordinates is invisible on the map, and
+ * leaving that to someone remembering to press a button nightly is how it
+ * stays broken.
+ *
+ * Deliberately swallows its own failures. Geocoding is enrichment on top of
+ * the import, and Nominatim being down or slow must not turn a successful
+ * import into a failed cron run.
+ */
+async function backfillCoordinates(
+  elapsedMs: number,
+): Promise<GeocodeMissingResult | { error: string }> {
+  const timeBudgetMs = MAX_DURATION_MS - elapsedMs - RESERVE_MS;
+
+  if (timeBudgetMs <= 0) {
+    return { error: "No time left after the import." };
+  }
+
+  try {
+    return await geocodeMissingVenues({
+      // The budget is the real limit; this only stops the query loading every
+      // row in the table when the backlog is large.
+      limit: 500,
+      timeBudgetMs,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+}
 
 // Vercel Cron sends `Authorization: Bearer $CRON_SECRET` when CRON_SECRET is
 // set on the project, so the same check covers the scheduler and a manual
@@ -103,13 +152,18 @@ export async function GET(request: Request) {
   try {
     const result = await runTorontoAutoImport();
     const summary = summarize(result);
+
+    // After the import, not before: the import is what the schedule exists for
+    // and must get the time it needs, and it can create venues that then want
+    // geocoding in the same run.
+    const geocode = await backfillCoordinates(Date.now() - startedAt);
     const durationMs = Date.now() - startedAt;
 
     console.log(
-      `${LOG_PREFIX} ${result.status} in ${durationMs}ms ${JSON.stringify(summary)}`,
+      `${LOG_PREFIX} ${result.status} in ${durationMs}ms ${JSON.stringify({ ...summary, geocode })}`,
     );
 
-    return Response.json({ ...summary, durationMs }, { status: 200 });
+    return Response.json({ ...summary, geocode, durationMs }, { status: 200 });
   } catch (error) {
     const durationMs = Date.now() - startedAt;
     const message = error instanceof Error ? error.message : String(error);

@@ -341,3 +341,61 @@ describe("geocodeMissingVenues", () => {
     expect(result.remaining).toBe(2);
   });
 });
+
+describe("geocodeMissingVenues time budget", () => {
+  // The budget is measured against time that actually passes, not against a
+  // per-venue charge, so the stub has to be slowed down for it to bind at all.
+  // That is also what makes it self-correcting in production: if Nominatim is
+  // slower than expected, fewer venues fit, with no constant to retune.
+  it("stops once the elapsed time leaves no room for another venue", async () => {
+    for (const name of ["A", "B", "C", "D", "E", "F"]) {
+      await createVenue(`${name} venue`);
+    }
+
+    const options = stubGeocode(johnInnesFixture);
+    const result = await geocodeMissingVenues({
+      geocode: { ...options.geocode, minRequestIntervalMs: 80 },
+      limit: 100,
+      timeBudgetMs: 300,
+      msPerVenue: 80,
+    });
+
+    // A range, not an exact count: this measures the wall clock, and pinning
+    // it to one number would be a test that fails on a slow machine rather
+    // than a test of the behaviour.
+    expect(result.attempted).toBeGreaterThanOrEqual(1);
+    expect(result.attempted).toBeLessThan(6);
+    expect(result.stoppedOnTime).toBe(true);
+    expect(result.remaining).toBeGreaterThan(0);
+  });
+
+  it("does not report stopping on time when it simply ran out of venues", async () => {
+    await createVenue("A venue");
+
+    const result = await geocodeMissingVenues({
+      ...stubGeocode(johnInnesFixture),
+      limit: 100,
+      timeBudgetMs: 60_000,
+      msPerVenue: 100,
+    });
+
+    expect(result.attempted).toBe(1);
+    expect(result.stoppedOnTime).toBe(false);
+    expect(result.remaining).toBe(0);
+  });
+
+  it("geocodes nothing when the budget cannot fit a single venue", async () => {
+    await createVenue("A venue");
+
+    const options = stubGeocode(johnInnesFixture);
+    const result = await geocodeMissingVenues({
+      ...options,
+      timeBudgetMs: 10,
+      msPerVenue: 100,
+    });
+
+    expect(result.attempted).toBe(0);
+    expect(result.stoppedOnTime).toBe(true);
+    expect(options.geocode.fetcher).not.toHaveBeenCalled();
+  });
+});

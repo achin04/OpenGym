@@ -205,6 +205,15 @@ export function describeGeocodeResult(result: GeocodeVenueResult): string {
  */
 export const GEOCODE_BATCH_SIZE = 15;
 
+/**
+ * What one venue costs in wall-clock time.
+ *
+ * Nominatim's one-request-per-second policy is enforced inside the geocoding
+ * client, so this is the floor however fast the database and the network are.
+ * Used to decide whether another venue still fits inside a time budget.
+ */
+const MS_PER_VENUE = 1_100;
+
 export type GeocodeMissingResult = {
   attempted: number;
   ok: number;
@@ -212,6 +221,8 @@ export type GeocodeMissingResult = {
   errored: number;
   /** Still without coordinates once this batch finished. */
   remaining: number;
+  /** True when a time budget ended the batch before it ran out of venues. */
+  stoppedOnTime: boolean;
 };
 
 /**
@@ -229,10 +240,30 @@ export type GeocodeMissingResult = {
  * of time with less to show for it if the batch is cut short.
  */
 export async function geocodeMissingVenues(
-  options: GeocodeVenueOptions & { limit?: number } = {},
+  options: GeocodeVenueOptions & {
+    limit?: number;
+    /**
+     * Stop once this much wall-clock time has gone, leaving the rest for the
+     * next run.
+     *
+     * The admin button works to a fixed count because a person is waiting and
+     * wants a predictable pause. The cron has the opposite problem: it gets
+     * whatever is left of its 300s after an import of unpredictable length, so
+     * it should spend what it has rather than guess a count. The check is made
+     * against the time one more venue would take, so the loop stops before
+     * overrunning rather than after.
+     */
+    timeBudgetMs?: number;
+    /** Overridable so a test does not have to spend real seconds. */
+    msPerVenue?: number;
+  } = {},
 ): Promise<GeocodeMissingResult> {
   const db = options.db ?? defaultPrisma;
   const limit = options.limit ?? GEOCODE_BATCH_SIZE;
+  const timeBudgetMs = options.timeBudgetMs ?? Number.POSITIVE_INFINITY;
+  const msPerVenue = options.msPerVenue ?? MS_PER_VENUE;
+  const startedAt = Date.now();
+  let stoppedOnTime = false;
 
   const venues = await db.venue.findMany({
     where: { latitude: null },
@@ -244,6 +275,11 @@ export async function geocodeMissingVenues(
   const counts = { attempted: 0, ok: 0, noMatch: 0, errored: 0 };
 
   for (const venue of venues) {
+    if (Date.now() - startedAt + msPerVenue > timeBudgetMs) {
+      stoppedOnTime = true;
+      break;
+    }
+
     const result = await geocodeVenueById(venue.id, {
       db,
       mode: "fillMissing",
@@ -263,7 +299,7 @@ export async function geocodeMissingVenues(
 
   const remaining = await db.venue.count({ where: { latitude: null } });
 
-  return { ...counts, remaining };
+  return { ...counts, remaining, stoppedOnTime };
 }
 
 /** One sentence for the admin, describing what a batch did and what is left. */
