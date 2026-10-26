@@ -41,17 +41,36 @@
  */
 export function TorontoSkyline({ className }: { className?: string }) {
   return (
-    <div className={className} aria-hidden="true">
+    <div className={`overflow-hidden ${className ?? ""}`} aria-hidden="true">
+      {/*
+        A two-copy marquee. The track is twice the container's width and holds
+        the band twice; the animation slides it left by exactly half its own
+        width -- one whole copy -- then snaps back. Copy two has by then landed
+        precisely where copy one started, so the reset is invisible and the
+        city appears to scroll forever.
+
+        overflow-hidden lives here rather than on the caller: the track is 200%
+        wide, and without it the page gains a horizontal scrollbar.
+      */}
+      <div className="skyline-track flex w-[200%]">
+        <SkylineArt />
+        <SkylineArt />
+      </div>
+    </div>
+  );
+}
+
+function SkylineArt() {
+  return (
       <svg
         viewBox="0 0 1920 260"
-        width="100%"
         preserveAspectRatio="xMidYMax meet"
         fill="none"
         stroke="currentColor"
         strokeWidth="3.5"
         strokeLinecap="round"
         strokeLinejoin="round"
-        className="block w-full text-skyline"
+        className="block w-1/2 shrink-0 text-skyline"
       >
         {/* Ground */}
         <path d="M0 252H1920" />
@@ -62,11 +81,20 @@ export function TorontoSkyline({ className }: { className?: string }) {
         <path d="M130 164v-20" />
         <rect x="172" y="208" width="56" height="44" />
 
-        {/* --- Outer right filler: new, fills 1692-1930 --- */}
+        {/* --- Outer right filler: fills 1692-1902 --- */}
         <rect x="1692" y="170" width="70" height="82" />
         <path d="M1706 196h18M1734 196h14M1706 222h18M1734 222h14" />
         <rect x="1778" y="200" width="60" height="52" />
-        <rect x="1852" y="152" width="78" height="100" />
+        <rect x="1852" y="152" width="50" height="100" />
+
+        {/*
+          The seam. This is the x=-10 building again, drawn one canvas width
+          later at 1910, so the 10px of it hanging off the right edge of one
+          copy is exactly the 10px clipped off the left edge of the next. Until
+          this was added the two edges were different buildings, and every join
+          in the loop would have shown a step.
+        */}
+        <rect x="1910" y="196" width="96" height="56" />
 
         {/*
           The original 1440-wide composition, shifted right by half the added
@@ -122,6 +150,5 @@ export function TorontoSkyline({ className }: { className?: string }) {
         <rect x="1406" y="146" width="34" height="106" />
         </g>
       </svg>
-    </div>
   );
 }

@@ -285,3 +285,43 @@ textarea {
 .leaflet-control-attribution a {
   color: var(--link-hover);
 }
+
+/*
+ * The skyline marquee.
+ *
+ * The track holds the band twice and is twice the container's width, so
+ * translating it -50% moves it by exactly one copy. At that point copy two
+ * occupies the pixels copy one started in, which is what makes the loop point
+ * invisible -- and why the drawing's left and right edges have to be the same
+ * building, which is what the x=1910 rect in toronto-skyline.tsx is for.
+ *
+ * 90s for a full pass. The brief was a conveyor belt, not a parade: slow
+ * enough that it reads as drift behind the hero rather than something
+ * competing with the search bar for attention.
+ */
+@keyframes skyline-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.skyline-track {
+  animation: skyline-scroll 90s linear infinite;
+  /* Promotes the track to its own layer so each frame is a compositor
+     transform rather than a repaint of a few hundred SVG strokes. */
+  will-change: transform;
+}
+
+/*
+ * Motion that never stops is exactly what this setting exists for, and the
+ * band is decorative -- stopping it costs nothing.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .skyline-track {
+    animation: none;
+    will-change: auto;
+  }
+}
