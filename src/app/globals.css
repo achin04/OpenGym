@@ -90,6 +90,20 @@ textarea {
 }
 
 /*
+ * Form controls do not inherit the document font: user-agent stylesheets set
+ * them to a system UI face, so the search bar and the selects were rendering
+ * in something other than Inter while everything around them was Inter. The
+ * shorthand `font: inherit` would also clobber the size and weight these
+ * controls set for themselves, so only the family is inherited.
+ */
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+/*
  * Native select arrows sit hard against the right edge of the control. With a
  * 2px border and a 10px corner radius that puts the arrow inside the corner
  * curve, where it reads as clipped. Supplying our own chevron lets us place it
