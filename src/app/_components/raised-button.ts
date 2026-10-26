@@ -7,9 +7,14 @@
  * the metrics change.
  *
  * `nav` metrics come from the Figma export of the header (46px tall, 21px
- * side padding, Inter Medium 15/18). `control` is the looser size used for
- * page-level buttons -- Search, Reset, View run -- where the label length
- * varies and a fixed height would be wrong.
+ * side padding, 15/18). `control` is the looser size used for page-level
+ * buttons -- Search, Add a run, View run -- where the label length varies and
+ * a fixed height would be wrong.
+ *
+ * Both sizes are semibold. The header was Inter Medium, a weight nothing else
+ * in the app used, and against the runs page -- where every button is 600 or
+ * 800 -- the nav read as unfinished rather than as restrained. One weight for
+ * every button, two sizes.
  *
  * Every variant's label is ink, not white: white on #ee7b3a is about 2.4:1
  * and fails WCAG AA, while #141414 on it is about 7:1. The same holds for the
@@ -26,7 +31,7 @@ const BASE =
   "focus-visible:outline-offset-2 focus-visible:outline-foreground";
 
 const SIZE: Record<RaisedSize, string> = {
-  nav: "h-[46px] px-[21px] text-[15px] font-medium leading-[18px]",
+  nav: "h-[46px] px-[21px] text-[15px] font-semibold leading-[18px]",
   control: "min-h-11 px-4 py-2 text-sm font-semibold",
 };
 
